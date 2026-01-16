@@ -1,174 +1,282 @@
 {
-  "projectName": "business-onboarding",
-  "branchName": "feature/business-onboarding",
+  "projectName": "product-cms",
+  "branchName": "feature/product-cms",
   "userStories": [
     {
       "id": "S01",
-      "title": "Create businesses table schema",
+      "title": "Create products and categories schema",
       "priority": 1,
-      "passes": true,
+      "passes": false,
       "ultrawork": true,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/schema.ts with businesses table definition",
-        "Fields: name (string, required), slug (string, required, unique), type (string, required: restaurant|pharmacy|retail|other)",
-        "Fields: description (optional string), logoUrl (optional string), address (optional string)",
-        "Fields: defaultLanguage (string, default 'en'), timezone (string, default 'UTC')",
-        "Fields: businessHours (optional object with open, close, days), aiGreeting (optional string)",
-        "Fields: ownerId (Id<'users'>, required), createdAt (number), updatedAt (number)",
-        "Index by_owner on ownerId for listing businesses by user",
-        "Index by_slug on slug for unique slug lookup"
+        "Create products table in Convex schema with fields: businessId, name, description, price, currency, categoryId, imageId, available, deleted, order, createdAt, updatedAt",
+        "Create categories table with fields: businessId, name, order, createdAt",
+        "Add index products.by_business on [businessId, deleted]",
+        "Add index products.by_category on [categoryId, deleted, available]",
+        "Add index categories.by_business on [businessId]",
+        "Price stored as integer in smallest currency unit (centavos)",
+        "Currency defaults from business settings, supports COP, BRL, MXN, USD"
       ]
     },
     {
       "id": "S02",
-      "title": "Create business mutations",
+      "title": "Create categories backend functions",
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/businesses.ts",
-        "businesses.create mutation with args: name, type, description?, logo?, address?",
-        "Auto-generate slug from name (kebab-case, check uniqueness)",
-        "Set ownerId from authenticated user context",
-        "Set default values for defaultLanguage ('en') and timezone ('UTC')",
-        "businesses.update mutation with args: businessId, ...fields",
-        "Validate user is owner before allowing update",
-        "Update updatedAt timestamp on changes"
+        "Create categories.create mutation with businessId, name, order args",
+        "Create categories.update mutation with categoryId, name, order args",
+        "Create categories.delete mutation with categoryId arg",
+        "Create categories.list query with businessId arg",
+        "Create categories.reorder mutation with businessId and orderedIds args",
+        "All mutations require authenticated user with business access",
+        "List query returns categories sorted by order field"
       ]
     },
     {
       "id": "S03",
-      "title": "Create business queries",
+      "title": "Create products CRUD backend functions",
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "businesses.list query returns all businesses for authenticated user using by_owner index",
-        "businesses.get query returns single business by businessId",
-        "Validate user is owner for businesses.get",
-        "Return null or appropriate error for unauthorized access"
+        "Create products.create mutation with businessId, name, description, price, categoryId, imageId args",
+        "Create products.update mutation with productId and optional fields",
+        "Create products.delete mutation with productId (soft delete - sets deleted: true)",
+        "Create products.get query with productId arg",
+        "Create products.list query with businessId, categoryId, available, search, limit, cursor args",
+        "List excludes deleted products by default",
+        "New products default to available: true, deleted: false",
+        "All mutations require authenticated user with business access"
       ]
     },
     {
       "id": "S04",
-      "title": "Create sign up page",
+      "title": "Create image upload backend functions",
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/routes/signup.tsx",
-        "Form with email and password fields using @tanstack/react-form",
-        "Zod validation for email format and password minimum length",
-        "Google OAuth button using Better-Auth",
-        "Link to login page for existing users",
-        "Redirect to /onboarding on successful signup",
-        "Show error messages for invalid credentials or existing email",
-        "BROWSER TEST: Navigate to /signup, verify form renders with email and password fields",
-        "BROWSER TEST: Google OAuth button is visible and clickable",
-        "BROWSER TEST: Login link navigates to /login",
-        "BROWSER TEST: Form shows validation errors for invalid input"
+        "Create products.generateUploadUrl mutation for Convex file storage",
+        "Allow updating product with imageId after upload",
+        "Create products.getImageUrl query to get public URL from imageId",
+        "Authenticated users only can generate upload URLs"
       ]
     },
     {
       "id": "S05",
-      "title": "Create login page",
+      "title": "Create bulk operations backend functions",
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/routes/login.tsx",
-        "Form with email and password fields using @tanstack/react-form",
-        "Zod validation for required fields",
-        "Google OAuth button using Better-Auth",
-        "Link to sign up page for new users",
-        "Redirect to /dashboard on successful login (or /onboarding if no business)",
-        "Show error messages for invalid credentials",
-        "BROWSER TEST: Navigate to /login, verify form renders with email and password fields",
-        "BROWSER TEST: Google OAuth button is visible",
-        "BROWSER TEST: Sign up link navigates to /signup",
-        "BROWSER TEST: Form shows error for invalid credentials"
+        "Create products.bulkUpdateAvailability mutation with productIds and available args",
+        "Create products.bulkDelete mutation with productIds arg (soft delete)",
+        "Create products.bulkUpdateCategory mutation with productIds and categoryId args",
+        "All bulk operations validate user has access to all products",
+        "Return count of updated products"
       ]
     },
     {
       "id": "S06",
-      "title": "Create onboarding page for business creation",
+      "title": "Create CategoryManager component and page",
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/routes/onboarding.tsx",
-        "Protected route - redirect to /login if not authenticated",
-        "Form with fields: business name (required), business type dropdown (restaurant, pharmacy, retail, other)",
-        "Optional fields: description, logo upload, address",
-        "Auto-generate slug preview from business name (editable)",
-        "Progress indicator showing onboarding step",
-        "Call businesses.create mutation on submit",
-        "Redirect to /dashboard on success",
-        "Mobile-responsive layout",
-        "BROWSER TEST: Navigate to /onboarding while authenticated, verify form renders",
-        "BROWSER TEST: Business type dropdown has all options (restaurant, pharmacy, retail, other)",
-        "BROWSER TEST: Slug preview updates when business name changes",
-        "BROWSER TEST: Form submission redirects to /dashboard on success"
+        "Create CategoryManager component in apps/web/src/components/products/CategoryManager.tsx",
+        "Create category management page at apps/web/src/routes/products/categories.tsx",
+        "Display list of categories with product count for each",
+        "Create category form with name field",
+        "Edit category inline or via modal",
+        "Delete category with confirmation dialog",
+        "Drag and drop or manual reorder of categories",
+        "Show uncategorized products count",
+        "BROWSER TEST: Navigate to /products/categories, verify category list renders",
+        "BROWSER TEST: Create new category, verify it appears in list",
+        "BROWSER TEST: Edit category name, verify update persists",
+        "BROWSER TEST: Delete category shows confirmation dialog",
+        "BROWSER TEST: Empty state shown when no categories exist"
       ]
     },
     {
       "id": "S07",
-      "title": "Create dashboard page",
+      "title": "Create PriceInput component",
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/routes/dashboard.tsx",
-        "Protected route - redirect to /login if not authenticated",
-        "Redirect to /onboarding if user has no businesses",
-        "Display active business name and basic info",
-        "Navigation links to /settings",
-        "Clean, minimal layout following design notes",
-        "BROWSER TEST: Navigate to /dashboard while authenticated with business, verify page renders",
-        "BROWSER TEST: Active business name is displayed",
-        "BROWSER TEST: Settings link navigates to /settings"
+        "Create PriceInput component in apps/web/src/components/ui/PriceInput.tsx",
+        "Accept currency prop (COP, BRL, MXN, USD)",
+        "Display appropriate currency symbol for locale",
+        "Handle decimal input and convert to centavos internally",
+        "Format display value with thousand separators",
+        "Support controlled input with value and onChange props"
       ]
     },
     {
       "id": "S08",
-      "title": "Create business settings page",
+      "title": "Create ImageUpload component",
       "priority": 8,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/routes/settings.tsx",
-        "Protected route - redirect if not authenticated or no business",
-        "Form to edit: business name, description, logo",
-        "Dropdown for default language: Spanish (es), Portuguese (pt), English (en)",
-        "Timezone selector with common IANA timezones",
-        "Business hours configuration: open time, close time, days of week",
-        "AI greeting message template text area",
-        "Call businesses.update mutation on save",
-        "Show success toast on save",
-        "BROWSER TEST: Navigate to /settings, verify all form fields render",
-        "BROWSER TEST: Language dropdown has es, pt, en options",
-        "BROWSER TEST: Changes reflect immediately after save"
+        "Create ImageUpload component in apps/web/src/components/ui/ImageUpload.tsx",
+        "Drag and drop zone for image files",
+        "Click to browse file picker",
+        "Preview uploaded image",
+        "Upload to Convex file storage using generateUploadUrl",
+        "Return file ID on successful upload",
+        "Replace existing image option",
+        "Show upload progress indicator",
+        "BROWSER TEST: ImageUpload component renders drop zone",
+        "BROWSER TEST: Click triggers file picker (verify input element exists)"
       ]
     },
     {
       "id": "S09",
-      "title": "Create business switcher component",
+      "title": "Create ProductForm component",
       "priority": 9,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/components/business-switcher.tsx",
-        "Displays current active business name",
-        "Dropdown/menu showing list of user's businesses from businesses.list",
-        "Clicking a business switches the active context",
-        "Store active business ID in local storage or context",
-        "Visual indicator (checkmark) on currently active business",
-        "Add 'Create new business' option linking to /onboarding",
-        "Integrate into dashboard layout/header",
-        "BROWSER TEST: Business switcher dropdown opens on click",
-        "BROWSER TEST: All user businesses are listed",
-        "BROWSER TEST: Active business has visual indicator",
-        "BROWSER TEST: Switching business updates the dashboard context"
+        "Create ProductForm component in apps/web/src/components/products/ProductForm.tsx",
+        "Form fields: name (required), description, price (required via PriceInput), category (dropdown), image (via ImageUpload)",
+        "Use TanStack Form with Zod validation",
+        "Name and price are required fields with validation",
+        "Category dropdown populated from categories.list",
+        "Support both create and edit modes via props",
+        "Submit calls products.create or products.update",
+        "Show success toast on save",
+        "BROWSER TEST: ProductForm renders all fields",
+        "BROWSER TEST: Submit with empty name shows validation error",
+        "BROWSER TEST: Submit with empty price shows validation error"
+      ]
+    },
+    {
+      "id": "S10",
+      "title": "Create ProductCard component",
+      "priority": 10,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create ProductCard component in apps/web/src/components/products/ProductCard.tsx",
+        "Display product image thumbnail (or placeholder if no image)",
+        "Show product name and formatted price",
+        "Show category name if assigned",
+        "Availability toggle switch",
+        "Visual indicator (greyed out, badge) for unavailable products",
+        "Click to navigate to edit page",
+        "Checkbox for bulk selection"
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "Create ProductTable component",
+      "priority": 11,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create ProductTable component in apps/web/src/components/products/ProductTable.tsx",
+        "Table columns: checkbox, image thumbnail, name, price, category, availability toggle",
+        "Sortable columns for name, price, category",
+        "Row click navigates to edit page",
+        "Checkbox in header for select all",
+        "Visual distinction for unavailable products"
+      ]
+    },
+    {
+      "id": "S12",
+      "title": "Create product list page",
+      "priority": 12,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create product list page at apps/web/src/routes/products/index.tsx",
+        "Toggle between grid view (ProductCard) and table view (ProductTable)",
+        "Filter by category dropdown",
+        "Filter by availability (all, available, unavailable)",
+        "Search input for product name",
+        "Add Product button linking to /products/new",
+        "Manage Categories link to /products/categories",
+        "Pagination or infinite scroll for large catalogs",
+        "Empty state with CTA when no products",
+        "BROWSER TEST: Navigate to /products, page renders",
+        "BROWSER TEST: Add Product button navigates to /products/new",
+        "BROWSER TEST: Category filter dropdown is present",
+        "BROWSER TEST: Search input is present",
+        "BROWSER TEST: Empty state shown when no products exist"
+      ]
+    },
+    {
+      "id": "S13",
+      "title": "Create add product page",
+      "priority": 13,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create add product page at apps/web/src/routes/products/new.tsx",
+        "Render ProductForm in create mode",
+        "Back link to /products",
+        "On success, show toast and option to add another or go to list",
+        "Product is available by default after creation",
+        "BROWSER TEST: Navigate to /products/new, form renders",
+        "BROWSER TEST: Back link navigates to /products",
+        "BROWSER TEST: Form submission creates product (verify redirect or success state)"
+      ]
+    },
+    {
+      "id": "S14",
+      "title": "Create edit product page",
+      "priority": 14,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create edit product page at apps/web/src/routes/products/$productId.tsx",
+        "Load product data and render ProductForm in edit mode",
+        "Back link to /products",
+        "Save button updates product immediately",
+        "Cancel button discards changes and navigates back",
+        "Delete button with confirmation dialog",
+        "Can replace product image",
+        "BROWSER TEST: Navigate to /products/[id], form renders with product data",
+        "BROWSER TEST: Back link navigates to /products",
+        "BROWSER TEST: Delete button shows confirmation dialog"
+      ]
+    },
+    {
+      "id": "S15",
+      "title": "Add toggle availability to product list",
+      "priority": 15,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Availability toggle in ProductCard and ProductTable triggers products.update",
+        "Toggle is quick action, no confirmation needed",
+        "Visual feedback on toggle (optimistic update)",
+        "Toast notification on availability change",
+        "BROWSER TEST: Toggle availability switch is present on product items",
+        "BROWSER TEST: Clicking toggle updates visual state"
+      ]
+    },
+    {
+      "id": "S16",
+      "title": "Add bulk actions to product list",
+      "priority": 16,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Bulk action toolbar appears when products are selected",
+        "Bulk mark as available button",
+        "Bulk mark as unavailable button",
+        "Bulk delete button with confirmation dialog",
+        "Bulk change category dropdown",
+        "Show count of selected products",
+        "Clear selection button",
+        "BROWSER TEST: Select multiple products, bulk action toolbar appears",
+        "BROWSER TEST: Bulk delete shows confirmation dialog",
+        "BROWSER TEST: Clear selection button deselects all"
       ]
     }
   ]
