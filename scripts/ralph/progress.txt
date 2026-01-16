@@ -133,3 +133,81 @@
 
 ---
 
+## 2026-01-16 16:30 - S06: Create onboarding page for business creation
+
+**What was implemented:**
+- Created /onboarding route (apps/web/src/routes/onboarding.tsx) with protected authentication
+- Used Convex's Authenticated/Unauthenticated/AuthLoading components for auth flow
+- Implemented business creation form with required fields (name, type) and optional fields (description, logoUrl, address)
+- Added real-time slug preview that updates as user types business name using generateSlug helper
+- Native HTML select element for business type dropdown (restaurant, pharmacy, retail, other)
+- Native textarea for description field
+- Progress indicator showing "Step 1: Create Your Business"
+- Card-based layout using shadcn/ui Card components for clean presentation
+- Mobile-responsive layout with container max-width and proper spacing
+- Form validation using TanStack Form without separate Zod validator (simplified approach)
+- Integrated businesses.create mutation from Convex backend
+- Success toast notification and redirect to /dashboard on successful submission
+- Generated route types using @tanstack/router-cli
+
+**Files changed:**
+- apps/web/src/routes/onboarding.tsx (created, 280 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated route types update)
+
+**Learnings for future iterations:**
+- TanStack Form validation can work without explicit Zod validators by doing validation in onSubmit
+- For optional fields with conditional validation (like URL), use safeParse in onSubmit handler
+- Convex's Authenticated/Unauthenticated components provide cleaner auth flow than beforeLoad redirects
+- Native HTML select/textarea elements work well and don't require shadcn components for simple use cases
+- generateSlug helper provides live preview without needing editable slug field
+- Progress indicators can be simple div-based layouts without complex step components
+- Card components from shadcn/ui provide excellent structure for multi-section forms
+- Route type generation must run after creating new route files
+- Comments describing form sections (like "Business Name") are unnecessary - the Label components make intent clear
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- LSP diagnostics show no errors after route generation
+- Committed as: feat: S06 - Create onboarding page for business creation (commit f2ac337)
+- Updated PRD: S06 passes: true
+
+---
+
+## 2026-01-16 17:00 - S07: Create dashboard page
+
+**What was implemented:**
+- Completely rebuilt /dashboard route with proper authentication and business checking
+- Used Authenticated/Unauthenticated/AuthLoading pattern from Convex
+- Implemented automatic redirect to /onboarding if user has no businesses using useEffect
+- Dashboard displays active business (first business from businesses.list query)
+- Shows business name as large heading with capitalized business type as subheading
+- Created two-column card layout using shadcn/ui Card components
+- Business Information card displays type, description (if available), and address (if available)
+- Quick Actions card contains button linking to /settings
+- Integrated UserMenu component in header area
+- Clean, minimal layout with proper spacing and responsive grid
+- Created placeholder /settings route to enable TypeScript type-safe navigation
+- Generated route types for new settings route
+
+**Files changed:**
+- apps/web/src/routes/dashboard.tsx (rebuilt, 119 lines)
+- apps/web/src/routes/settings.tsx (created placeholder, 31 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated route types update)
+
+**Learnings for future iterations:**
+- useEffect with navigate is ideal for conditional redirects based on query results
+- Check if query is undefined before checking length to avoid unnecessary renders
+- Displaying the first business as "active" is simple MVP approach; business switcher (S09) will enhance this
+- Card grid with md:grid-cols-2 provides clean responsive layout without custom breakpoints
+- Capitalizing enum values for display: `type.charAt(0).toUpperCase() + type.slice(1)`
+- Creating placeholder routes helps avoid TypeScript navigation errors when building incrementally
+- Separating DashboardContent into its own component keeps auth logic clean
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- LSP diagnostics show no errors
+- Committed as: feat: S07 - Create dashboard page (commit bbdcb8b)
+- Updated PRD: S07 passes: true
+
+---
+

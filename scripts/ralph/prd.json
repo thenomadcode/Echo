@@ -93,7 +93,7 @@
       "id": "S06",
       "title": "Create onboarding page for business creation",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/onboarding.tsx",
@@ -115,7 +115,7 @@
       "id": "S07",
       "title": "Create dashboard page",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/dashboard.tsx",
