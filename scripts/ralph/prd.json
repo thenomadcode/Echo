@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Create businesses table schema",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create packages/backend/convex/schema.ts with businesses table definition",
@@ -23,7 +23,7 @@
       "id": "S02",
       "title": "Create business mutations",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/businesses.ts",

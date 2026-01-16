@@ -1,0 +1,66 @@
+## Codebase Patterns
+- Schema tables use `defineTable()` with `v` validators from "convex/values"
+- Auth pattern: `authComponent.safeGetAuthUser(ctx)` returns authUser with `userId` property - always check `!authUser || !authUser.userId`
+- Owner references use `ownerId: v.string()` (not v.id) since authUser.userId is a string
+- Timestamps stored as `v.number()` in UTC, populated with `Date.now()` in mutations
+- Optional fields use `v.optional(v.type)` wrapper
+- Enum-like fields use `v.union(v.literal("value1"), v.literal("value2"))`
+- Indexes defined with `.index("indexName", ["field"])` chained after defineTable
+- Nested objects use `v.object({ field: v.type })`
+- Mutations use `Record<string, unknown>` for update objects to avoid optional field type conflicts
+- Uniqueness validation: query by index in loop, append suffix if exists
+
+---
+
+## 2026-01-16 12:35 - S01: Create businesses table schema
+
+**What was implemented:**
+- Created complete businesses table schema in packages/backend/convex/schema.ts
+- Defined all required fields: name, slug, type (union of 4 business types)
+- Defined all optional fields: description, logoUrl, address, aiGreeting
+- Added localization fields: defaultLanguage, timezone (defaults will be set in mutations)
+- Implemented nested businessHours object with open, close, days fields
+- Added ownerId for user ownership tracking (using v.string() per auth pattern)
+- Added createdAt and updatedAt timestamp fields
+- Created two indexes: by_owner (for listing user's businesses) and by_slug (for unique slug lookup)
+
+**Files changed:**
+- packages/backend/convex/schema.ts (added 42 lines)
+
+**Learnings for future iterations:**
+- Auth pattern discovered: `authComponent.safeGetAuthUser(ctx)` returns authUser object with `userId` as string, so ownerId fields should use `v.string()` not `v.id("users")`
+- Convex schemas don't support default values - these must be handled in mutation layer
+- Convex doesn't enforce uniqueness at schema level - must validate in mutations using indexes
+- Type-safe enums created using `v.union(v.literal("val1"), v.literal("val2"))`
+- Schema files benefit from grouping comments for organization of large table definitions
+- Business hours stored as object with time strings (HH:mm format) and days array (0-6)
+
+**Verification:**
+- `bun run check-types` passed successfully
+- Committed as: feat: S01 - Create businesses table schema (commit 5c50b91)
+
+---
+## 2026-01-16 13:40 - S02: Create business mutations
+
+**What was implemented:**
+- Created businesses.create mutation with name, type, and optional fields (description, logoUrl, address)
+- Implemented generateSlug() helper function to convert business name to kebab-case slug
+- Added slug uniqueness validation using by_slug index with automatic suffix incrementing
+- Set ownerId from authUser.userId with proper null checking
+- Applied default values: defaultLanguage='en', timezone='UTC'
+- Created businesses.update mutation accepting businessId and all updatable fields
+- Implemented ownership validation ensuring only business owner can update
+- Auto-updates updatedAt timestamp on all mutations
+
+**Files changed:**
+- packages/backend/convex/businesses.ts (created, 132 lines)
+
+**Learnings for future iterations:**
+- Must check both `!authUser` AND `!authUser.userId` since userId can be null/undefined
+- Slug generation regex patterns require inline comments explaining the pattern (Priority 3 necessary comments)
+- For update mutations, use `Record<string, unknown>` instead of `Partial<typeof business>` to avoid type issues with optional fields
+- Uniqueness check pattern: query with index, loop until no match found, append suffix if needed
+- Convex mutations throw errors which propagate to client - no need for custom error objects
+
+---
+
