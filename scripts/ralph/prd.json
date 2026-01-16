@@ -53,7 +53,7 @@
       "id": "S04",
       "title": "Create sign up page",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/signup.tsx",
@@ -73,7 +73,7 @@
       "id": "S05",
       "title": "Create login page",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/login.tsx",

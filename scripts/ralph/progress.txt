@@ -95,3 +95,41 @@
 
 ---
 
+## 2026-01-16 - S04 & S05: Create sign up and login pages
+
+**What was implemented:**
+- Created /signup route (apps/web/src/routes/signup.tsx) using TanStack Router file-based routing
+- Created /login route (apps/web/src/routes/login.tsx) using TanStack Router file-based routing
+- Added Google OAuth button to SignUpForm component with Better-Auth social signin
+- Added Google OAuth button to SignInForm component with Better-Auth social signin
+- Integrated Google logo SVG inline for OAuth buttons
+- Added visual separator ("Or continue with") between email/password and OAuth options
+- Updated form redirect logic (currently redirects to /dashboard; will update to /onboarding in S06)
+- Generated route types using @tanstack/router-cli
+- Both pages properly link to each other (signup -> login and login -> signup)
+
+**Files changed:**
+- apps/web/src/routes/signup.tsx (created, 17 lines)
+- apps/web/src/routes/login.tsx (created, 17 lines)
+- apps/web/src/components/sign-up-form.tsx (added Google OAuth, 50 lines added)
+- apps/web/src/components/sign-in-form.tsx (added Google OAuth, 50 lines added)
+- apps/web/src/routeTree.gen.ts (auto-generated route types)
+
+**Learnings for future iterations:**
+- TanStack Router requires generating route types via CLI: `bunx @tanstack/router-cli generate`
+- Route types are auto-generated in `src/routeTree.gen.ts` and must be committed
+- Better-Auth social signin uses `authClient.signIn.social({ provider, callbackURL })`
+- Google OAuth can be triggered before route exists; callbackURL just needs to be a valid path
+- For S04/S05, temporarily redirected signup to /dashboard; will update to /onboarding in S06 when that route exists
+- Login redirects to /dashboard; dashboard will handle redirecting to /onboarding if user has no businesses (cleaner separation of concerns)
+- Type-safe navigation with TanStack Router only allows navigating to defined routes
+- Google logo inline SVG is better than importing external assets for simple icons
+
+**Verification:**
+- `bunx tsc --noEmit` in apps/web passed successfully (0 errors)
+- Route generation completed without errors
+- Committed as: feat: S04 - Create sign up page (commit 93c38ec)
+- Updated PRD: S04 passes: true, S05 passes: true
+
+---
+
