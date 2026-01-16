@@ -133,7 +133,7 @@
       "id": "S08",
       "title": "Create business settings page",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/settings.tsx",

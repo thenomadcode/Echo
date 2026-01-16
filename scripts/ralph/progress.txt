@@ -211,3 +211,44 @@
 
 ---
 
+## 2026-01-16 17:45 - S08: Create business settings page
+
+**What was implemented:**
+- Completely rebuilt /settings route from placeholder into fully functional settings page
+- Used same auth pattern as dashboard (Authenticated/Unauthenticated/AuthLoading)
+- Implemented redirect to /onboarding if user has no businesses
+- Created comprehensive settings form with four Card sections:
+  1. Basic Information: name, description, logoUrl
+  2. Localization: defaultLanguage dropdown (en, es, pt), timezone selector
+  3. Business Hours: open/close time inputs, days of week checkboxes
+  4. AI Configuration: aiGreeting textarea
+- Language dropdown with full language names (English, Spanish (Español), Portuguese (Português))
+- Timezone selector with 15 common IANA timezones (UTC, Americas, Europe, Asia, Australia)
+- Business hours uses native time inputs (HH:mm format) and checkbox grid for days
+- Days of week stored as numbers (0=Sunday through 6=Saturday) matching schema
+- Smart form submission only sends changed fields to businesses.update mutation
+- Success toast notification on save
+- Properly typed updateBusiness function with correct return type (Promise<string>)
+- Mobile-responsive grid layouts (2 columns for time inputs, 2-4 columns for day checkboxes)
+
+**Files changed:**
+- apps/web/src/routes/settings.tsx (expanded from 32 to 420 lines)
+
+**Learnings for future iterations:**
+- Convex mutations return the document ID, not void - must type function signatures correctly
+- Comparing arrays with JSON.stringify is pragmatic for detecting changes in simple arrays
+- Native time inputs work excellently with browser UI, no need for custom time pickers
+- Checkbox grids for days of week are more intuitive than multi-select dropdowns
+- Smart diffing before mutation reduces unnecessary database writes
+- COMMON_TIMEZONES constant provides good UX without overwhelming users
+- Card-based sections make complex forms scannable and organized
+- Type alias for Business interface improves readability when passing to components
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- LSP diagnostics show no errors
+- Committed as: feat: S08 - Create business settings page (commit 166b611)
+- Updated PRD: S08 passes: true
+
+---
+
