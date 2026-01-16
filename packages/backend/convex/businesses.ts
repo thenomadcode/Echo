@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 function generateSlug(name: string): string {
@@ -128,5 +128,47 @@ export const update = mutation({
     await ctx.db.patch(args.businessId, updates);
 
     return args.businessId;
+  },
+});
+
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser.userId) {
+      return [];
+    }
+
+    const userId = authUser.userId;
+
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+
+    return businesses;
+  },
+});
+
+export const get = query({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser.userId) {
+      return null;
+    }
+
+    const business = await ctx.db.get(args.businessId);
+    if (!business) {
+      return null;
+    }
+
+    if (business.ownerId !== authUser.userId) {
+      return null;
+    }
+
+    return business;
   },
 });

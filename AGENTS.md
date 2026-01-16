@@ -173,6 +173,7 @@ export { Button, buttonVariants };
 - Use `cn()` utility from `@/lib/utils` for className merging
 - Use Base UI primitives for accessible components
 - shadcn/ui components live in `apps/web/src/components/ui/`
+- Prefer using existing shadcn/ui components over building custom ones
 
 ### Forms
 ```typescript
