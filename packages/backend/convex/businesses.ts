@@ -27,7 +27,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       throw new Error("Not authenticated");
     }
 
@@ -59,7 +59,7 @@ export const create = mutation({
       address: args.address,
       defaultLanguage: "en",
       timezone: "UTC",
-      ownerId: authUser.userId,
+      ownerId: authUser._id,
       createdAt: now,
       updatedAt: now,
     });
@@ -96,7 +96,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       throw new Error("Not authenticated");
     }
 
@@ -105,7 +105,7 @@ export const update = mutation({
       throw new Error("Business not found");
     }
 
-    if (business.ownerId !== authUser.userId) {
+    if (business.ownerId !== authUser._id) {
       throw new Error("Not authorized to update this business");
     }
 
@@ -135,11 +135,11 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       return [];
     }
 
-    const userId = authUser.userId;
+    const userId = authUser._id;
 
     const businesses = await ctx.db
       .query("businesses")
@@ -156,7 +156,7 @@ export const get = query({
   },
   handler: async (ctx, args) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       return null;
     }
 
@@ -165,7 +165,7 @@ export const get = query({
       return null;
     }
 
-    if (business.ownerId !== authUser.userId) {
+    if (business.ownerId !== authUser._id) {
       return null;
     }
 

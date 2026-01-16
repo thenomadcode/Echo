@@ -34,7 +34,7 @@ function OnboardingPage() {
       </Authenticated>
       <Unauthenticated>
         <div className="mx-auto mt-10 max-w-md p-6">
-          <SignInForm onSwitchToSignUp={() => {}} />
+          <SignInForm />
         </div>
       </Unauthenticated>
       <AuthLoading>
