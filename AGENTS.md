@@ -6,6 +6,64 @@
 
 Echo is a Turborepo monorepo using the Better-T-Stack: TanStack Start + Convex + Better-Auth.
 
+### What is Echo?
+
+Echo is a **WhatsApp AI customer service platform** for small-medium businesses in Latin America. It automates customer interactions so business owners don't have to manually respond to every message.
+
+**Target customers**: Restaurants, pharmacies, retail stores in LATAM (Colombia, Brazil, Mexico)
+
+**Core value proposition**: Business owners connect their WhatsApp Business number, add their product catalog, and Echo's AI handles customer inquiries and orders 24/7.
+
+### Key Business Domains
+
+| Domain | Description |
+|--------|-------------|
+| **Multi-tenancy** | One user can own multiple businesses. Each business has isolated data. |
+| **Product Catalog** | Businesses manage products with prices, categories, images, availability. |
+| **WhatsApp Integration** | Connect via BSP (Twilio/360dialog) to receive/send messages. |
+| **AI Conversations** | AI understands intent, answers questions, helps with orders. |
+| **Order Management** | Customers place orders via chat, businesses fulfill them. |
+
+### User Flow
+
+```
+Customer (WhatsApp) → Echo AI → Response
+                         ↓
+                   [If needed]
+                         ↓
+               Business Owner (Dashboard)
+```
+
+### Supported Languages
+
+- **English** (en) - Primary, default
+- **Spanish** (es) - LATAM market
+- **Portuguese** (pt) - Brazil market
+
+AI auto-detects language from customer's first message and responds in same language.
+
+### Currency & Pricing
+
+- Store prices in **smallest currency unit** (centavos) as integers
+- Supported currencies: COP (Colombia), BRL (Brazil), MXN (Mexico), USD
+- Default currency inherited from business settings
+
+### Timestamps & Timezone
+
+- Store all timestamps in **UTC**
+- UI converts to user's local timezone for display
+- Default business timezone: UTC
+
+### Feature Roadmap (PRDs in `tasks/` folder)
+
+1. **Business Onboarding** - Sign up, create business profile, settings
+2. **Product CMS** - Add/edit products, categories, bulk operations
+3. **WhatsApp Integration** - Connect number, receive/send messages
+4. **AI Conversation Engine** - Intent classification, response generation
+5. **Order Flow** - Cart, checkout, order tracking
+6. **Conversation Dashboard** - View/manage conversations, escalations
+7. **Shopify Sync** - Import products from Shopify
+
 ### Tech Stack
 - **Runtime**: Bun 1.3.6
 - **Frontend**: React 19, TanStack Router/Start (SSR), Tailwind CSS v4

@@ -1,0 +1,175 @@
+{
+  "projectName": "business-onboarding",
+  "branchName": "feature/business-onboarding",
+  "userStories": [
+    {
+      "id": "S01",
+      "title": "Create businesses table schema",
+      "priority": 1,
+      "passes": false,
+      "ultrawork": true,
+      "acceptanceCriteria": [
+        "Create packages/backend/convex/schema.ts with businesses table definition",
+        "Fields: name (string, required), slug (string, required, unique), type (string, required: restaurant|pharmacy|retail|other)",
+        "Fields: description (optional string), logoUrl (optional string), address (optional string)",
+        "Fields: defaultLanguage (string, default 'en'), timezone (string, default 'UTC')",
+        "Fields: businessHours (optional object with open, close, days), aiGreeting (optional string)",
+        "Fields: ownerId (Id<'users'>, required), createdAt (number), updatedAt (number)",
+        "Index by_owner on ownerId for listing businesses by user",
+        "Index by_slug on slug for unique slug lookup"
+      ]
+    },
+    {
+      "id": "S02",
+      "title": "Create business mutations",
+      "priority": 2,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create packages/backend/convex/businesses.ts",
+        "businesses.create mutation with args: name, type, description?, logo?, address?",
+        "Auto-generate slug from name (kebab-case, check uniqueness)",
+        "Set ownerId from authenticated user context",
+        "Set default values for defaultLanguage ('en') and timezone ('UTC')",
+        "businesses.update mutation with args: businessId, ...fields",
+        "Validate user is owner before allowing update",
+        "Update updatedAt timestamp on changes"
+      ]
+    },
+    {
+      "id": "S03",
+      "title": "Create business queries",
+      "priority": 3,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "businesses.list query returns all businesses for authenticated user using by_owner index",
+        "businesses.get query returns single business by businessId",
+        "Validate user is owner for businesses.get",
+        "Return null or appropriate error for unauthorized access"
+      ]
+    },
+    {
+      "id": "S04",
+      "title": "Create sign up page",
+      "priority": 4,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/routes/signup.tsx",
+        "Form with email and password fields using @tanstack/react-form",
+        "Zod validation for email format and password minimum length",
+        "Google OAuth button using Better-Auth",
+        "Link to login page for existing users",
+        "Redirect to /onboarding on successful signup",
+        "Show error messages for invalid credentials or existing email",
+        "BROWSER TEST: Navigate to /signup, verify form renders with email and password fields",
+        "BROWSER TEST: Google OAuth button is visible and clickable",
+        "BROWSER TEST: Login link navigates to /login",
+        "BROWSER TEST: Form shows validation errors for invalid input"
+      ]
+    },
+    {
+      "id": "S05",
+      "title": "Create login page",
+      "priority": 5,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/routes/login.tsx",
+        "Form with email and password fields using @tanstack/react-form",
+        "Zod validation for required fields",
+        "Google OAuth button using Better-Auth",
+        "Link to sign up page for new users",
+        "Redirect to /dashboard on successful login (or /onboarding if no business)",
+        "Show error messages for invalid credentials",
+        "BROWSER TEST: Navigate to /login, verify form renders with email and password fields",
+        "BROWSER TEST: Google OAuth button is visible",
+        "BROWSER TEST: Sign up link navigates to /signup",
+        "BROWSER TEST: Form shows error for invalid credentials"
+      ]
+    },
+    {
+      "id": "S06",
+      "title": "Create onboarding page for business creation",
+      "priority": 6,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/routes/onboarding.tsx",
+        "Protected route - redirect to /login if not authenticated",
+        "Form with fields: business name (required), business type dropdown (restaurant, pharmacy, retail, other)",
+        "Optional fields: description, logo upload, address",
+        "Auto-generate slug preview from business name (editable)",
+        "Progress indicator showing onboarding step",
+        "Call businesses.create mutation on submit",
+        "Redirect to /dashboard on success",
+        "Mobile-responsive layout",
+        "BROWSER TEST: Navigate to /onboarding while authenticated, verify form renders",
+        "BROWSER TEST: Business type dropdown has all options (restaurant, pharmacy, retail, other)",
+        "BROWSER TEST: Slug preview updates when business name changes",
+        "BROWSER TEST: Form submission redirects to /dashboard on success"
+      ]
+    },
+    {
+      "id": "S07",
+      "title": "Create dashboard page",
+      "priority": 7,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/routes/dashboard.tsx",
+        "Protected route - redirect to /login if not authenticated",
+        "Redirect to /onboarding if user has no businesses",
+        "Display active business name and basic info",
+        "Navigation links to /settings",
+        "Clean, minimal layout following design notes",
+        "BROWSER TEST: Navigate to /dashboard while authenticated with business, verify page renders",
+        "BROWSER TEST: Active business name is displayed",
+        "BROWSER TEST: Settings link navigates to /settings"
+      ]
+    },
+    {
+      "id": "S08",
+      "title": "Create business settings page",
+      "priority": 8,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/routes/settings.tsx",
+        "Protected route - redirect if not authenticated or no business",
+        "Form to edit: business name, description, logo",
+        "Dropdown for default language: Spanish (es), Portuguese (pt), English (en)",
+        "Timezone selector with common IANA timezones",
+        "Business hours configuration: open time, close time, days of week",
+        "AI greeting message template text area",
+        "Call businesses.update mutation on save",
+        "Show success toast on save",
+        "BROWSER TEST: Navigate to /settings, verify all form fields render",
+        "BROWSER TEST: Language dropdown has es, pt, en options",
+        "BROWSER TEST: Changes reflect immediately after save"
+      ]
+    },
+    {
+      "id": "S09",
+      "title": "Create business switcher component",
+      "priority": 9,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/components/business-switcher.tsx",
+        "Displays current active business name",
+        "Dropdown/menu showing list of user's businesses from businesses.list",
+        "Clicking a business switches the active context",
+        "Store active business ID in local storage or context",
+        "Visual indicator (checkmark) on currently active business",
+        "Add 'Create new business' option linking to /onboarding",
+        "Integrate into dashboard layout/header",
+        "BROWSER TEST: Business switcher dropdown opens on click",
+        "BROWSER TEST: All user businesses are listed",
+        "BROWSER TEST: Active business has visual indicator",
+        "BROWSER TEST: Switching business updates the dashboard context"
+      ]
+    }
+  ]
+}
