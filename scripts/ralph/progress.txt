@@ -252,3 +252,49 @@
 
 ---
 
+## 2026-01-16 18:30 - S09: Create business switcher component
+
+**What was implemented:**
+- Created business-switcher component (apps/web/src/components/business-switcher.tsx)
+- Used shadcn/ui DropdownMenu with Base UI primitives
+- Button trigger displays current active business name with ChevronDown icon
+- Dropdown lists all user's businesses from businesses.list query
+- Each business item shows name (bold) and type (small muted text)
+- Active business indicated with Check icon (checkmark) from lucide-react
+- Implemented localStorage persistence with key "echo:activeBusinessId"
+- Auto-selects first business if no active business is set or stored ID is invalid
+- useEffect hook ensures active business is always valid when businesses list changes
+- Dropdown includes separator and "Create new business" option with Plus icon
+- Clicking "Create new business" navigates to /onboarding
+- Integrated into dashboard page header (replaced business name heading)
+- Integrated into settings page header (added to flex layout with title)
+- Used render prop pattern for DropdownMenuTrigger (Base UI doesn't support asChild)
+
+**Files changed:**
+- apps/web/src/components/business-switcher.tsx (created, 90 lines)
+- apps/web/src/routes/dashboard.tsx (integrated switcher, removed static business heading)
+- apps/web/src/routes/settings.tsx (added switcher to header layout)
+
+**Learnings for future iterations:**
+- localStorage access must be guarded with typeof window !== "undefined" for SSR
+- useEffect dependency array should include all values used for conditional logic
+- Base UI DropdownMenuTrigger uses render prop pattern, not asChild like Radix UI
+- Storing business ID in localStorage provides persistence across sessions
+- Auto-fallback to first business provides good UX when stored ID becomes invalid
+- lucide-react icons (Check, ChevronDown, Plus) integrate seamlessly with components
+- Business switcher in header is more scalable than static business name display
+- flex-col in dropdown items allows stacking name and metadata
+
+**Patterns added to progress.txt:**
+- Use localStorage with SSR-safe initialization: `typeof window !== "undefined"`
+- DropdownMenuTrigger render prop: `render={(props) => <Button {...props}>...</Button>}`
+- Active item indicator: conditional Check icon based on ID comparison
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- LSP diagnostics show no errors
+- Committed as: feat: S09 - Create business switcher component (commit 491aeb6)
+- Updated PRD: S09 passes: true
+
+---
+

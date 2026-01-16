@@ -154,7 +154,7 @@
       "id": "S09",
       "title": "Create business switcher component",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/business-switcher.tsx",
