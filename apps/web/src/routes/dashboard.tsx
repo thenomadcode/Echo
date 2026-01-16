@@ -1,39 +1,117 @@
 import { api } from "@echo/backend/convex/_generated/api";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useQuery } from "convex/react";
-import { useState } from "react";
+import { useEffect } from "react";
 
 import SignInForm from "@/components/sign-in-form";
-import SignUpForm from "@/components/sign-up-form";
 import UserMenu from "@/components/user-menu";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const [showSignIn, setShowSignIn] = useState(false);
-  const privateData = useQuery(api.privateData.get);
-
   return (
     <>
       <Authenticated>
-        <div>
-          <h1>Dashboard</h1>
-          <p>privateData: {privateData?.message}</p>
-          <UserMenu />
-        </div>
+        <DashboardContent />
       </Authenticated>
       <Unauthenticated>
-        {showSignIn ? (
-          <SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
-        ) : (
-          <SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
-        )}
+        <div className="mx-auto mt-10 max-w-md p-6">
+          <SignInForm onSwitchToSignUp={() => {}} />
+        </div>
       </Unauthenticated>
       <AuthLoading>
-        <div>Loading...</div>
+        <div className="flex items-center justify-center min-h-screen">
+          <div>Loading...</div>
+        </div>
       </AuthLoading>
     </>
+  );
+}
+
+function DashboardContent() {
+  const navigate = useNavigate();
+  const businesses = useQuery(api.businesses.list);
+
+  useEffect(() => {
+    if (businesses !== undefined && businesses.length === 0) {
+      navigate({ to: "/onboarding" });
+    }
+  }, [businesses, navigate]);
+
+  if (businesses === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Loading your businesses...</div>
+      </div>
+    );
+  }
+
+  if (businesses.length === 0) {
+    return null;
+  }
+
+  const activeBusiness = businesses[0];
+
+  return (
+    <div className="container mx-auto max-w-4xl py-8 px-4">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">{activeBusiness.name}</h1>
+          <p className="text-muted-foreground mt-1">
+            {activeBusiness.type.charAt(0).toUpperCase() + activeBusiness.type.slice(1)}
+          </p>
+        </div>
+        <UserMenu />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Business Information</CardTitle>
+            <CardDescription>Overview of your business profile</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div>
+              <p className="text-sm font-medium">Business Type</p>
+              <p className="text-sm text-muted-foreground">
+                {activeBusiness.type.charAt(0).toUpperCase() + activeBusiness.type.slice(1)}
+              </p>
+            </div>
+            {activeBusiness.description && (
+              <div>
+                <p className="text-sm font-medium">Description</p>
+                <p className="text-sm text-muted-foreground">{activeBusiness.description}</p>
+              </div>
+            )}
+            {activeBusiness.address && (
+              <div>
+                <p className="text-sm font-medium">Address</p>
+                <p className="text-sm text-muted-foreground">{activeBusiness.address}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Manage your business settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate({ to: "/settings" })}
+              className="w-full"
+              variant="outline"
+            >
+              Business Settings
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
