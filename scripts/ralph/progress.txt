@@ -1,6 +1,7 @@
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
 - Auth pattern: `authComponent.safeGetAuthUser(ctx)` returns authUser with `userId` property - always check `!authUser || !authUser.userId`
+- After auth check, store userId in const: `const userId = authUser.userId;` to avoid TypeScript narrowing issues
 - Owner references use `ownerId: v.string()` (not v.id) since authUser.userId is a string
 - Timestamps stored as `v.number()` in UTC, populated with `Date.now()` in mutations
 - Optional fields use `v.optional(v.type)` wrapper
@@ -9,10 +10,40 @@
 - Nested objects use `v.object({ field: v.type })`
 - Mutations use `Record<string, unknown>` for update objects to avoid optional field type conflicts
 - Uniqueness validation: query by index in loop, append suffix if exists
+- Queries return null/empty arrays for unauthorized access; mutations throw errors
 
 ---
 
-## 2026-01-16 12:35 - S01: Create businesses table schema
+## 2026-01-16 15:20 - S03: Create business queries
+
+**What was implemented:**
+- Added `businesses.list` query that returns all businesses owned by authenticated user
+- Query uses the `by_owner` index for efficient lookups by ownerId
+- Returns empty array for unauthenticated users
+- Added `businesses.get` query that returns a single business by businessId
+- Validates ownership before returning business data
+- Returns null for unauthenticated users or unauthorized access attempts
+- Imported query function from Convex server module
+
+**Files changed:**
+- packages/backend/convex/businesses.ts (added 43 lines, lines 134-175)
+- packages/backend/convex/_generated/api.d.ts (auto-generated to include businesses module)
+- AGENTS.md (added note about preferring existing shadcn/ui components)
+
+**Learnings for future iterations:**
+- When using `authUser.userId` after null check, store it in a const to avoid TypeScript type narrowing issues
+- Pattern: `const userId = authUser.userId;` then use `userId` in queries
+- Queries should return null or empty arrays for unauthorized/unauthenticated users rather than throwing errors
+- This allows graceful handling on the client side
+- Auto-generated Convex API files should be committed as they reflect the actual module exports
+
+**Verification:**
+- `bun run check-types` passed successfully
+- LSP diagnostics show no errors
+- Committed as: feat: S03 - Create business queries (commit 703fefb)
+
+---
+
 
 **What was implemented:**
 - Created complete businesses table schema in packages/backend/convex/schema.ts

@@ -40,7 +40,7 @@
       "id": "S03",
       "title": "Create business queries",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "businesses.list query returns all businesses for authenticated user using by_owner index",
