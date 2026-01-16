@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import SignInForm from "@/components/sign-in-form";
 import UserMenu from "@/components/user-menu";
+import BusinessSwitcher from "@/components/business-switcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -59,12 +60,7 @@ function DashboardContent() {
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">{activeBusiness.name}</h1>
-          <p className="text-muted-foreground mt-1">
-            {activeBusiness.type.charAt(0).toUpperCase() + activeBusiness.type.slice(1)}
-          </p>
-        </div>
+        <BusinessSwitcher />
         <UserMenu />
       </div>
 

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 
 import SignInForm from "@/components/sign-in-form";
+import BusinessSwitcher from "@/components/business-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -191,7 +192,10 @@ function SettingsForm({
 
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Business Settings</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Business Settings</h1>
+        <BusinessSwitcher />
+      </div>
 
       <form
         onSubmit={(e) => {
