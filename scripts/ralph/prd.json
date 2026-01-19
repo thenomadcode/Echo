@@ -71,7 +71,7 @@
       "id": "S05",
       "title": "Send rich messages with buttons and lists",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Extend whatsapp.sendMessage action to support type: buttons, list, image",

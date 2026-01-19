@@ -451,3 +451,40 @@
 
 ---
 
+## 2026-01-19 22:17 - S05: Send rich messages with buttons and lists
+
+**What was implemented:**
+- Extended whatsapp.sendMessage action to support message types: text, buttons, list, image
+- Added Convex validators for Button and ListSection types (buttonValidator, listRowValidator, listSectionValidator)
+- Updated action args with optional fields: buttons, sections, imageUrl, caption, buttonText
+- Implemented validation: buttons array required for buttons type (max 3), sections required for list type, imageUrl required for image type
+- Implemented automatic fallback to plain text for all rich message types when API call fails
+- Created formatButtonsAsFallback(): converts buttons to numbered list text
+- Created formatListAsFallback(): converts sections to formatted text with asterisk-bold titles
+- Created formatImageAsFallback(): includes image URL in text message
+- Updated storeOutgoingMessage mutation with new fields: messageType, richContent, mediaUrl
+- Updated messages table schema with messageType (string) and richContent (JSON-encoded structured data)
+- Stores original structured content in richContent as JSON string for reconstruction/analytics
+- Tracks usedFallback flag to correctly record messageType as "text" when fallback is used
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/actions.ts (expanded from 152 to 279 lines)
+- packages/backend/convex/schema.ts (added messageType and richContent fields to messages table)
+
+**Learnings for future iterations:**
+- Rich message fallback should be attempted only once per send operation (usedFallback flag)
+- Storing structured content as JSON string in richContent enables future analytics/reconstruction
+- Convex validators can be composed: listSectionValidator uses listRowValidator via v.array()
+- Type casting with `as Button[]` works when Convex validator structure matches TypeScript interface
+- WhatsApp button limit (3) should be validated before attempting to send
+- Image fallback includes URL in text so customers can still access the image
+
+**Verification:**
+- Convex codegen passes successfully (22:16:42)
+- LSP diagnostics show no errors on actions.ts and schema.ts
+- Pre-existing errors in dashboard.tsx and settings.tsx are unrelated to S05
+- Committed as: feat: S05 - Send rich messages with buttons and lists (commit ef52aff)
+- Updated PRD: S05 passes: true
+
+---
+
