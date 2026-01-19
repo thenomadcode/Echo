@@ -77,6 +77,9 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     sender: v.string(),
     content: v.string(),
+    messageType: v.optional(v.string()),
+    // JSON-encoded structured data for buttons/list messages
+    richContent: v.optional(v.string()),
     externalId: v.optional(v.string()),
     deliveryStatus: v.optional(v.string()),
     mediaUrl: v.optional(v.string()),

@@ -3,6 +3,7 @@ import { action, internalMutation, internalQuery } from "../../_generated/server
 import { internal } from "../../_generated/api";
 import { TwilioWhatsAppProvider } from "./twilio";
 import type { Doc, Id } from "../../_generated/dataModel";
+import type { Button, ListSection } from "./types";
 
 type ConversationData = {
   conversation: Doc<"conversations">;
@@ -55,6 +56,9 @@ export const storeOutgoingMessage = internalMutation({
     content: v.string(),
     externalId: v.optional(v.string()),
     deliveryStatus: v.string(),
+    messageType: v.optional(v.string()),
+    richContent: v.optional(v.string()),
+    mediaUrl: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"messages">> => {
     const messageId = await ctx.db.insert("messages", {
@@ -63,6 +67,9 @@ export const storeOutgoingMessage = internalMutation({
       content: args.content,
       externalId: args.externalId,
       deliveryStatus: args.deliveryStatus,
+      messageType: args.messageType,
+      richContent: args.richContent,
+      mediaUrl: args.mediaUrl,
       createdAt: Date.now(),
     });
 
@@ -74,14 +81,40 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const buttonValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+});
+
+const listRowValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+  description: v.optional(v.string()),
+});
+
+const listSectionValidator = v.object({
+  title: v.string(),
+  rows: v.array(listRowValidator),
+});
+
 export const sendMessage = action({
   args: {
     conversationId: v.id("conversations"),
     content: v.string(),
-    type: v.literal("text"),
+    type: v.union(
+      v.literal("text"),
+      v.literal("buttons"),
+      v.literal("list"),
+      v.literal("image")
+    ),
+    buttons: v.optional(v.array(buttonValidator)),
+    sections: v.optional(v.array(listSectionValidator)),
+    imageUrl: v.optional(v.string()),
+    caption: v.optional(v.string()),
+    buttonText: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<SendMessageResult> => {
-    const { conversationId, content } = args;
+    const { conversationId, content, type } = args;
 
     const data: ConversationData = await ctx.runQuery(
       internal.integrations.whatsapp.actions.loadConversationData,
@@ -101,18 +134,86 @@ export const sendMessage = action({
 
     const maxRetries = 3;
     let lastError: Error | null = null;
+    let usedFallback = false;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const result = await provider.sendText(customerPhone, content);
+      let result;
+      let actualContent = content;
+      let richContent: string | undefined;
+      let mediaUrl: string | undefined;
+
+      switch (type) {
+        case "text":
+          result = await provider.sendText(customerPhone, content);
+          break;
+
+        case "buttons":
+          if (!args.buttons || args.buttons.length === 0) {
+            throw new Error("Buttons array is required for buttons message type");
+          }
+          if (args.buttons.length > 3) {
+            throw new Error("WhatsApp allows maximum 3 buttons per message");
+          }
+          richContent = JSON.stringify({ buttons: args.buttons });
+          result = await provider.sendButtons(
+            customerPhone,
+            content,
+            args.buttons as Button[]
+          );
+          if (!result.success && !usedFallback) {
+            usedFallback = true;
+            const fallbackText = formatButtonsAsFallback(content, args.buttons);
+            result = await provider.sendText(customerPhone, fallbackText);
+            actualContent = fallbackText;
+          }
+          break;
+
+        case "list":
+          if (!args.sections || args.sections.length === 0) {
+            throw new Error("Sections array is required for list message type");
+          }
+          richContent = JSON.stringify({ sections: args.sections });
+          result = await provider.sendList(
+            customerPhone,
+            content,
+            args.sections as ListSection[],
+            args.buttonText
+          );
+          if (!result.success && !usedFallback) {
+            usedFallback = true;
+            const fallbackText = formatListAsFallback(content, args.sections, args.buttonText);
+            result = await provider.sendText(customerPhone, fallbackText);
+            actualContent = fallbackText;
+          }
+          break;
+
+        case "image":
+          if (!args.imageUrl) {
+            throw new Error("imageUrl is required for image message type");
+          }
+          mediaUrl = args.imageUrl;
+          actualContent = args.caption || content;
+          result = await provider.sendImage(customerPhone, args.imageUrl, args.caption);
+          if (!result.success && !usedFallback) {
+            usedFallback = true;
+            const fallbackText = formatImageAsFallback(args.imageUrl, args.caption || content);
+            result = await provider.sendText(customerPhone, fallbackText);
+            actualContent = fallbackText;
+          }
+          break;
+      }
 
       if (result.success) {
         await ctx.runMutation(
           internal.integrations.whatsapp.actions.storeOutgoingMessage,
           {
             conversationId,
-            content,
+            content: actualContent,
             externalId: result.messageId,
             deliveryStatus: "sent",
+            messageType: usedFallback ? "text" : type,
+            richContent,
+            mediaUrl,
           }
         );
 
@@ -131,7 +232,6 @@ export const sendMessage = action({
         break;
       }
 
-      // Exponential backoff formula: 2^attempt * 1000ms (1s, 2s, 4s)
       const backoffMs = Math.pow(2, attempt) * 1000;
       await sleep(backoffMs);
       lastError = new Error(result.error || "Rate limited");
@@ -143,9 +243,36 @@ export const sendMessage = action({
         conversationId,
         content,
         deliveryStatus: "failed",
+        messageType: type,
       }
     );
 
     throw lastError || new Error("Failed to send message after retries");
   },
 });
+
+function formatButtonsAsFallback(body: string, buttons: Array<{ id: string; title: string }>): string {
+  const buttonText = buttons.map((btn, idx) => `${idx + 1}. ${btn.title}`).join("\n");
+  return `${body}\n\n${buttonText}\n\nReply with the number of your choice.`;
+}
+
+function formatListAsFallback(
+  body: string,
+  sections: Array<{ title: string; rows: Array<{ id: string; title: string; description?: string }> }>,
+  buttonText?: string
+): string {
+  const sectionTexts = sections.map((section) => {
+    const rowsText = section.rows
+      .map((row, idx) => {
+        const desc = row.description ? ` - ${row.description}` : "";
+        return `  ${idx + 1}. ${row.title}${desc}`;
+      })
+      .join("\n");
+    return `*${section.title}*\n${rowsText}`;
+  });
+  return `${body}\n\n${sectionTexts.join("\n\n")}\n\n${buttonText || "Reply with your choice."}`;
+}
+
+function formatImageAsFallback(imageUrl: string, caption: string): string {
+  return `${caption}\n\n[Image: ${imageUrl}]`;
+}
