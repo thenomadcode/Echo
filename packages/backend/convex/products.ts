@@ -274,3 +274,137 @@ export const getImageUrl = query({
     return await ctx.storage.getUrl(args.storageId);
   },
 });
+
+export const bulkUpdateAvailability = mutation({
+  args: {
+    productIds: v.array(v.id("products")),
+    available: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    let updatedCount = 0;
+    const now = Date.now();
+
+    for (const productId of args.productIds) {
+      const product = await ctx.db.get(productId);
+      if (!product) {
+        continue;
+      }
+
+      const business = await ctx.db
+        .query("businesses")
+        .filter((q) => q.eq(q.field("_id"), product.businessId))
+        .first();
+
+      if (!business) {
+        continue;
+      }
+
+      if (business.ownerId !== authUser._id) {
+        throw new Error("Not authorized to update products for this business");
+      }
+
+      await ctx.db.patch(productId, {
+        available: args.available,
+        updatedAt: now,
+      });
+
+      updatedCount++;
+    }
+
+    return updatedCount;
+  },
+});
+
+export const bulkDelete = mutation({
+  args: {
+    productIds: v.array(v.id("products")),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    let deletedCount = 0;
+    const now = Date.now();
+
+    for (const productId of args.productIds) {
+      const product = await ctx.db.get(productId);
+      if (!product) {
+        continue;
+      }
+
+      const business = await ctx.db
+        .query("businesses")
+        .filter((q) => q.eq(q.field("_id"), product.businessId))
+        .first();
+
+      if (!business) {
+        continue;
+      }
+
+      if (business.ownerId !== authUser._id) {
+        throw new Error("Not authorized to delete products for this business");
+      }
+
+      await ctx.db.patch(productId, {
+        deleted: true,
+        updatedAt: now,
+      });
+
+      deletedCount++;
+    }
+
+    return deletedCount;
+  },
+});
+
+export const bulkUpdateCategory = mutation({
+  args: {
+    productIds: v.array(v.id("products")),
+    categoryId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    let updatedCount = 0;
+    const now = Date.now();
+
+    for (const productId of args.productIds) {
+      const product = await ctx.db.get(productId);
+      if (!product) {
+        continue;
+      }
+
+      const business = await ctx.db
+        .query("businesses")
+        .filter((q) => q.eq(q.field("_id"), product.businessId))
+        .first();
+
+      if (!business) {
+        continue;
+      }
+
+      if (business.ownerId !== authUser._id) {
+        throw new Error("Not authorized to update products for this business");
+      }
+
+      await ctx.db.patch(productId, {
+        categoryId: args.categoryId,
+        updatedAt: now,
+      });
+
+      updatedCount++;
+    }
+
+    return updatedCount;
+  },
+});
