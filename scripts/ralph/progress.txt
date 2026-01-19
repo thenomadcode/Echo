@@ -645,3 +645,54 @@
 
 ---
 
+## 2026-01-19 14:20 - S10: Create ProductCard component
+
+**What was implemented:**
+- Created ProductCard component in apps/web/src/components/products/ProductCard.tsx (156 lines)
+- Created Switch component in apps/web/src/components/ui/switch.tsx (22 lines) using Base UI primitives
+- Component displays all required product information:
+  - Product image thumbnail from Convex storage via products.getImageUrl query
+  - Placeholder image ("No image") when no imageId provided
+  - Product name with conditional styling (muted when unavailable)
+  - Formatted price using Intl.NumberFormat with locale-specific currency formatting
+  - Category name (fetched from categories.list and matched by categoryId)
+  - Availability badge showing "Unavailable" for unavailable products
+- Implemented availability toggle switch at bottom of card
+- Switch updates product availability via products.update mutation
+- Success toast notifications for availability changes
+- Click on card navigates to /products/{productId} edit page
+- Checkbox for bulk selection with onSelectChange callback
+- Visual indicators for unavailable products:
+  - Card opacity reduced to 60% when unavailable
+  - Text color muted for product name
+  - "Unavailable" badge displayed
+- Price formatting with CURRENCY_LOCALES mapping (COP->es-CO, BRL->pt-BR, MXN->es-MX, USD->en-US)
+- Converts price from centavos to major units (price / 100) before formatting
+- Card hover effect with shadow transition
+- Event propagation stopped for checkbox and switch to prevent card click
+
+**Files changed:**
+- apps/web/src/components/products/ProductCard.tsx (created, 156 lines)
+- apps/web/src/components/ui/switch.tsx (created, 22 lines)
+
+**Learnings for future iterations:**
+- Base UI Switch component pattern: SwitchPrimitive.Root with SwitchPrimitive.Thumb
+- Switch styling uses data-checked state for conditional styles
+- Thumb translation with data-checked:translate-x-4 for toggle animation
+- Image loading from Convex storage: useQuery with products.getImageUrl and storageId
+- Conditional query pattern: imageId ? { storageId: imageId } : "skip" to avoid unnecessary queries
+- formatPrice helper uses Intl.NumberFormat with locale and currency for proper formatting
+- Category lookup: find category in categories array by matching _id with categoryId
+- Event.stopPropagation() prevents parent onClick when interacting with checkbox/switch
+- Card opacity pattern: opacity-60 for unavailable items provides subtle visual feedback
+- Checkbox onCheckedChange receives boolean | "indeterminate" - must type guard before using
+- Navigate pattern: navigate({ to: `/products/${productId}` }) for type-safe routing
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- LSP diagnostics show no errors
+- Committed as: feat: S10 - Create ProductCard component (commit e5ab003)
+- Updated PRD: S10 passes: true
+
+---
+

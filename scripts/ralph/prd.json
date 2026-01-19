@@ -158,7 +158,7 @@
       "id": "S10",
       "title": "Create ProductCard component",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create ProductCard component in apps/web/src/components/products/ProductCard.tsx",
