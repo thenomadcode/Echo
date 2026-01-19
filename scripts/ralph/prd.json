@@ -213,7 +213,7 @@
       "id": "S13",
       "title": "Create add product page",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create add product page at apps/web/src/routes/products/new.tsx",

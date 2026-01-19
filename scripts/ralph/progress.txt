@@ -807,3 +807,48 @@
 
 ---
 
+
+## 2026-01-19 14:35 - S13: Create add product page
+
+**What was implemented:**
+- Created add product page at apps/web/src/routes/products/new.tsx (97 lines)
+- Page wrapped with Authenticated component for auth protection
+- Renders ProductForm component in "create" mode
+- Passes businessId prop to ProductForm from active business state
+- Back button linking to /products with ArrowLeft icon
+- Button uses variant="ghost" and size="sm" for subtle appearance
+- onSuccess callback navigates user to /products list after successful creation
+- ProductForm handles form validation, submission, and toast notifications
+- Product available field defaults to true (set in ProductForm component)
+- Same active business ID pattern as products list and dashboard
+- Retrieves active business from localStorage or defaults to first business
+- Auto-redirects to /onboarding if user has no businesses
+- BusinessSwitcher integrated in header for multi-tenant support
+- Card layout with CardHeader and CardTitle for consistent UI
+- Loading state shown while businesses query loads
+- Generated TanStack Router route types for /products/new
+
+**Files changed:**
+- apps/web/src/routes/products/new.tsx (created, 97 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated route types)
+- apps/web/bun.lockb (lockfile updates from route generation)
+
+**Learnings for future iterations:**
+- Reusable form component pattern: ProductForm accepts mode="create" or mode="edit"
+- onSuccess callback pattern allows parent route to control post-submission behavior
+- Simple navigation: navigate({ to: "/products" }) after successful creation
+- ProductForm already has toast success notification, no need to duplicate in parent
+- Back button placement: Above Card component provides clear navigation hierarchy
+- Arrow icon convention: ArrowLeft for back navigation, Plus for create actions
+- Active business pattern is consistent across all product pages
+- Same localStorage key ("echo:activeBusinessId") ensures consistent business context
+- Route generation resolves TypeScript errors for navigate() type checking
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Generated route types successfully
+- Committed as: feat: S13 - Create add product page (commit 08b448f)
+- Updated PRD: S13 passes: true
+
+---
+

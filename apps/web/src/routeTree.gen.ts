@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as ProductsNewRouteImport } from './routes/products/new'
 import { Route as ProductsCategoriesRouteImport } from './routes/products/categories'
+import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const SignupRoute = SignupRouteImport.update({
@@ -65,6 +66,11 @@ const ProductsCategoriesRoute = ProductsCategoriesRouteImport.update({
   path: '/products/categories',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
+  id: '/products/$productId',
+  path: '/products/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
   '/products/': typeof ProductsIndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
   '/products': typeof ProductsIndexRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
   '/products/': typeof ProductsIndexRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/signup'
+    | '/products/$productId'
     | '/products/categories'
     | '/products/new'
     | '/products/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/signup'
+    | '/products/$productId'
     | '/products/categories'
     | '/products/new'
     | '/products'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/signup'
+    | '/products/$productId'
     | '/products/categories'
     | '/products/new'
     | '/products/'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsCategoriesRoute: typeof ProductsCategoriesRoute
   ProductsNewRoute: typeof ProductsNewRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsCategoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products/$productId': {
+      id: '/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof ProductsProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsCategoriesRoute: ProductsCategoriesRoute,
   ProductsNewRoute: ProductsNewRoute,
   ProductsIndexRoute: ProductsIndexRoute,
