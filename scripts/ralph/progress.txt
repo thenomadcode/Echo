@@ -298,3 +298,75 @@
 
 ---
 
+
+## 2026-01-19 13:15 - S01: Create products and categories schema
+
+**What was implemented:**
+- Created products table in Convex schema with all required fields:
+  - Relationships: businessId (v.string), categoryId (v.optional(v.string)), imageId (v.optional(v.string))
+  - Required fields: name, price (v.number for centavos), currency (v.string), available (v.boolean), deleted (v.boolean), order (v.number)
+  - Optional fields: description (v.optional(v.string))
+  - Timestamps: createdAt, updatedAt (both v.number)
+- Created categories table with all required fields:
+  - Relationships: businessId (v.string)
+  - Required fields: name (v.string), order (v.number)
+  - Timestamps: createdAt (v.number)
+- Added products indexes:
+  - by_business on [businessId, deleted]
+  - by_category on [categoryId, deleted, available]
+- Added categories index:
+  - by_business on [businessId]
+- Price stored as v.number (integer representing centavos)
+- Currency stored as v.string (defaults will be handled in mutations: COP, BRL, MXN, USD)
+
+**Files changed:**
+- packages/backend/convex/schema.ts (added 37 lines for products and categories tables)
+
+**Learnings for future iterations:**
+- Products table needs all fields for comprehensive product management (name, description, price, currency, category, image, availability, soft delete)
+- Categories table is simpler with just business relationship, name, and order for reordering
+- Multi-field indexes improve query performance (e.g., by_business on [businessId, deleted] allows filtering non-deleted products efficiently)
+- Composite index on [categoryId, deleted, available] enables fast filtered queries by category and availability
+- Price as integer (centavos) prevents floating-point precision issues with currency
+- Currency stored as string allows flexibility for different markets without schema changes
+- Soft delete pattern (deleted: boolean) preserves data integrity and allows recovery
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Committed as: feat: S01 - Create products and categories schema (commit 8db5079)
+- Updated PRD: S01 passes: true
+
+---
+
+## 2026-01-19 13:20 - S02: Create categories backend functions
+
+**What was implemented:**
+- Created packages/backend/convex/categories.ts with complete CRUD operations
+- Implemented categories.create mutation with businessId, name, order args
+- Implemented categories.update mutation with categoryId, optional name and order args
+- Implemented categories.deleteCategory mutation with categoryId arg (hard delete)
+- Implemented categories.list query with businessId arg, returns categories sorted by order
+- Implemented categories.reorder mutation with businessId and orderedIds args for drag-and-drop reordering
+- All mutations validate authentication using authComponent.safeGetAuthUser pattern
+- All mutations verify business ownership before allowing operations
+- List query returns empty array for unauthenticated/unauthorized users
+- Queries use by_business index for efficient lookups
+
+**Files changed:**
+- packages/backend/convex/categories.ts (created, 180 lines)
+
+**Learnings for future iterations:**
+- Business access validation pattern: query businesses table by _id using filter + eq, then check ownerId matches authUser._id
+- For queries, return empty arrays for unauthorized access (graceful degradation)
+- For mutations, throw errors for unauthorized access (fail fast)
+- Named export `deleteCategory` instead of `delete` to avoid conflicts with reserved keyword
+- Reorder mutation updates order field by iterating through orderedIds array with index
+- Sort categories in list query using .sort((a, b) => a.order - b.order) for consistent ordering
+- Use Record<string, unknown> type for update objects to avoid optional field conflicts
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Committed as: feat: S02 - Create categories backend functions (commit c50da7c)
+- Updated PRD: S02 passes: true
+
+---

@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Create products and categories schema",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create products table in Convex schema with fields: businessId, name, description, price, currency, categoryId, imageId, available, deleted, order, createdAt, updatedAt",
@@ -22,7 +22,7 @@
       "id": "S02",
       "title": "Create categories backend functions",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create categories.create mutation with businessId, name, order args",
