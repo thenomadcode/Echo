@@ -370,3 +370,107 @@
 - Updated PRD: S02 passes: true
 
 ---
+
+## 2026-01-19 13:35 - S03: Create products CRUD backend functions
+
+**What was implemented:**
+- Created products.ts in packages/backend/convex/ with complete CRUD operations (250 lines)
+- Implemented products.create mutation with businessId, name, description, price, categoryId, imageId args
+- Auto-generates currency from business defaultLanguage (es->COP, pt->BRL, default->USD)
+- Auto-increments order field for new products based on existing max order
+- Implemented products.update mutation with productId and all optional fields (name, description, price, categoryId, imageId, available)
+- Implemented products.deleteProduct mutation with soft delete (sets deleted: true, updates updatedAt)
+- Implemented products.get query with productId arg, returns null for unauthenticated/unauthorized users
+- Implemented products.list query with comprehensive filtering:
+  - businessId (required), categoryId (optional), available (optional), search (optional)
+  - Pagination support with limit and cursor args
+  - Search filters by name and description (case-insensitive)
+  - Returns object with products array, hasMore boolean, nextCursor number
+- All queries use by_business index with [businessId, deleted] for efficient lookups
+- List query excludes deleted products by default (deleted: false in index query)
+- New products default to available: true, deleted: false
+- All mutations validate authentication and business ownership before operations
+
+**Files changed:**
+- packages/backend/convex/products.ts (created, 250 lines)
+
+**Learnings for future iterations:**
+- Currency inference pattern: Use business.defaultLanguage to set appropriate currency (es->COP, pt->BRL, else USD)
+- Order field auto-increment: Query all products, find max order, increment by 1 for new product
+- Soft delete pattern: Don't actually delete from DB, just set deleted: true and update timestamp
+- List query pagination: Return object with { products, hasMore, nextCursor } for client-side pagination
+- Search implementation: Filter in-memory after index query (Convex doesn't support full-text search on indexed queries)
+- Composite index usage: .withIndex("by_business", q => q.eq("businessId", x).eq("deleted", false)) efficiently excludes deleted items
+- Named export for delete: Use deleteProduct instead of delete to avoid reserved keyword conflicts
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Committed as: feat: S03 - Create products CRUD backend functions (commit ef921a9)
+- Updated PRD: S03 passes: true
+
+---
+
+## 2026-01-19 13:45 - S04: Create image upload backend functions
+
+**What was implemented:**
+- Created products.generateUploadUrl mutation in packages/backend/convex/products.ts
+- Mutation validates authentication using authComponent.safeGetAuthUser pattern
+- Returns upload URL from ctx.storage.generateUploadUrl() for client-side file upload
+- Created products.getImageUrl query with storageId arg
+- Query validates authentication before returning public URL
+- Uses ctx.storage.getUrl(storageId) to retrieve public URL from Convex file storage
+- Product imageId can already be updated via existing products.update mutation
+- All file storage operations require authenticated users
+
+**Files changed:**
+- packages/backend/convex/products.ts (added 26 lines for image upload functions)
+
+**Learnings for future iterations:**
+- Convex file storage pattern: ctx.storage.generateUploadUrl() generates temporary upload URL for client
+- Client uploads file to the URL, receives storageId in response
+- Store storageId as string in database (imageId field)
+- Retrieve public URL with ctx.storage.getUrl(storageId) when needed
+- Upload URL generation should be authenticated to prevent abuse
+- getImageUrl query validates auth but could be made public if product images should be accessible to customers
+- File storage IDs are strings (not v.id type), use v.optional(v.string()) in schema
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors
+- Committed as: feat: S04 - Create image upload backend functions (commit 0955b72)
+- Updated PRD: S04 passes: true
+
+---
+
+## 2026-01-19 13:50 - S05: Create bulk operations backend functions
+
+**What was implemented:**
+- Created products.bulkUpdateAvailability mutation accepting productIds array and available boolean
+- Created products.bulkDelete mutation accepting productIds array (soft delete pattern)
+- Created products.bulkUpdateCategory mutation accepting productIds array and optional categoryId
+- All bulk mutations iterate through productIds array and validate ownership for each product
+- Each mutation checks authentication using authComponent.safeGetAuthUser
+- For each product, verifies business ownership matches authenticated user before updating
+- Throws error if user doesn't own business associated with ANY product (fail-fast validation)
+- Updates updatedAt timestamp for all modified products
+- Returns integer count of successfully updated products
+- Bulk delete sets deleted: true (soft delete), consistent with single delete pattern
+
+**Files changed:**
+- packages/backend/convex/products.ts (added 134 lines for bulk operations)
+
+**Learnings for future iterations:**
+- Bulk operations pattern: iterate through array, validate each item, track success count
+- Fail-fast on authorization errors to prevent partial updates across tenant boundaries
+- Skip non-existent products (continue loop) but throw on authorization failures
+- Bulk mutations return count instead of IDs for simpler client handling
+- Consistent timestamp updates across all bulk operations
+- Bulk operations reuse same business ownership validation as single operations
+- categoryId can be v.optional to support "remove from category" use case
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors
+- Committed as: feat: S05 - Create bulk operations backend functions (commit 7bd63c6)
+- Updated PRD: S05 passes: true
+
+---
+

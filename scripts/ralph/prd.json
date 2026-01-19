@@ -38,7 +38,7 @@
       "id": "S03",
       "title": "Create products CRUD backend functions",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create products.create mutation with businessId, name, description, price, categoryId, imageId args",
@@ -55,7 +55,7 @@
       "id": "S04",
       "title": "Create image upload backend functions",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create products.generateUploadUrl mutation for Convex file storage",
@@ -68,7 +68,7 @@
       "id": "S05",
       "title": "Create bulk operations backend functions",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create products.bulkUpdateAvailability mutation with productIds and available args",
