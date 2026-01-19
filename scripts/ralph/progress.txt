@@ -937,3 +937,53 @@
 
 ---
 
+
+## 2026-01-19 14:50 - S16: Add bulk actions to product list
+
+**What was implemented:**
+- Enhanced bulk selection banner in apps/web/src/routes/products/index.tsx
+- Added bulk action toolbar that appears when products are selected
+- Toolbar shows selected count with proper pluralization
+- Implemented handleBulkMarkAvailable function using bulkUpdateAvailability mutation
+- Implemented handleBulkMarkUnavailable function using bulkUpdateAvailability mutation
+- Implemented handleBulkDelete function using bulkDelete mutation
+- Implemented handleBulkChangeCategory function using bulkUpdateCategory mutation
+- Bulk mark available button with CheckCircle icon
+- Bulk mark unavailable button with XCircle icon
+- Bulk delete button with Trash2 icon and destructive variant
+- Bulk change category dropdown with FolderOpen icon
+- Dropdown includes "Uncategorized" option and all categories
+- Clear selection button remains at top-right of toolbar
+- All bulk action buttons disabled during bulk operation (isBulkActionRunning state)
+- Bulk delete confirmation modal with product count
+- Modal shows "Deleting..." text during deletion
+- Success toast notifications showing count of affected products
+- Error handling with toast.error for failed bulk operations
+- Auto-clear selection after successful bulk operations
+- Category dropdown resets value after selection to allow repeated use
+
+**Files changed:**
+- apps/web/src/routes/products/index.tsx (modified, added 95 lines)
+
+**Learnings for future iterations:**
+- Bulk action toolbar pattern: Two-row layout with count/clear on top, actions on bottom
+- Array.from(Set) converts Set to array for mutation arguments
+- Bulk mutations return count of affected products for success message
+- isBulkActionRunning state prevents duplicate operations and shows feedback
+- Category dropdown pattern: value="" with onChange handler for immediate action
+- Reset dropdown value to "" after operation allows selecting same category again
+- Disabled state on all actions during bulk operation provides clear feedback
+- Toast messages with dynamic count: `${count} product${count === 1 ? "" : "s"}`
+- Bulk change category handles "none" value to set categoryId as undefined
+- Category name lookup for toast: find category by ID from categories array
+- Modal confirmation pattern same as single delete: fixed overlay with Card
+- Flex-wrap on actions allows responsive layout on smaller screens
+- Icon prefix pattern: <Icon className="mr-2 h-4 w-4" /> for consistent spacing
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Committed as: feat: S16 - Add bulk actions to product list (commit [hash])
+- Updated PRD: S16 passes: true
+
+---
+

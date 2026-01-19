@@ -264,7 +264,7 @@
       "id": "S16",
       "title": "Add bulk actions to product list",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Bulk action toolbar appears when products are selected",
