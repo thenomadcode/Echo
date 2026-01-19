@@ -298,3 +298,33 @@
 
 ---
 
+## 2026-01-19 16:35 - S01: Create WhatsApp data model
+
+**What was implemented:**
+- Created whatsappConnections table in packages/backend/convex/schema.ts
+  - Fields: businessId (v.id("businesses")), provider, phoneNumberId, phoneNumber, credentials (nested object with accountSid, authToken, apiKey), verified, createdAt
+  - Indexes: by_business [businessId], by_phone [phoneNumber]
+- Created conversations table for tracking customer conversations
+  - Fields: businessId, customerId, channel, channelId, lastCustomerMessageAt, status (optional), createdAt, updatedAt
+  - Indexes: by_business [businessId], by_channel [channelId, businessId]
+- Created messages table for individual messages
+  - Fields: conversationId, sender, content, externalId (optional), deliveryStatus (optional), mediaUrl (optional), mediaType (optional), createdAt
+  - Index: by_conversation [conversationId]
+
+**Files changed:**
+- packages/backend/convex/schema.ts (added 41 lines for 3 new tables)
+
+**Learnings for future iterations:**
+- WhatsApp BSP credentials stored in nested object for flexibility across providers (Twilio, 360dialog)
+- Conversations track channel type (whatsapp, web) and channelId for lookup
+- lastCustomerMessageAt enables 24-hour messaging window tracking
+- Messages use optional externalId for WhatsApp message ID correlation
+- deliveryStatus tracks sent/delivered/read/failed states from webhook updates
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors
+- Committed as: feat: S01 - Create WhatsApp data model (commit 3760aca)
+- Updated PRD: S01 passes: true
+
+---
+
