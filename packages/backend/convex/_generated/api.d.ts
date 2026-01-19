@@ -14,6 +14,7 @@ import type * as conversations from "../conversations.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
+import type * as integrations_whatsapp_settings from "../integrations/whatsapp/settings.js";
 import type * as integrations_whatsapp_templates from "../integrations/whatsapp/templates.js";
 import type * as integrations_whatsapp_twilio from "../integrations/whatsapp/twilio.js";
 import type * as integrations_whatsapp_types from "../integrations/whatsapp/types.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   healthCheck: typeof healthCheck;
   http: typeof http;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;
+  "integrations/whatsapp/settings": typeof integrations_whatsapp_settings;
   "integrations/whatsapp/templates": typeof integrations_whatsapp_templates;
   "integrations/whatsapp/twilio": typeof integrations_whatsapp_twilio;
   "integrations/whatsapp/types": typeof integrations_whatsapp_types;
