@@ -78,13 +78,15 @@ export default defineSchema({
     sender: v.string(),
     content: v.string(),
     messageType: v.optional(v.string()),
-    // JSON-encoded structured data for buttons/list messages
     richContent: v.optional(v.string()),
     externalId: v.optional(v.string()),
     deliveryStatus: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
     mediaUrl: v.optional(v.string()),
     mediaType: v.optional(v.string()),
     createdAt: v.number(),
   })
-    .index("by_conversation", ["conversationId"]),
+    .index("by_conversation", ["conversationId"])
+    .index("by_external_id", ["externalId"]),
 });

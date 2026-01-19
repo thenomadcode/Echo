@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
+import type { DeliveryStatus } from "./types";
 
 export const processIncomingMessage = internalMutation({
   args: {
@@ -105,5 +106,52 @@ export const getBusinessByPhoneNumber = internalMutation({
       credentials: connection.credentials,
       provider: connection.provider,
     };
+  },
+});
+
+export const updateMessageStatus = internalMutation({
+  args: {
+    externalId: v.string(),
+    status: v.union(
+      v.literal("sent"),
+      v.literal("delivered"),
+      v.literal("read"),
+      v.literal("failed"),
+      v.literal("undelivered")
+    ),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { externalId, status, errorCode, errorMessage } = args;
+
+    const message = await ctx.db
+      .query("messages")
+      .withIndex("by_external_id", (q) => q.eq("externalId", externalId))
+      .first();
+
+    if (!message) {
+      console.log(`Message not found for externalId: ${externalId}`);
+      return { updated: false, reason: "message_not_found" };
+    }
+
+    const updateData: Record<string, unknown> = {
+      deliveryStatus: status,
+    };
+
+    if (status === "failed" || status === "undelivered") {
+      if (errorCode) updateData.errorCode = errorCode;
+      if (errorMessage) updateData.errorMessage = errorMessage;
+
+      console.error(
+        `Message delivery failed - externalId: ${externalId}, ` +
+        `status: ${status}, errorCode: ${errorCode || "N/A"}, ` +
+        `errorMessage: ${errorMessage || "N/A"}`
+      );
+    }
+
+    await ctx.db.patch(message._id, updateData);
+
+    return { updated: true, messageId: message._id };
   },
 });

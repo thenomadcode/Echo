@@ -488,3 +488,90 @@
 
 ---
 
+## 2026-01-19 22:20 - S06: Handle WhatsApp 24-hour messaging window
+
+**What was implemented:**
+- Created packages/backend/convex/integrations/whatsapp/window.ts with:
+  - isWithin24HourWindow(lastCustomerMessageAt) - checks if within 24h window
+  - getWindowExpiresAt(lastCustomerMessageAt) - returns expiration timestamp
+  - getWindowRemainingMs(lastCustomerMessageAt) - returns remaining ms in window
+- Created packages/backend/convex/integrations/whatsapp/templates.ts with:
+  - MessageTemplate and TemplateVariable interfaces
+  - RE_ENGAGEMENT_TEMPLATE - re-engagement template with {{1}}=business name, {{2}}=context
+  - ORDER_UPDATE_TEMPLATE - order status template with {{1}}=customer, {{2}}=order#, {{3}}=status
+  - renderTemplate() - renders template with variable substitution
+  - getTemplate() - retrieves template by name
+- Updated sendMessage action in actions.ts:
+  - Added type: "template" as valid message type
+  - Added templateName and templateVariables arguments
+  - Check isWithin24HourWindow before sending non-template messages
+  - Throws error outside 24h window unless type is "template"
+  - Template case renders template with provided variables
+- Created packages/backend/convex/conversations.ts with queries:
+  - get(conversationId) - returns conversation with windowExpiresAt computed field
+  - listByBusiness(businessId) - lists all conversations with windowExpiresAt
+  - getWithMessages(conversationId, limit?) - returns conversation with messages and windowExpiresAt
+- Verified lastCustomerMessageAt already updated in processIncomingMessage (webhook.ts line 48)
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/window.ts (created, 25 lines)
+- packages/backend/convex/integrations/whatsapp/templates.ts (created, 61 lines)
+- packages/backend/convex/integrations/whatsapp/actions.ts (modified, added template support and 24h check)
+- packages/backend/convex/conversations.ts (created, 57 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- WhatsApp 24h window uses customer's lastCustomerMessageAt timestamp + 24 hours
+- Template variables are 1-indexed per WhatsApp Business API spec: {{1}}, {{2}}, etc.
+- getWindowExpiresAt returns null if no customer message yet (window never opened)
+- Convex queries can add computed fields by spreading document and adding new properties
+- Template rendering should provide default values for optional variables
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on all new/modified files
+- Pre-existing errors in dashboard.tsx and settings.tsx are unrelated to S06
+- Committed as: feat: S06 - Handle WhatsApp 24-hour messaging window (commit aae5f0c)
+- Updated PRD: S06 passes: true
+
+---
+
+## 2026-01-19 22:25 - S07: Process webhook status updates
+
+**What was implemented:**
+- Extended /webhook/whatsapp POST handler in http.ts to detect status update payloads vs message payloads
+- Added TwilioWhatsAppProvider.isStatusUpdate() static method to detect status callbacks (has MessageStatus and MessageSid, no Body)
+- Added TwilioWhatsAppProvider.parseStatusUpdate() method to parse status webhooks into StatusUpdate type
+- Created StatusUpdate interface and DeliveryStatus type ("sent" | "delivered" | "read" | "failed" | "undelivered") in types.ts
+- Added ErrorCode and ErrorMessage fields to TwilioWebhookPayload interface
+- Created whatsapp.updateMessageStatus internal mutation in webhook.ts:
+  - Looks up message by externalId using new by_external_id index
+  - Updates deliveryStatus in database
+  - Stores errorCode and errorMessage for failed/undelivered messages
+  - Logs failed deliveries with console.error for debugging
+- Added by_external_id index to messages table in schema.ts for efficient lookup
+- Added errorCode and errorMessage optional fields to messages table for failure tracking
+- Refactored http.ts POST handler into handleStatusUpdate() and handleIncomingMessage() helpers for clarity
+
+**Files changed:**
+- packages/backend/convex/http.ts (expanded from 111 to 145 lines, refactored into helper functions)
+- packages/backend/convex/integrations/whatsapp/twilio.ts (added isStatusUpdate and parseStatusUpdate methods)
+- packages/backend/convex/integrations/whatsapp/types.ts (added StatusUpdate interface and DeliveryStatus type)
+- packages/backend/convex/integrations/whatsapp/webhook.ts (added updateMessageStatus mutation)
+- packages/backend/convex/schema.ts (added by_external_id index, errorCode, errorMessage fields)
+
+**Learnings for future iterations:**
+- Twilio status callbacks have MessageStatus and MessageSid fields but no Body field - use this to distinguish from message webhooks
+- Status values from Twilio: sent, delivered, read, failed, undelivered
+- Failed/undelivered messages include ErrorCode (e.g., 30003) and ErrorMessage fields
+- Using a static method for payload type detection (isStatusUpdate) avoids needing credentials for detection
+- parseStatusUpdate can use a dummy provider instance since it only parses payload, doesn't send
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on all modified files
+- Committed as: feat: S07 - Process webhook status updates
+- Updated PRD: S07 passes: true
+
+---
+

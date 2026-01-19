@@ -32,6 +32,18 @@ export interface MessageResult {
 // Message types supported by WhatsApp Business API
 export type MessageType = "text" | "image" | "voice" | "document" | "buttons" | "list";
 
+// Delivery status types from WhatsApp/BSP webhooks
+export type DeliveryStatus = "sent" | "delivered" | "read" | "failed" | "undelivered";
+
+// Parsed status update from webhook payload
+export interface StatusUpdate {
+  externalId: string; // Provider's message ID (MessageSid for Twilio)
+  status: DeliveryStatus;
+  timestamp: number; // Unix timestamp in milliseconds
+  errorCode?: string; // Error code for failed deliveries
+  errorMessage?: string; // Human-readable error message
+}
+
 // Parsed incoming message from webhook payload
 export interface ParsedMessage {
   from: string; // Customer phone number (e.g., +573001234567)

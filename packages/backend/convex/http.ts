@@ -44,54 +44,92 @@ http.route({
       payload = await request.json();
     }
 
-    const toPhoneNumber = extractToPhoneNumber(payload);
-    if (!toPhoneNumber) {
-      return new Response("OK", { status: 200 });
+    if (TwilioWhatsAppProvider.isStatusUpdate(payload)) {
+      return await handleStatusUpdate(ctx, payload);
     }
 
-    const businessLookup = await ctx.runMutation(
-      internal.integrations.whatsapp.webhook.getBusinessByPhoneNumber,
-      { phoneNumber: toPhoneNumber }
-    );
-
-    if (!businessLookup) {
-      console.log(`No business found for phone number: ${toPhoneNumber}`);
-      return new Response("OK", { status: 200 });
-    }
-
-    const provider = new TwilioWhatsAppProvider(
-      businessLookup.credentials,
-      toPhoneNumber
-    );
-
-    const parsedMessage = provider.parseWebhook(payload);
-
-    if (!parsedMessage) {
-      return new Response("OK", { status: 200 });
-    }
-
-    const validMessageTypes: MessageType[] = ["text", "image", "voice", "document"];
-    const messageType = validMessageTypes.includes(parsedMessage.messageType)
-      ? parsedMessage.messageType
-      : "text";
-
-    await ctx.runMutation(
-      internal.integrations.whatsapp.webhook.processIncomingMessage,
-      {
-        businessId: businessLookup.businessId,
-        customerPhone: parsedMessage.from,
-        content: parsedMessage.content,
-        messageType: messageType as "text" | "image" | "voice" | "document",
-        externalId: parsedMessage.externalId,
-        mediaUrl: parsedMessage.mediaUrl,
-        mediaType: parsedMessage.mediaType,
-        timestamp: parsedMessage.timestamp,
-      }
-    );
-
-    return new Response("OK", { status: 200 });
+    return await handleIncomingMessage(ctx, payload);
   }),
 });
+
+async function handleStatusUpdate(
+  ctx: Parameters<Parameters<typeof httpAction>[0]>[0],
+  payload: unknown
+): Promise<Response> {
+  const dummyProvider = new TwilioWhatsAppProvider(
+    { accountSid: "", authToken: "" },
+    ""
+  );
+  const statusUpdate = dummyProvider.parseStatusUpdate(payload);
+
+  if (!statusUpdate) {
+    return new Response("OK", { status: 200 });
+  }
+
+  await ctx.runMutation(
+    internal.integrations.whatsapp.webhook.updateMessageStatus,
+    {
+      externalId: statusUpdate.externalId,
+      status: statusUpdate.status,
+      errorCode: statusUpdate.errorCode,
+      errorMessage: statusUpdate.errorMessage,
+    }
+  );
+
+  return new Response("OK", { status: 200 });
+}
+
+async function handleIncomingMessage(
+  ctx: Parameters<Parameters<typeof httpAction>[0]>[0],
+  payload: unknown
+): Promise<Response> {
+  const toPhoneNumber = extractToPhoneNumber(payload);
+  if (!toPhoneNumber) {
+    return new Response("OK", { status: 200 });
+  }
+
+  const businessLookup = await ctx.runMutation(
+    internal.integrations.whatsapp.webhook.getBusinessByPhoneNumber,
+    { phoneNumber: toPhoneNumber }
+  );
+
+  if (!businessLookup) {
+    console.log(`No business found for phone number: ${toPhoneNumber}`);
+    return new Response("OK", { status: 200 });
+  }
+
+  const provider = new TwilioWhatsAppProvider(
+    businessLookup.credentials,
+    toPhoneNumber
+  );
+
+  const parsedMessage = provider.parseWebhook(payload);
+
+  if (!parsedMessage) {
+    return new Response("OK", { status: 200 });
+  }
+
+  const validMessageTypes: MessageType[] = ["text", "image", "voice", "document"];
+  const messageType = validMessageTypes.includes(parsedMessage.messageType)
+    ? parsedMessage.messageType
+    : "text";
+
+  await ctx.runMutation(
+    internal.integrations.whatsapp.webhook.processIncomingMessage,
+    {
+      businessId: businessLookup.businessId,
+      customerPhone: parsedMessage.from,
+      content: parsedMessage.content,
+      messageType: messageType as "text" | "image" | "voice" | "document",
+      externalId: parsedMessage.externalId,
+      mediaUrl: parsedMessage.mediaUrl,
+      mediaType: parsedMessage.mediaType,
+      timestamp: parsedMessage.timestamp,
+    }
+  );
+
+  return new Response("OK", { status: 200 });
+}
 
 function extractToPhoneNumber(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") {

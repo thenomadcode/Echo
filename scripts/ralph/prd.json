@@ -86,7 +86,7 @@
       "id": "S06",
       "title": "Handle WhatsApp 24-hour messaging window",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update lastCustomerMessageAt on conversation when receiving customer message",
@@ -101,7 +101,7 @@
       "id": "S07",
       "title": "Process webhook status updates",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Extend /webhook/whatsapp POST handler to detect status update payloads vs message payloads",

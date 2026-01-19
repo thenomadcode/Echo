@@ -6,6 +6,8 @@ import type {
   ParsedMessage,
   WebhookVerification,
   ProviderCredentials,
+  StatusUpdate,
+  DeliveryStatus,
 } from "./types";
 
 interface TwilioWebhookPayload {
@@ -23,6 +25,8 @@ interface TwilioWebhookPayload {
   MediaUrl0?: string;
   AccountSid?: string;
   MessageStatus?: string;
+  ErrorCode?: string;
+  ErrorMessage?: string;
 }
 
 export class TwilioWhatsAppProvider implements WhatsAppProvider {
@@ -160,6 +164,40 @@ export class TwilioWhatsAppProvider implements WhatsAppProvider {
     }
 
     return { valid: true };
+  }
+
+  static isStatusUpdate(payload: unknown): boolean {
+    const data = payload as TwilioWebhookPayload;
+    return !!(data.MessageStatus && data.MessageSid && !data.Body);
+  }
+
+  parseStatusUpdate(payload: unknown): StatusUpdate | null {
+    const data = payload as TwilioWebhookPayload;
+
+    if (!data.MessageStatus || !data.MessageSid) {
+      return null;
+    }
+
+    const statusMap: Record<string, DeliveryStatus> = {
+      sent: "sent",
+      delivered: "delivered",
+      read: "read",
+      failed: "failed",
+      undelivered: "undelivered",
+    };
+
+    const status = statusMap[data.MessageStatus.toLowerCase()];
+    if (!status) {
+      return null;
+    }
+
+    return {
+      externalId: data.MessageSid,
+      status,
+      timestamp: Date.now(),
+      errorCode: data.ErrorCode,
+      errorMessage: data.ErrorMessage,
+    };
   }
 
   private async sendTwilioMessage(
