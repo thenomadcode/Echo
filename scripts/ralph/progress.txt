@@ -474,3 +474,174 @@
 
 ---
 
+## 2026-01-19 14:40 - S06: Create CategoryManager component and page
+
+**What was implemented:**
+- Created CategoryManager component in apps/web/src/components/products/CategoryManager.tsx (245 lines)
+- Created category management page at apps/web/src/routes/products/categories.tsx (79 lines)
+- Component displays list of categories with product count for each category
+- Create category form with name field inline in Card component
+- Edit category inline with Input field and Save/Cancel buttons
+- Delete category with confirmation dialog (modal overlay)
+- Product count calculation for each category using products.list query
+- Uncategorized products count shown at bottom of list with special styling (bg-muted/50)
+- Empty state card shown when no categories exist with helpful message
+- Uses Convex queries: categories.list and products.list
+- Uses Convex mutations: categories.create, categories.update, categories.deleteCategory
+- Toast notifications for all success/error states
+- Back to Dashboard button with ArrowLeft icon for navigation
+- Auth flow with Authenticated/Unauthenticated/AuthLoading components
+- Redirect to onboarding if no businesses exist
+- Generated TanStack Router types for /products/categories route
+
+**Files changed:**
+- apps/web/src/components/products/CategoryManager.tsx (created, 245 lines)
+- apps/web/src/routes/products/categories.tsx (created, 79 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated route types)
+- Created directories: apps/web/src/components/products and apps/web/src/routes/products
+
+**Learnings for future iterations:**
+- CategoryManager accepts businessId prop for multi-tenant isolation
+- Product count calculated client-side by filtering products.products array
+- Inline editing pattern: track editingId state, show Input when editing, normal display otherwise
+- Modal overlay pattern: use fixed inset-0 with bg-black/50 for simple dialogs
+- Delete confirmation requires explicit state (deleteConfirmId) to show/hide dialog
+- Uncategorized products filter: products.filter(p => !p.categoryId)
+- lucide-react icons (Pencil, Trash2, ArrowLeft) integrate seamlessly
+- TanStack Router requires bunx @tanstack/router-cli generate after adding new routes
+- Convex dev --once regenerates API types when backend functions change
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors after route generation
+- Committed as: feat: S06 - Create CategoryManager component and page (commit e08c97a)
+- Updated PRD: S06 passes: true
+
+---
+
+## 2026-01-19 14:45 - S07: Create PriceInput component
+
+**What was implemented:**
+- Created PriceInput component in apps/web/src/components/ui/PriceInput.tsx (116 lines)
+- Component accepts currency prop (COP, BRL, MXN, USD)
+- Displays appropriate currency symbol ($, R$) in left position using absolute positioning
+- Currency symbols mapped: COP=$, BRL=R$, MXN=$, USD=$
+- Locale-specific formatting using Intl.NumberFormat with locales: es-CO, pt-BR, es-MX, en-US
+- Handles decimal input validation with regex /^[\d.]*$/
+- Converts display value to centavos (integer) internally using Math.round(value * 100)
+- Formats display value with thousand separators and 2 decimal places
+- Focus/blur behavior: shows raw decimal on focus, formatted with separators on blur
+- Controlled input with value (number in centavos) and onChange (valueInCents: number) props
+- Uses forwardRef for ref forwarding to underlying Input component
+- Additional props: className, id, name, placeholder, disabled
+- Input mode set to "decimal" for mobile numeric keyboard
+
+**Files changed:**
+- apps/web/src/components/ui/PriceInput.tsx (created, 116 lines)
+
+**Learnings for future iterations:**
+- Price values stored as integers (centavos) prevent floating-point precision issues
+- Intl.NumberFormat provides locale-aware thousand separators and decimal formatting
+- Focus state controls display format: raw decimal when editing, formatted when not focused
+- Currency symbol positioned absolutely with pl-8 to offset Input padding
+- forwardRef required for components wrapping Input to support form refs
+- inputMode="decimal" triggers appropriate mobile keyboard (numeric with decimal point)
+- Parse display value by removing non-digit/decimal characters before conversion
+- Update parent state only on blur to avoid re-rendering during typing
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors
+- Committed as: feat: S07 - Create PriceInput component (commit 812bef9)
+- Updated PRD: S07 passes: true
+
+---
+
+## 2026-01-19 14:50 - S08: Create ImageUpload component
+
+**What was implemented:**
+- Created ImageUpload component in apps/web/src/components/ui/ImageUpload.tsx (194 lines)
+- Drag and drop zone with visual feedback (border-primary bg-primary/5 when dragging)
+- Click to browse file picker using hidden input with type="file" and ref
+- Preview uploaded image using FileReader and data URL
+- Upload to Convex file storage flow:
+  1. Call products.generateUploadUrl mutation to get temporary upload URL
+  2. POST file to URL with Content-Type header
+  3. Extract storageId from response JSON
+  4. Pass storageId to onChange callback
+- File validation: only image/* types, max 5MB size
+- Replace existing image with X button (absolute positioned top-right)
+- Upload progress indicator: spinning loader overlay with bg-background/80
+- Controlled component with value (storageId string) and onChange props
+- Disabled state support with opacity and cursor changes
+- Toast notifications for success/error states
+- lucide-react icons: Upload (drop zone), X (remove button)
+
+**Files changed:**
+- apps/web/src/components/ui/ImageUpload.tsx (created, 194 lines)
+
+**Learnings for future iterations:**
+- Convex file upload pattern: generateUploadUrl → POST file → extract storageId from response
+- FileReader.readAsDataURL creates preview without full upload
+- Drag events require preventDefault() to enable custom drop handling
+- Hidden file input controlled via ref for programmatic click triggering
+- Upload progress overlay uses absolute positioning with semi-transparent background
+- Image preview with object-contain maintains aspect ratio
+- Accept attribute on input filters file picker to images only
+- Stop propagation on remove button click to prevent triggering container click
+- Display truncated storageId when no preview available (first 8 chars)
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors
+- Committed as: feat: S08 - Create ImageUpload component (commit fda3110)
+- Updated PRD: S08 passes: true
+
+---
+
+## 2026-01-19 14:15 - S09: Create ProductForm component
+
+**What was implemented:**
+- Created ProductForm component in apps/web/src/components/products/ProductForm.tsx (239 lines)
+- Implemented comprehensive form with all required fields:
+  - Name field (required with validation)
+  - Description field (optional textarea)
+  - Price field (required, using PriceInput component)
+  - Category dropdown (optional, populated from categories.list)
+  - Image upload (optional, using ImageUpload component)
+- Used TanStack Form with Zod validation schema
+- Zod validation for name (min 1 character) and price (min 1, greater than 0)
+- Validation errors displayed inline with red text below each field
+- Support for both create and edit modes via mode prop
+- Mode prop determines: form title, button text, and which mutation to call
+- Create mode calls products.create mutation with businessId
+- Edit mode calls products.update mutation with productId
+- Currency auto-detected from business.defaultLanguage (es->COP, pt->BRL, default->USD)
+- Success toast notifications after successful create/update
+- Optional onSuccess callback prop for parent component handling
+- Card-based layout using shadcn/ui Card components
+- Native select element for category dropdown with clean styling
+- Native textarea for description with consistent input styling
+- Loading state while categories and business data loads
+
+**Files changed:**
+- apps/web/src/components/products/ProductForm.tsx (created, 239 lines)
+
+**Learnings for future iterations:**
+- TanStack Form field pattern: `<form.Field name="fieldName">{(field) => ...}</form.Field>`
+- Zod safeParse returns success boolean and issues array (not errors array)
+- Access Zod validation errors: `validated.error.issues[0].message`
+- Type casting for Convex Id types: `businessId as Id<"businesses">`
+- PriceInput accepts value in centavos (integer) and onChange callback with valueInCents
+- ImageUpload accepts value (storageId string) and onChange callback with storageId or undefined
+- Currency inference pattern: Use business.defaultLanguage to determine currency for PriceInput
+- Native select/textarea elements can be styled consistently with shadcn Input using same classes
+- Form submission pattern: e.preventDefault(), e.stopPropagation(), form.handleSubmit()
+- Optional fields should be sent as undefined (not empty strings) to Convex mutations
+- Mode prop pattern allows single component to handle both create and edit use cases
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- LSP diagnostics show no errors
+- Committed as: feat: S09 - Create ProductForm component (commit 04687a2)
+- Updated PRD: S09 passes: true
+
+---
+
