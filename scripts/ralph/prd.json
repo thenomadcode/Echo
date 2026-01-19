@@ -115,7 +115,7 @@
       "id": "S08",
       "title": "Create WhatsApp connection settings page",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/settings/whatsapp.tsx page",

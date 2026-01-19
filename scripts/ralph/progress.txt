@@ -575,3 +575,52 @@
 
 ---
 
+## 2026-01-19 22:30 - S08: Create WhatsApp connection settings page
+
+**What was implemented:**
+- Created packages/backend/convex/integrations/whatsapp/settings.ts with:
+  - getConnectionStatus query - returns connection status, provider, phone, verified flag, lastMessageAt
+  - saveCredentials mutation - stores/updates WhatsApp BSP credentials
+  - markVerified internalMutation - marks connection as verified after test
+  - getConnectionForTest internalQuery - loads connection for action
+  - testConnection action - validates Twilio credentials via API call
+- Created apps/web/src/routes/settings_.whatsapp.tsx (flat route for /settings/whatsapp):
+  - Connection status card with visual indicator (green CheckCircle2 / red XCircle)
+  - Setup instructions with numbered steps and links to Twilio docs
+  - Webhook URL display with copy-to-clipboard button
+  - Form with provider dropdown (Twilio), Account SID, Auth Token, Phone Number fields
+  - Test Connection button (disabled until credentials saved)
+  - Save Credentials button
+  - Toast feedback for save/test operations
+  - Business switcher integration
+- Updated routeTree.gen.ts with new route
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/settings.ts (created, 217 lines)
+- apps/web/src/routes/settings_.whatsapp.tsx (created, 375 lines)
+- apps/web/src/routeTree.gen.ts (updated)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- TanStack Router nested routes require parent to render <Outlet /> - use flat route pattern (settings_.whatsapp.tsx) to avoid this
+- Flat route naming: use underscore (settings_.whatsapp.tsx) to create /settings/whatsapp without nesting
+- Convex actions can test external APIs (Twilio) and then call mutations to update state
+- internalMutation/internalQuery bypass auth for internal use but must be called from actions
+- Connection test pattern: fetch Twilio account endpoint to verify credentials before marking verified
+
+**Browser Test Results:**
+- Navigate to /settings/whatsapp - PASSED (page renders with correct title)
+- Connection status indicator visible - PASSED (shows red X for no connection)
+- Form with provider dropdown and fields - PASSED (all 4 fields visible)
+- Webhook URL in copyable format - PASSED (text input + copy button)
+- Test Connection button present - PASSED (disabled until credentials saved)
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on new files
+- Browser tests all pass
+- Committed as: feat: S08 - Create WhatsApp connection settings page (commit c894d1e)
+- Updated PRD: S08 passes: true
+
+---
+
