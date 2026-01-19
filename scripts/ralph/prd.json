@@ -55,7 +55,7 @@
       "id": "S04",
       "title": "Send text response to customer",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create whatsapp.sendMessage action in packages/backend/convex/integrations/whatsapp/actions.ts",

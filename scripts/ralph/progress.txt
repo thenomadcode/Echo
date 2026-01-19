@@ -418,3 +418,36 @@
 
 ---
 
+## 2026-01-19 21:37 - S04: Send text response to customer
+
+**What was implemented:**
+- Created whatsapp.sendMessage action in packages/backend/convex/integrations/whatsapp/actions.ts
+- Action accepts args: conversationId, content, type (text)
+- Created loadConversationData internalQuery to load conversation, business, and WhatsApp credentials
+- Created storeOutgoingMessage internalMutation to store sent messages
+- Integrated TwilioWhatsAppProvider.sendText() for actual message delivery
+- Implemented exponential backoff with max 3 retries for rate limit handling (1s, 2s, 4s delays)
+- Detects rate limit errors via 429 status code or "rate limit" / "Too Many Requests" strings
+- Stores successful messages with sender: "business", externalId from Twilio API, deliveryStatus: "sent"
+- Stores failed messages with deliveryStatus: "failed" after all retries exhausted
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/actions.ts (created, 152 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Convex actions use ctx.runQuery and ctx.runMutation for database operations
+- Internal functions use internal.module.path.functionName syntax
+- Rate limit handling requires explicit detection of 429 status or rate limit keywords
+- Exponential backoff formula: Math.pow(2, attempt) * 1000 gives 1s, 2s, 4s delays
+- Always store failed messages with status to enable retry/debugging later
+- sleep() helper implemented with Promise and setTimeout
+
+**Verification:**
+- bun run check-types passed successfully
+- LSP diagnostics show no errors on actions.ts
+- Committed as: feat: S04 - Send text response to customer (commit e2cec92)
+- Updated PRD: S04 passes: true
+
+---
+
