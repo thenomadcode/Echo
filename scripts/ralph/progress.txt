@@ -696,3 +696,56 @@
 
 ---
 
+
+## 2026-01-19 14:20 - S11: Create ProductTable component
+
+**What was implemented:**
+- Created shadcn/ui Table component in apps/web/src/components/ui/table.tsx (125 lines)
+- Table component includes: Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell, TableCaption
+- Created ProductTable component in apps/web/src/components/products/ProductTable.tsx (260 lines)
+- Implemented all required table columns: checkbox, image thumbnail, name, price, category, availability toggle
+- Added sortable columns for name, price, and category with ChevronUp/ChevronDown icons
+- Sort state tracked with sortField and sortOrder (asc/desc)
+- Click on column header toggles sort order (asc ↔ desc) or changes sort field
+- Row click navigation to /products/{productId} edit page
+- Checkbox in header for select all functionality
+- Select all checkbox shows checked when all products selected, unchecked otherwise
+- Visual distinction for unavailable products using opacity-60 and text-muted-foreground
+- Availability toggle switch in each row with immediate update via products.update mutation
+- Product images loaded via products.getImageUrl query with "No img" placeholder
+- Category names resolved from categories.list query
+- Created separate ProductTableRow component to avoid violating React hooks rules
+- useQuery calls moved to ProductTableRow to comply with rules of hooks
+- Price formatting using Intl.NumberFormat with locale-specific currency formatting
+- Empty state shown when no products exist ("No products found.")
+
+**Files changed:**
+- apps/web/src/components/ui/table.tsx (created, 125 lines)
+- apps/web/src/components/products/ProductTable.tsx (created, 260 lines)
+
+**Learnings for future iterations:**
+- shadcn/ui Table component structure: Table wraps the entire component, div with overflow-auto for responsive scrolling
+- Table styling uses Tailwind CSS classes with hover states, border handling, and padding
+- TableHead includes special styling for checkbox columns: [&:has([role=checkbox])]:pr-0
+- TableCell has similar checkbox handling for consistent layout
+- React hooks rules: Cannot call useQuery inside .map() loop - must extract to separate component
+- ProductTableRow pattern: Separate component per row allows hooks to be called at proper level
+- Sortable columns pattern: Track sortField and sortOrder state, toggle on header click
+- Sort icon display: Conditionally render ChevronUp/ChevronDown based on current sortField
+- Sort implementation: Create sorted array with [...products].sort() to avoid mutating original
+- Category name resolution: Query categories once, find matching category in sort/render logic
+- Select all checkbox: Calculate allSelected as products.every() check
+- Base UI Checkbox doesn't support "indeterminate" string value - only boolean checked prop
+- Row click with nested interactive elements: Use e.stopPropagation() on nested onClick handlers
+- Availability toggle: Inline Switch component with optimistic update feel
+- Image loading pattern: useQuery with conditional "skip" when imageId is undefined
+- formatPrice helper: Reuse CURRENCY_LOCALES mapping from ProductCard for consistency
+- Empty state: Use TableRow with colSpan={6} to span all columns with centered message
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Committed as: feat: S11 - Create ProductTable component (commit 40a3621)
+- Updated PRD: S11 passes: true
+
+---
+

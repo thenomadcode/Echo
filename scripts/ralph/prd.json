@@ -175,7 +175,7 @@
       "id": "S11",
       "title": "Create ProductTable component",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create ProductTable component in apps/web/src/components/products/ProductTable.tsx",
