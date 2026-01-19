@@ -14,7 +14,54 @@
 
 ---
 
-## 2026-01-16 15:20 - S03: Create business queries
+## 2026-01-19 21:25 - S03: Receive customer message via webhook
+
+**What was implemented:**
+- Created HTTP GET endpoint at /webhook/whatsapp for Meta/Twilio webhook verification
+  - Verifies hub.verify_token against WEBHOOK_VERIFY_TOKEN environment variable
+  - Returns challenge for successful verification
+- Created HTTP POST endpoint at /webhook/whatsapp for receiving messages
+  - Handles both JSON and form-urlencoded payloads (Twilio uses form data)
+  - Extracts recipient phone number from payload
+  - Looks up business by phone number using by_phone index
+  - Uses TwilioWhatsAppProvider.parseWebhook() to parse message
+  - Calls processIncomingMessage internal mutation
+  - Returns 200 OK immediately for fast webhook response
+- Created whatsapp.processIncomingMessage internal mutation in webhook.ts
+  - Creates channelId format: whatsapp:{customerPhone}:{businessId}
+  - Creates new conversation or updates existing one via by_channel index
+  - Updates lastCustomerMessageAt on existing conversations
+  - Stores message in messages table with sender: "customer"
+  - Handles message types: text, image, voice, document via mediaType
+- Created whatsapp.getBusinessByPhoneNumber internal mutation
+  - Looks up WhatsApp connection by phone number
+  - Returns business credentials and provider info
+- Fixed twilio.ts to remove Node.js-specific crypto import (not needed for current verification)
+- Replaced Buffer.from() with btoa() for base64 encoding (Web API compatible)
+
+**Files changed:**
+- packages/backend/convex/http.ts (expanded from 10 to 107 lines)
+- packages/backend/convex/integrations/whatsapp/webhook.ts (created, 111 lines)
+- packages/backend/convex/integrations/whatsapp/twilio.ts (removed crypto import, replaced Buffer with btoa)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Convex HTTP actions use httpAction from _generated/server, not convex/server
+- Nested module paths use dots in API: internal.integrations.whatsapp.webhook.functionName
+- Convex runtime doesn't support Node.js crypto module - use Web Crypto API or format validation only
+- Form-urlencoded webhooks need URLSearchParams parsing: new URLSearchParams(await request.text())
+- Return 200 OK quickly for webhooks to avoid timeouts - process async if needed
+- channelId pattern enables finding conversations across channels
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on new/modified backend files
+- Pre-existing errors in dashboard.tsx and settings.tsx are unrelated to S03
+- Committed as: feat: S03 - Receive customer message via webhook (commit 0c05eab)
+- Updated PRD: S03 passes: true
+
+---
+
 
 **What was implemented:**
 - Added `businesses.list` query that returns all businesses owned by authenticated user

@@ -36,7 +36,7 @@
       "id": "S03",
       "title": "Receive customer message via webhook",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create HTTP POST endpoint at /webhook/whatsapp in packages/backend/convex/http.ts",
