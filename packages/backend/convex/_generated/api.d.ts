@@ -12,6 +12,9 @@ import type * as auth from "../auth.js";
 import type * as businesses from "../businesses.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as integrations_whatsapp_twilio from "../integrations/whatsapp/twilio.js";
+import type * as integrations_whatsapp_types from "../integrations/whatsapp/types.js";
+import type * as integrations_whatsapp_webhook from "../integrations/whatsapp/webhook.js";
 import type * as privateData from "../privateData.js";
 
 import type {
@@ -25,6 +28,9 @@ declare const fullApi: ApiFromModules<{
   businesses: typeof businesses;
   healthCheck: typeof healthCheck;
   http: typeof http;
+  "integrations/whatsapp/twilio": typeof integrations_whatsapp_twilio;
+  "integrations/whatsapp/types": typeof integrations_whatsapp_types;
+  "integrations/whatsapp/webhook": typeof integrations_whatsapp_webhook;
   privateData: typeof privateData;
 }>;
 

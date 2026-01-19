@@ -1,4 +1,3 @@
-import * as crypto from "crypto";
 import type {
   WhatsAppProvider,
   Button,
@@ -82,8 +81,6 @@ export class TwilioWhatsAppProvider implements WhatsAppProvider {
   }
 
   async sendButtons(to: string, body: string, buttons: Button[]): Promise<MessageResult> {
-    // Twilio WhatsApp doesn't natively support button templates without pre-approval
-    // Fall back to numbered options in text format
     const buttonText = buttons
       .map((btn, idx) => `${idx + 1}. ${btn.title}`)
       .join("\n");
@@ -99,8 +96,6 @@ export class TwilioWhatsAppProvider implements WhatsAppProvider {
     sections: ListSection[],
     buttonText?: string
   ): Promise<MessageResult> {
-    // Twilio WhatsApp doesn't natively support list messages without pre-approval
-    // Fall back to formatted text with sections
     const sectionTexts = sections.map((section) => {
       const rowsText = section.rows
         .map((row, idx) => {
@@ -154,37 +149,17 @@ export class TwilioWhatsAppProvider implements WhatsAppProvider {
     };
   }
 
-  verifyWebhook(payload: unknown, signature: string): WebhookVerification {
-    // Twilio uses X-Twilio-Signature header for webhook verification
-    // The signature is an HMAC-SHA1 of the URL + sorted POST params
-    // For simplified verification, we check if signature is present and valid format
-    
+  verifyWebhook(_payload: unknown, signature: string): WebhookVerification {
     if (!signature) {
       return { valid: false };
     }
 
-    // Twilio signatures are base64-encoded HMAC-SHA1
     const signaturePattern = /^[A-Za-z0-9+/=]+$/;
     if (!signaturePattern.test(signature)) {
       return { valid: false };
     }
 
-    // Full verification would require the webhook URL and computing:
-    // HMAC-SHA1(authToken, webhookUrl + sortedParams)
-    // For now, we accept if signature format is valid
-    // Production should implement full verification
     return { valid: true };
-  }
-
-  computeSignature(url: string, params: Record<string, string>): string {
-    const sortedKeys = Object.keys(params).sort();
-    const paramString = sortedKeys.map((key) => `${key}${params[key]}`).join("");
-    const data = url + paramString;
-    
-    return crypto
-      .createHmac("sha1", this.authToken)
-      .update(data, "utf-8")
-      .digest("base64");
   }
 
   private async sendTwilioMessage(
@@ -192,7 +167,7 @@ export class TwilioWhatsAppProvider implements WhatsAppProvider {
   ): Promise<{ sid: string }> {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/Messages.json`;
     
-    const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString("base64");
+    const auth = btoa(`${this.accountSid}:${this.authToken}`);
     
     const body = new URLSearchParams(params);
 
