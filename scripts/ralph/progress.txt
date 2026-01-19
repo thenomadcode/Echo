@@ -749,3 +749,61 @@
 
 ---
 
+
+## 2026-01-19 14:30 - S12: Create product list page
+
+**What was implemented:**
+- Created product list page at apps/web/src/routes/products/index.tsx (309 lines)
+- Implemented view toggle between grid (ProductCard) and table (ProductTable) modes
+- View mode state managed with useState, toggle buttons with Grid/List icons from lucide-react
+- Added comprehensive filter controls:
+  - Search input for product name and description (case-insensitive)
+  - Category dropdown filter (all categories, uncategorized, or specific category)
+  - Availability filter dropdown (all, available only, unavailable only)
+- Filter logic uses useMemo to optimize filtering performance
+- Integrated ProductCard component for grid view in responsive grid (sm:2, lg:3, xl:4 columns)
+- Integrated ProductTable component for table view with full functionality
+- Bulk selection state management using Set<Id<"products">>
+- handleSelectProduct adds/removes products from selection Set
+- handleSelectAll selects all filtered products or clears selection
+- Selection banner shows count of selected products with "Clear Selection" button
+- Add Product button in header linking to /products/new (with Plus icon)
+- Manage Categories button in header linking to /products/categories (with Settings icon)
+- Empty state with CTA when no products exist
+- Empty state differentiates between "no products at all" vs "no products match filters"
+- "Add Your First Product" button shown only when product catalog is truly empty
+- Auth protection using Authenticated wrapper component from Convex
+- Auto-redirect to /onboarding if user has no businesses
+- BusinessSwitcher component integrated in header for multi-tenant support
+- Active business ID persisted in localStorage with same pattern as dashboard/settings
+- Generated TanStack Router route types for /products/ route
+
+**Files changed:**
+- apps/web/src/routes/products/index.tsx (created, 309 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated route types)
+
+**Learnings for future iterations:**
+- View toggle pattern: Single state variable with "grid" | "table" union type
+- Button variant="default" for active view, variant="outline" for inactive
+- Filter state management: Separate useState for each filter (search, category, availability)
+- useMemo for expensive filtering operations prevents re-computation on every render
+- Filter composition: Chain multiple filter conditions (search AND category AND availability)
+- Category filter "uncategorized" option: Special case for products without categoryId
+- Select behavior: Native select element with consistent styling matches Input component classes
+- Bulk selection with Set: Efficient add/delete operations, .has() for checking selection
+- Selection banner: Conditional render when selectedProducts.size > 0
+- Empty state logic: Check products.length === 0 vs filteredProducts.length === 0
+- Grid responsive breakpoints: sm:grid-cols-2, lg:grid-cols-3, xl:grid-cols-4 for optimal layout
+- Selected products passed to both ProductCard and ProductTable for consistent selection UI
+- onSelectChange callback prop pattern allows parent to manage selection state
+- TanStack Router generation must run after creating new route files
+- Route generation command: bunx @tanstack/router-cli generate in apps/web directory
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Generated route types successfully
+- Committed as: feat: S12 - Create product list page (commit 625a037)
+- Updated PRD: S12 passes: true
+
+---
+

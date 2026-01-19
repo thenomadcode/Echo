@@ -190,7 +190,7 @@
       "id": "S12",
       "title": "Create product list page",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create product list page at apps/web/src/routes/products/index.tsx",
