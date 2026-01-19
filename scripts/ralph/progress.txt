@@ -852,3 +852,88 @@
 
 ---
 
+
+## 2026-01-19 14:40 - S14: Create edit product page
+
+**What was implemented:**
+- Created edit product page at apps/web/src/routes/products/$productId.tsx (168 lines)
+- Dynamic route using TanStack Router's $productId parameter syntax
+- Loaded product data using products.get query with productId parameter
+- Route.useParams() hook to extract productId from URL
+- Rendered ProductForm in "edit" mode with initialData prop
+- initialData populated from loaded product (name, description, price, categoryId, imageId)
+- Back button in header linking to /products with ArrowLeft icon
+- Delete button in header with Trash2 icon and variant="destructive"
+- Cancel button below form to discard changes and navigate back
+- Delete confirmation dialog using modal overlay pattern
+- Modal shows product name in confirmation message
+- Delete button disabled during deletion with "Deleting..." text
+- Successful deletion triggers toast and navigation to /products
+- Product deletion uses products.deleteProduct mutation (soft delete)
+- Loading state shown while product query is loading
+- "Product not found" state shown when product query returns null
+- BusinessSwitcher integrated in header for multi-tenant support
+- Auth protection with Authenticated wrapper
+- Generated TanStack Router route types for dynamic route
+
+**Files changed:**
+- apps/web/src/routes/products/$productId.tsx (created, 168 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated route types)
+- apps/web/bun.lockb (lockfile updates)
+
+**Learnings for future iterations:**
+- TanStack Router dynamic route syntax: $paramName in filename creates dynamic segment
+- Route.useParams() provides type-safe access to URL parameters
+- Type cast productId to Id<"products"> for Convex queries: `productId as Id<"products">`
+- ProductForm initialData prop: Pass existing product data for edit mode
+- Edit form pattern: Load data → show loading → render form with initialData
+- Null check for product: Handle both loading (undefined) and not found (null) states
+- Delete confirmation flow: State variable controls modal visibility
+- isDeleting state prevents duplicate delete operations during mutation
+- Modal overlay z-index: Use z-50 to ensure it appears above other content
+- Delete button placement: Top-right header position with destructive variant for danger action
+- Cancel button placement: Below form provides alternative to save action
+- ProductForm handles save button internally, parent only needs Cancel button
+- Soft delete pattern: products.deleteProduct sets deleted: true, doesn't remove record
+- Success navigation: Both save and delete navigate back to /products list
+
+**Verification:**
+- `bun run check-types` passed successfully (0 errors)
+- Generated route types successfully
+- Committed as: feat: S14 - Create edit product page (commit f0c491b)
+- Updated PRD: S14 passes: true
+
+---
+
+
+## 2026-01-19 14:45 - S15: Add toggle availability to product list
+
+**What was implemented:**
+- S15 was already implemented in S10 (ProductCard) and S11 (ProductTable)
+- ProductCard.tsx includes handleAvailabilityToggle function (line 70)
+- Switch component at bottom of card triggers products.update mutation
+- Toast notification on success: "Product marked as available/unavailable"
+- ProductTable.tsx includes handleAvailabilityToggle function (line 144)
+- Switch component in availability column triggers products.update mutation
+- Both components use same toast notification pattern
+- No confirmation dialog needed (quick action as specified)
+- Visual feedback: Switch state changes immediately (Convex reactive updates)
+- Error handling with toast.error for failed updates
+- Event propagation stopped to prevent row/card click when toggling
+
+**Files changed:**
+- No new files (feature already implemented in S10 and S11)
+
+**Learnings for future iterations:**
+- Availability toggle was implemented proactively during ProductCard and ProductTable creation
+- This demonstrates good component design: Including common actions directly in the component
+- Switch component provides inherent visual feedback through checked state
+- Convex reactive queries provide "optimistic update" feel automatically
+- No need for explicit optimistic updates when using Convex's real-time reactivity
+
+**Verification:**
+- Feature already implemented and verified in S10 and S11
+- Updated PRD: S15 passes: true
+
+---
+

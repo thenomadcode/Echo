@@ -230,7 +230,7 @@
       "id": "S14",
       "title": "Create edit product page",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create edit product page at apps/web/src/routes/products/$productId.tsx",
@@ -249,7 +249,7 @@
       "id": "S15",
       "title": "Add toggle availability to product list",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Availability toggle in ProductCard and ProductTable triggers products.update",

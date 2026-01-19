@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Authenticated } from "convex/react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { useState, useEffect, useMemo } from "react";
-import { Grid, List, Plus, Settings } from "lucide-react";
+import { Grid, List, Plus, Settings, CheckCircle, XCircle, Trash2, FolderOpen } from "lucide-react";
+import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,12 +76,17 @@ function ProductsPage({ businessId }: ProductsPageProps) {
     limit: 100,
   });
   const categories = useQuery(api.categories.list, { businessId });
+  const bulkUpdateAvailability = useMutation(api.products.bulkUpdateAvailability);
+  const bulkDelete = useMutation(api.products.bulkDelete);
+  const bulkUpdateCategory = useMutation(api.products.bulkUpdateCategory);
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>("all");
   const [selectedProducts, setSelectedProducts] = useState<Set<Id<"products">>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isBulkActionRunning, setIsBulkActionRunning] = useState(false);
 
   const products = productsData?.products || [];
 
@@ -135,6 +141,70 @@ function ProductsPage({ businessId }: ProductsPageProps) {
 
   const handleClearSelection = () => {
     setSelectedProducts(new Set());
+  };
+
+  const handleBulkMarkAvailable = async () => {
+    setIsBulkActionRunning(true);
+    try {
+      const productIds = Array.from(selectedProducts);
+      const count = await bulkUpdateAvailability({ productIds, available: true });
+      toast.success(`${count} product${count === 1 ? "" : "s"} marked as available`);
+      setSelectedProducts(new Set());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update products");
+    } finally {
+      setIsBulkActionRunning(false);
+    }
+  };
+
+  const handleBulkMarkUnavailable = async () => {
+    setIsBulkActionRunning(true);
+    try {
+      const productIds = Array.from(selectedProducts);
+      const count = await bulkUpdateAvailability({ productIds, available: false });
+      toast.success(`${count} product${count === 1 ? "" : "s"} marked as unavailable`);
+      setSelectedProducts(new Set());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update products");
+    } finally {
+      setIsBulkActionRunning(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkActionRunning(true);
+    try {
+      const productIds = Array.from(selectedProducts);
+      const count = await bulkDelete({ productIds });
+      toast.success(`${count} product${count === 1 ? "" : "s"} deleted`);
+      setSelectedProducts(new Set());
+      setShowBulkDeleteConfirm(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete products");
+    } finally {
+      setIsBulkActionRunning(false);
+    }
+  };
+
+  const handleBulkChangeCategory = async (categoryId: string) => {
+    setIsBulkActionRunning(true);
+    try {
+      const productIds = Array.from(selectedProducts);
+      const count = await bulkUpdateCategory({
+        productIds,
+        categoryId: categoryId === "none" ? undefined : categoryId,
+      });
+      const categoryName =
+        categoryId === "none"
+          ? "uncategorized"
+          : categories?.find((c) => c._id === categoryId)?.name || "category";
+      toast.success(`${count} product${count === 1 ? "" : "s"} moved to ${categoryName}`);
+      setSelectedProducts(new Set());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update products");
+    } finally {
+      setIsBulkActionRunning(false);
+    }
   };
 
   return (
@@ -234,13 +304,68 @@ function ProductsPage({ businessId }: ProductsPageProps) {
               </div>
 
               {selectedProducts.size > 0 && (
-                <div className="flex items-center justify-between rounded-md border border-primary bg-primary/5 p-3">
-                  <span className="text-sm font-medium">
-                    {selectedProducts.size} product{selectedProducts.size === 1 ? "" : "s"} selected
-                  </span>
-                  <Button variant="outline" size="sm" onClick={handleClearSelection}>
-                    Clear Selection
-                  </Button>
+                <div className="rounded-md border border-primary bg-primary/5 p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {selectedProducts.size} product{selectedProducts.size === 1 ? "" : "s"} selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearSelection}
+                      disabled={isBulkActionRunning}
+                    >
+                      Clear Selection
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkMarkAvailable}
+                      disabled={isBulkActionRunning}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark Available
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkMarkUnavailable}
+                      disabled={isBulkActionRunning}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Mark Unavailable
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setShowBulkDeleteConfirm(true)}
+                      disabled={isBulkActionRunning}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                      <select
+                        value=""
+                        onChange={(e) => handleBulkChangeCategory(e.target.value)}
+                        disabled={isBulkActionRunning}
+                        className="flex h-8 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="" disabled>
+                          Change Category
+                        </option>
+                        <option value="none">Uncategorized</option>
+                        {categories?.map((cat) => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -293,6 +418,38 @@ function ProductsPage({ businessId }: ProductsPageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Delete Products</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete {selectedProducts.size} product
+                {selectedProducts.size === 1 ? "" : "s"}? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  disabled={isBulkActionRunning}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkActionRunning}
+                >
+                  {isBulkActionRunning ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
