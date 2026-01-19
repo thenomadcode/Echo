@@ -248,3 +248,29 @@ export const list = query({
     };
   },
 });
+
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const getImageUrl = query({
+  args: {
+    storageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
