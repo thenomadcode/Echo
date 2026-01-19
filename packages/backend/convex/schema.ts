@@ -43,4 +43,45 @@ export default defineSchema({
   })
     .index("by_owner", ["ownerId"])
     .index("by_slug", ["slug"]),
+
+  whatsappConnections: defineTable({
+    businessId: v.id("businesses"),
+    provider: v.string(),
+    phoneNumberId: v.string(),
+    phoneNumber: v.string(),
+    credentials: v.object({
+      accountSid: v.optional(v.string()),
+      authToken: v.optional(v.string()),
+      apiKey: v.optional(v.string()),
+    }),
+    verified: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_phone", ["phoneNumber"]),
+
+  conversations: defineTable({
+    businessId: v.id("businesses"),
+    customerId: v.string(),
+    channel: v.string(),
+    channelId: v.string(),
+    lastCustomerMessageAt: v.number(),
+    status: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_channel", ["channelId", "businessId"]),
+
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    sender: v.string(),
+    content: v.string(),
+    externalId: v.optional(v.string()),
+    deliveryStatus: v.optional(v.string()),
+    mediaUrl: v.optional(v.string()),
+    mediaType: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"]),
 });
