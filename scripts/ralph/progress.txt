@@ -328,3 +328,46 @@
 
 ---
 
+## 2026-01-19 21:10 - S02: Create BSP abstraction layer
+
+**What was implemented:**
+- Created packages/backend/convex/integrations/whatsapp/ directory structure
+- Created types.ts (116 lines) with comprehensive WhatsApp BSP abstraction types:
+  - WhatsAppProvider interface with sendText, sendImage, sendButtons, sendList, parseWebhook, verifyWebhook methods
+  - Button type with id and title fields
+  - ListRow type with id, title, description fields
+  - ListSection type with title and rows fields
+  - MessageResult type with success, messageId, error fields
+  - ParsedMessage type with from, content, timestamp, mediaUrl, mediaType, messageType, externalId fields
+  - MessageType union: "text" | "image" | "voice" | "document" | "buttons" | "list"
+  - WebhookVerification type with valid and challenge fields
+  - ProviderCredentials type for multi-provider support
+- Created twilio.ts (216 lines) with TwilioWhatsAppProvider class implementing WhatsAppProvider:
+  - sendText: Sends plain text via Twilio API
+  - sendImage: Sends image with optional caption via MediaUrl
+  - sendButtons: Falls back to numbered text options (Twilio requires pre-approved templates for buttons)
+  - sendList: Falls back to formatted text sections (same template limitation)
+  - parseWebhook: Parses Twilio webhook payload into ParsedMessage
+  - verifyWebhook: Validates Twilio X-Twilio-Signature header format
+  - computeSignature: Helper for full HMAC-SHA1 signature computation
+  - sendTwilioMessage: Private method handling Twilio API HTTP requests with Basic auth
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/types.ts (created, 116 lines)
+- packages/backend/convex/integrations/whatsapp/twilio.ts (created, 216 lines)
+
+**Learnings for future iterations:**
+- Twilio WhatsApp interactive messages (buttons, lists) require pre-approved templates - fallback to text format is practical
+- WhatsApp phone numbers must be in E.164 format (e.g., +573001234567)
+- Twilio webhooks use X-Twilio-Signature header with HMAC-SHA1 of URL + sorted POST params
+- Provider abstraction enables easy switching between Twilio, 360dialog, Meta Cloud API
+- MessageType union allows type-safe handling of different WhatsApp message formats
+- externalId field in ParsedMessage enables message status tracking via webhooks
+
+**Verification:**
+- LSP diagnostics show no TypeScript errors on types.ts and twilio.ts
+- Committed as: feat: S02 - Create BSP abstraction layer (commit 3b664ba)
+- Updated PRD: S02 passes: true
+
+---
+

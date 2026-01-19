@@ -20,7 +20,7 @@
       "id": "S02",
       "title": "Create BSP abstraction layer",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create packages/backend/convex/integrations/whatsapp/types.ts with WhatsAppProvider interface",
