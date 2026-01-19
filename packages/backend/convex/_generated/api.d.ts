@@ -10,12 +10,15 @@
 
 import type * as auth from "../auth.js";
 import type * as businesses from "../businesses.js";
+import type * as conversations from "../conversations.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
+import type * as integrations_whatsapp_templates from "../integrations/whatsapp/templates.js";
 import type * as integrations_whatsapp_twilio from "../integrations/whatsapp/twilio.js";
 import type * as integrations_whatsapp_types from "../integrations/whatsapp/types.js";
 import type * as integrations_whatsapp_webhook from "../integrations/whatsapp/webhook.js";
+import type * as integrations_whatsapp_window from "../integrations/whatsapp/window.js";
 import type * as privateData from "../privateData.js";
 
 import type {
@@ -27,12 +30,15 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   businesses: typeof businesses;
+  conversations: typeof conversations;
   healthCheck: typeof healthCheck;
   http: typeof http;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;
+  "integrations/whatsapp/templates": typeof integrations_whatsapp_templates;
   "integrations/whatsapp/twilio": typeof integrations_whatsapp_twilio;
   "integrations/whatsapp/types": typeof integrations_whatsapp_types;
   "integrations/whatsapp/webhook": typeof integrations_whatsapp_webhook;
+  "integrations/whatsapp/window": typeof integrations_whatsapp_window;
   privateData: typeof privateData;
 }>;
 

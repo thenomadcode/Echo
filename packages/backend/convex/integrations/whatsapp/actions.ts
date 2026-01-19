@@ -4,6 +4,8 @@ import { internal } from "../../_generated/api";
 import { TwilioWhatsAppProvider } from "./twilio";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { Button, ListSection } from "./types";
+import { isWithin24HourWindow } from "./window";
+import { renderTemplate, getTemplate } from "./templates";
 
 type ConversationData = {
   conversation: Doc<"conversations">;
@@ -105,13 +107,16 @@ export const sendMessage = action({
       v.literal("text"),
       v.literal("buttons"),
       v.literal("list"),
-      v.literal("image")
+      v.literal("image"),
+      v.literal("template")
     ),
     buttons: v.optional(v.array(buttonValidator)),
     sections: v.optional(v.array(listSectionValidator)),
     imageUrl: v.optional(v.string()),
     caption: v.optional(v.string()),
     buttonText: v.optional(v.string()),
+    templateName: v.optional(v.string()),
+    templateVariables: v.optional(v.any()),
   },
   handler: async (ctx, args): Promise<SendMessageResult> => {
     const { conversationId, content, type } = args;
@@ -125,7 +130,16 @@ export const sendMessage = action({
       throw new Error("Conversation not found or WhatsApp not configured");
     }
 
-    const { whatsappConnection, customerPhone } = data;
+    const { whatsappConnection, customerPhone, conversation } = data;
+
+    const withinWindow = isWithin24HourWindow(conversation.lastCustomerMessageAt);
+
+    if (!withinWindow && type !== "template") {
+      throw new Error(
+        "24-hour messaging window expired. Only template messages can be sent. " +
+        "Use type: 'template' with a templateName to send a pre-approved message."
+      );
+    }
 
     const provider = new TwilioWhatsAppProvider(
       whatsappConnection.credentials,
@@ -201,6 +215,24 @@ export const sendMessage = action({
             actualContent = fallbackText;
           }
           break;
+
+        case "template":
+          if (!args.templateName) {
+            throw new Error("templateName is required for template message type");
+          }
+          const template = getTemplate(args.templateName);
+          if (!template) {
+            throw new Error(`Template '${args.templateName}' not found`);
+          }
+          const templateVars = (args.templateVariables || {}) as Record<number, string>;
+          actualContent = renderTemplate(template, templateVars);
+          richContent = JSON.stringify({ templateName: args.templateName, variables: templateVars });
+          result = await provider.sendText(customerPhone, actualContent);
+          break;
+      }
+
+      if (!result) {
+        throw new Error("Unexpected error: no message result");
       }
 
       if (result.success) {
