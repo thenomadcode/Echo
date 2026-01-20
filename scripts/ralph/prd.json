@@ -61,7 +61,7 @@
       "id": "S04",
       "title": "Create conversation detail and messages queries",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create conversations.get query returning full conversation details",

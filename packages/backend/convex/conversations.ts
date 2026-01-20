@@ -306,3 +306,73 @@ export const addMessage = mutation({
     return messageId;
   },
 });
+
+export const takeOver = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      throw new Error("Not authorized");
+    }
+
+    const userId = authUser._id;
+    const now = Date.now();
+
+    const updates: Record<string, unknown> = {
+      assignedTo: userId,
+      lastReadAt: now,
+      updatedAt: now,
+    };
+
+    if (conversation.status === "escalated") {
+      updates.status = "active";
+    }
+
+    await ctx.db.patch(args.conversationId, updates);
+
+    return await ctx.db.get(args.conversationId);
+  },
+});
+
+export const handBack = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    const userId = authUser._id;
+
+    if (conversation.assignedTo !== userId) {
+      throw new Error("Conversation is not assigned to you");
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      assignedTo: undefined,
+      status: "active",
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.conversationId);
+  },
+});

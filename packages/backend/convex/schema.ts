@@ -106,7 +106,7 @@ export default defineSchema({
     ),
 
     // Human assignment - null means AI handling, user ID means human assigned
-    assignedTo: v.optional(v.id("users")),
+    assignedTo: v.optional(v.string()),
 
     // For unread indicator - timestamp of when user last read the conversation
     lastReadAt: v.optional(v.number()),
@@ -257,7 +257,7 @@ export default defineSchema({
 
   // Conversation Dashboard notifications
   notifications: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     type: v.union(v.literal("escalation"), v.literal("new_order")),
     conversationId: v.id("conversations"),
     read: v.boolean(),

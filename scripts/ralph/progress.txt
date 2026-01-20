@@ -17,6 +17,31 @@
 
 ---
 
+## 2026-01-20 22:03 - S04: Create conversation detail and messages queries
+
+**What was implemented:**
+- Enhanced conversations.get query with auth validation and order info
+- Args: conversationId
+- Returns conversation with all fields including escalationReason, assignedTo, status
+- Includes related order info if exists (via by_conversation index on orders)
+- Validates caller has access to conversation's business
+- Created conversations.messages query with pagination
+- Args: conversationId, limit (default 100), cursor (optional)
+- Returns messages with sender, content, createdAt, mediaUrl, mediaType
+- Sort messages by createdAt ascending (oldest first)
+- Cursor-based pagination for message history
+
+**Files changed:**
+- packages/backend/convex/conversations.ts (+75 lines, modified get query)
+
+**Verification:**
+- Convex dev compiles successfully
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S04 - Create conversation detail and messages queries (commit 8fd0a24)
+
+---
+
 ## 2026-01-20 22:01 - S03: Create conversation list query with filtering
 
 **What was implemented:**
