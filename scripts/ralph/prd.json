@@ -85,7 +85,7 @@
       "id": "S06",
       "title": "Create system prompt builder",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/ai/prompts.ts",

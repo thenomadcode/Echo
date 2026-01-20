@@ -785,3 +785,37 @@
 
 ---
 
+## 2026-01-20 11:55 - S06: Create system prompt builder
+
+**What was implemented:**
+- Created packages/backend/convex/ai/prompts.ts with buildSystemPrompt function
+- Accepts BuildSystemPromptParams: business info, products list, conversation state, detected language
+- Business section includes: name, type, address, business hours (formatted with day names)
+- Products section formats each product: name, price (converted from cents), description
+- Filters to only show available products
+- formatPrice() helper converts cents to display format with currency symbols (USD, COP, BRL, MXN)
+- Conversation state context explains current state to AI
+- Language instruction in target language (en/es/pt)
+- Configurable AI tone from business.aiTone
+- 6 rules for AI behavior: only real products, admit uncertainty, offer human help, be concise
+- Suggested greeting included when state is "idle" and aiGreeting is configured
+- Exports types: BusinessInfo, Product, BuildSystemPromptParams, ConversationState, LanguageCode
+
+**Files changed:**
+- packages/backend/convex/ai/prompts.ts (created, 133 lines)
+
+**Learnings for future iterations:**
+- Prices stored in cents (integer) must be divided by 100 for display
+- Record<number, string> works well for day-of-week mapping (0-6)
+- Separating prompt into sections with ## headers improves AI comprehension
+- Language instructions in target language reinforce the desired response language
+- Filtering products by availability prevents AI from mentioning unavailable items
+
+**Verification:**
+- LSP diagnostics show no errors on prompts.ts
+- bun run check-types passes
+- Committed as: feat: S06 - Create system prompt builder
+- Updated PRD: S06 passes: true
+
+---
+
