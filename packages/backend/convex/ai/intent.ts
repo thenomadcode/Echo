@@ -12,28 +12,30 @@ IMPORTANT RULES:
 2. Default quantity is 1 if not specified
 3. For business questions, identify the topic: "hours", "location", "delivery", or "payment"
 4. If the intent is unclear, classify as "unknown"
+5. IMPORTANT: If the message expresses desire to purchase, order, or get a product, classify as "order_start"
 
 Respond with a JSON object in one of these formats:
 
-For greeting (hi, hello, hey):
+For greeting (hi, hello, hey, hola, buenos días):
 {"type": "greeting"}
 
-For product question (do you have X, how much is X, what is X):
+For product question (do you have X, how much is X, what is X, tell me about X):
 {"type": "product_question", "query": "<product name or search term>"}
 
-For starting an order (I want X, order X, give me X):
+For starting an order - USE THIS when customer wants to buy/order/get products:
+Examples: "I want a latte", "I'd like to order X", "Give me X", "Can I get X", "Order X please", "2 lattes please"
 {"type": "order_start", "items": [{"productQuery": "<product>", "quantity": <number>}]}
 
-For modifying an order (add X, remove X, change to X):
+For modifying an existing order (add X, remove X, change quantity, add another one):
 {"type": "order_modify", "action": "<add|remove|change_quantity>", "item": "<product name>"}
 
-For business question (when open, where located, do you deliver):
+For business question (when open, where located, do you deliver, how can I pay):
 {"type": "business_question", "topic": "<hours|location|delivery|payment>"}
 
-For escalation request (talk to human, speak to person, need help):
+For escalation request (talk to human, speak to person, need help, this is urgent):
 {"type": "escalation_request"}
 
-For small talk (how are you, nice weather):
+For small talk (how are you, nice weather, thanks, bye):
 {"type": "small_talk"}
 
 For unclear intent:
@@ -50,10 +52,32 @@ interface IntentResult {
   topic?: string;
 }
 
+function parseJsonResponse(content: string): IntentResult {
+  try {
+    return JSON.parse(content) as IntentResult;
+  } catch {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]) as IntentResult;
+      } catch {
+        console.error("Failed to parse extracted JSON:", jsonMatch[0]);
+      }
+    }
+    console.error("Could not find valid JSON in response:", content);
+    return { type: "unknown" };
+  }
+}
+
 const messageValidator = v.object({
   role: v.union(v.literal("system"), v.literal("user"), v.literal("assistant")),
   content: v.string(),
 });
+
+interface IntentClassificationResult {
+  intent: Intent;
+  tokensUsed: number;
+}
 
 export const classifyIntent = action({
   args: {
@@ -61,11 +85,11 @@ export const classifyIntent = action({
     conversationHistory: v.array(messageValidator),
     productNames: v.array(v.string()),
   },
-  handler: async (_ctx, args): Promise<Intent> => {
+  handler: async (_ctx, args): Promise<IntentClassificationResult> => {
     const { message, conversationHistory, productNames } = args;
 
     if (!message || message.trim().length === 0) {
-      return { type: "unknown" };
+      return { intent: { type: "unknown" }, tokensUsed: 0 };
     }
 
     const productList =
@@ -92,18 +116,25 @@ export const classifyIntent = action({
         messages: contextMessages,
         systemPrompt,
         temperature: 0,
-        maxTokens: 150,
+        maxTokens: 256,
         responseFormat: "json",
       });
 
-      const parsed = JSON.parse(result.content) as IntentResult;
-      return mapToIntent(parsed);
+      console.log("Intent classification raw response:", result.content);
+      
+      const parsed = parseJsonResponse(result.content);
+      console.log("Intent classification parsed:", JSON.stringify(parsed));
+      
+      return { intent: mapToIntent(parsed), tokensUsed: result.tokensUsed };
     } catch (error) {
       console.error(
         "Intent classification failed:",
         error instanceof Error ? error.message : "Unknown error"
       );
-      return { type: "unknown" };
+      if (error instanceof SyntaxError) {
+        console.error("JSON parsing error - raw content may be truncated or invalid");
+      }
+      return { intent: { type: "unknown" }, tokensUsed: 0 };
     }
   },
 });

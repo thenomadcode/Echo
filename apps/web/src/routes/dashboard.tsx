@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import SignInForm from "@/components/sign-in-form";
 import UserMenu from "@/components/user-menu";
 import BusinessSwitcher from "@/components/business-switcher";
+import AppNav from "@/components/app-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -60,7 +61,10 @@ function DashboardContent() {
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
       <div className="flex items-center justify-between mb-8">
-        <BusinessSwitcher />
+        <div className="flex items-center gap-4">
+          <BusinessSwitcher />
+          <AppNav />
+        </div>
         <UserMenu />
       </div>
 

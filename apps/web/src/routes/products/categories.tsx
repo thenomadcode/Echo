@@ -8,6 +8,7 @@ import CategoryManager from "@/components/products/CategoryManager";
 import SignInForm from "@/components/sign-in-form";
 import UserMenu from "@/components/user-menu";
 import BusinessSwitcher from "@/components/business-switcher";
+import AppNav from "@/components/app-nav";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/products/categories")({
@@ -61,18 +62,21 @@ function CategoriesContent() {
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
       <div className="flex items-center justify-between mb-8">
-        <BusinessSwitcher />
+        <div className="flex items-center gap-4">
+          <BusinessSwitcher />
+          <AppNav />
+        </div>
         <UserMenu />
       </div>
 
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate({ to: "/dashboard" })}
+          onClick={() => navigate({ to: "/products" })}
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          Back to Products
         </Button>
         <h1 className="text-3xl font-bold">Manage Categories</h1>
         <p className="text-muted-foreground mt-2">

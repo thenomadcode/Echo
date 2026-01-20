@@ -204,12 +204,14 @@ export const processMessage = action({
 
     let detectedLanguage = conversation.detectedLanguage ?? "en";
     const isFirstMessage = messages.length === 0;
+    let languageTokens = 0;
 
     if (isFirstMessage || !conversation.detectedLanguage) {
       const languageResult = await ctx.runAction(api.ai.language.detectLanguage, {
         message: args.message,
       });
-      detectedLanguage = languageResult;
+      detectedLanguage = languageResult.language;
+      languageTokens = languageResult.tokensUsed;
 
       await ctx.runMutation(internal.ai.process.updateConversation, {
         conversationId: args.conversationId,
@@ -226,11 +228,13 @@ export const processMessage = action({
       content: msg.content,
     }));
 
-    const intent = await ctx.runAction(api.ai.intent.classifyIntent, {
+    const intentResult = await ctx.runAction(api.ai.intent.classifyIntent, {
       message: args.message,
       conversationHistory,
       productNames,
     });
+    const intent = intentResult.intent;
+    const intentTokens = intentResult.tokensUsed;
 
     const failureCount = 0;
     const escalationResult = detectEscalation(args.message, conversationHistory, failureCount);
@@ -254,7 +258,7 @@ export const processMessage = action({
       available: p.available,
     }));
 
-    const response = await ctx.runAction(api.ai.response.generateResponse, {
+    const responseResult = await ctx.runAction(api.ai.response.generateResponse, {
       intent: serializeIntent(intent),
       conversationHistory,
       businessContext,
@@ -262,6 +266,8 @@ export const processMessage = action({
       language: detectedLanguage,
       conversationState: conversation.state ?? "idle",
     });
+    const response = responseResult.response;
+    const responseTokens = responseResult.tokensUsed;
 
     let newState = determineNewState(intent, conversation.state ?? "idle");
 
@@ -291,6 +297,8 @@ export const processMessage = action({
 
     const latencyMs = Date.now() - startTime;
 
+    const totalTokensUsed = languageTokens + intentTokens + responseTokens;
+    
     await ctx.runMutation(internal.ai.process.logAIInteraction, {
       conversationId: args.conversationId,
       messageId,
@@ -298,7 +306,7 @@ export const processMessage = action({
       prompt: `Message: ${args.message}`,
       response,
       model: "gpt-4o-mini",
-      tokensUsed: 0,
+      tokensUsed: totalTokensUsed,
       latencyMs,
     });
 

@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import ProductCard from "@/components/products/ProductCard";
 import ProductTable from "@/components/products/ProductTable";
 import BusinessSwitcher from "@/components/business-switcher";
+import AppNav from "@/components/app-nav";
+import UserMenu from "@/components/user-menu";
 
 export const Route = createFileRoute("/products/")({
   component: RouteComponent,
@@ -213,7 +215,9 @@ function ProductsPage({ businessId }: ProductsPageProps) {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <BusinessSwitcher />
+            <AppNav />
           </div>
+          <UserMenu />
         </div>
 
         <Card>

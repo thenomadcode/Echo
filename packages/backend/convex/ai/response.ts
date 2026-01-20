@@ -54,6 +54,11 @@ const productValidator = v.object({
   available: v.boolean(),
 });
 
+interface ResponseGenerationResult {
+  response: string;
+  tokensUsed: number;
+}
+
 export const generateResponse = action({
   args: {
     intent: intentValidator,
@@ -63,7 +68,7 @@ export const generateResponse = action({
     language: v.string(),
     conversationState: v.optional(v.string()),
   },
-  handler: async (_ctx, args): Promise<string> => {
+  handler: async (_ctx, args): Promise<ResponseGenerationResult> => {
     const {
       intent,
       conversationHistory,
@@ -104,17 +109,17 @@ export const generateResponse = action({
         messages,
         systemPrompt: fullSystemPrompt,
         temperature: 0.7,
-        maxTokens: 500,
+        maxTokens: 1024,
         responseFormat: "text",
       });
 
-      return result.content;
+      return { response: result.content, tokensUsed: result.tokensUsed };
     } catch (error) {
       console.error(
         "Response generation failed:",
         error instanceof Error ? error.message : "Unknown error"
       );
-      return getFallbackResponse(typedIntent.type, typedLanguage);
+      return { response: getFallbackResponse(typedIntent.type, typedLanguage), tokensUsed: 0 };
     }
   },
 });

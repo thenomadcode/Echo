@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { TwilioWhatsAppProvider } from "./integrations/whatsapp/twilio";
 import type { MessageType } from "./integrations/whatsapp/types";
 
@@ -114,7 +114,7 @@ async function handleIncomingMessage(
     ? parsedMessage.messageType
     : "text";
 
-  await ctx.runMutation(
+  const messageResult = await ctx.runMutation(
     internal.integrations.whatsapp.webhook.processIncomingMessage,
     {
       businessId: businessLookup.businessId,
@@ -127,6 +127,23 @@ async function handleIncomingMessage(
       timestamp: parsedMessage.timestamp,
     }
   );
+
+  if (messageType === "text" && parsedMessage.content.trim()) {
+    try {
+      const aiResult = await ctx.runAction(api.ai.process.processMessage, {
+        conversationId: messageResult.conversationId,
+        message: parsedMessage.content,
+      });
+
+      await ctx.runAction(api.integrations.whatsapp.actions.sendMessage, {
+        conversationId: messageResult.conversationId,
+        content: aiResult.response,
+        type: "text",
+      });
+    } catch (error) {
+      console.error("AI processing or reply failed:", error);
+    }
+  }
 
   return new Response("OK", { status: 200 });
 }

@@ -21,7 +21,7 @@ export const getSettings = query({
   },
   handler: async (ctx, args): Promise<AISettings | null> => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       return null;
     }
 
@@ -30,7 +30,7 @@ export const getSettings = query({
       return null;
     }
 
-    if (business.ownerId !== authUser.userId) {
+    if (business.ownerId !== authUser._id) {
       return null;
     }
 
@@ -51,7 +51,7 @@ export const updateSettings = mutation({
   },
   handler: async (ctx, args): Promise<void> => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       throw new Error("Not authenticated");
     }
 
@@ -60,7 +60,7 @@ export const updateSettings = mutation({
       throw new Error("Business not found");
     }
 
-    if (business.ownerId !== authUser.userId) {
+    if (business.ownerId !== authUser._id) {
       throw new Error("Not authorized to update this business");
     }
 
@@ -90,7 +90,7 @@ export const getUsageStats = query({
   },
   handler: async (ctx, args): Promise<UsageStats | null> => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
-    if (!authUser || !authUser.userId) {
+    if (!authUser || !authUser._id) {
       return null;
     }
 
@@ -99,7 +99,7 @@ export const getUsageStats = query({
       return null;
     }
 
-    if (business.ownerId !== authUser.userId) {
+    if (business.ownerId !== authUser._id) {
       return null;
     }
 

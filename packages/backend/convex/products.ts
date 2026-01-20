@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 export const create = mutation({
@@ -406,5 +406,47 @@ export const bulkUpdateCategory = mutation({
     }
 
     return updatedCount;
+  },
+});
+
+export const seedTestProducts = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("products")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId).eq("deleted", false))
+      .collect();
+
+    if (existing.length > 0) {
+      return { seeded: false, message: "Products already exist for this business" };
+    }
+
+    const now = Date.now();
+    const testProducts = [
+      { name: "Cappuccino", description: "Creamy Italian coffee", price: 450 },
+      { name: "Latte", description: "Smooth espresso with steamed milk", price: 500 },
+      { name: "Chocolate Croissant", description: "Buttery, flaky croissant with rich chocolate filling", price: 400 },
+    ];
+
+    for (let i = 0; i < testProducts.length; i++) {
+      const product = testProducts[i];
+      if (!product) continue;
+      await ctx.db.insert("products", {
+        businessId: args.businessId,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        currency: "USD",
+        available: true,
+        deleted: false,
+        order: i,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return { seeded: true, count: testProducts.length };
   },
 });

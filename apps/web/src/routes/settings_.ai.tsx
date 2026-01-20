@@ -9,6 +9,8 @@ import { useEffect } from "react";
 
 import SignInForm from "@/components/sign-in-form";
 import BusinessSwitcher from "@/components/business-switcher";
+import AppNav from "@/components/app-nav";
+import UserMenu from "@/components/user-menu";
 import UsageStats from "@/components/ai/usage-stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,11 +120,16 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">AI Settings</h1>
-          <p className="text-muted-foreground">Configure your AI assistant behavior</p>
+        <div className="flex items-center gap-4">
+          <BusinessSwitcher />
+          <AppNav />
         </div>
-        <BusinessSwitcher />
+        <UserMenu />
+      </div>
+
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">AI Settings</h1>
+        <p className="text-muted-foreground">Configure your AI assistant behavior</p>
       </div>
 
       <form

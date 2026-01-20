@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ProductForm from "@/components/products/ProductForm";
 import BusinessSwitcher from "@/components/business-switcher";
+import AppNav from "@/components/app-nav";
+import UserMenu from "@/components/user-menu";
 
 export const Route = createFileRoute("/products/$productId")({
   component: RouteComponent,
@@ -80,7 +82,9 @@ function EditProductPageContent({ productId }: EditProductPageContentProps) {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <BusinessSwitcher />
+            <AppNav />
           </div>
+          <UserMenu />
         </div>
 
         <div className="mb-4 flex items-center justify-between">

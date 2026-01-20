@@ -10,6 +10,8 @@ import { CheckCircle2, XCircle, Copy, ExternalLink, Loader2 } from "lucide-react
 
 import SignInForm from "@/components/sign-in-form";
 import BusinessSwitcher from "@/components/business-switcher";
+import AppNav from "@/components/app-nav";
+import UserMenu from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -158,9 +160,14 @@ function WhatsAppSettingsForm({ businessId }: { businessId: Id<"businesses"> }) 
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">WhatsApp Settings</h1>
-        <BusinessSwitcher />
+        <div className="flex items-center gap-4">
+          <BusinessSwitcher />
+          <AppNav />
+        </div>
+        <UserMenu />
       </div>
+
+      <h1 className="text-3xl font-bold mb-6">WhatsApp Settings</h1>
 
       <Card className="mb-6">
         <CardHeader>
