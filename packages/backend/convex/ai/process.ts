@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { action, internalMutation, internalQuery } from "../_generated/server";
+import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import { detectEscalation } from "./escalation";
@@ -68,13 +69,21 @@ const pendingOrderValidator = v.object({
   total: v.optional(v.number()),
 });
 
+const pendingDeliveryValidator = v.object({
+  type: v.union(v.literal("pickup"), v.literal("delivery")),
+  address: v.optional(v.string()),
+});
+
 export const updateConversation = internalMutation({
   args: {
     conversationId: v.id("conversations"),
     detectedLanguage: v.optional(v.string()),
     state: v.optional(v.string()),
     pendingOrder: v.optional(pendingOrderValidator),
+    pendingDelivery: v.optional(pendingDeliveryValidator),
     escalationReason: v.optional(v.string()),
+    clearPendingData: v.optional(v.boolean()),
+    clearPendingDelivery: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const updates: Record<string, unknown> = {
@@ -90,8 +99,18 @@ export const updateConversation = internalMutation({
     if (args.pendingOrder !== undefined) {
       updates.pendingOrder = args.pendingOrder;
     }
+    if (args.pendingDelivery !== undefined) {
+      updates.pendingDelivery = args.pendingDelivery;
+    }
     if (args.escalationReason !== undefined) {
       updates.escalationReason = args.escalationReason;
+    }
+    if (args.clearPendingData) {
+      updates.pendingOrder = undefined;
+      updates.pendingDelivery = undefined;
+    }
+    if (args.clearPendingDelivery) {
+      updates.pendingDelivery = undefined;
     }
 
     await ctx.db.patch(args.conversationId, updates);
@@ -175,6 +194,15 @@ export const notifyEscalation = internalMutation({
   },
 });
 
+export const getOrderDetails = internalQuery({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.orderId);
+  },
+});
+
 export const processMessage = action({
   args: {
     conversationId: v.id("conversations"),
@@ -220,10 +248,10 @@ export const processMessage = action({
     }
 
     const productNames = products
-      .filter((p) => p.available)
-      .map((p) => p.name);
+      .filter((p: Doc<"products">) => p.available)
+      .map((p: Doc<"products">) => p.name);
 
-    const conversationHistory: Message[] = messages.map((msg) => ({
+    const conversationHistory: Message[] = messages.map((msg: Doc<"messages">) => ({
       role: msg.sender === "customer" ? "user" : "assistant",
       content: msg.content,
     }));
@@ -250,13 +278,24 @@ export const processMessage = action({
       aiTone: undefined as string | undefined,
     };
 
-    const productContext = products.map((p) => ({
+    const productContext = products.map((p: Doc<"products">) => ({
       name: p.name,
       price: p.price,
       currency: p.currency,
       description: p.description,
       available: p.available,
     }));
+
+    let newState = determineNewState(intent, conversation.state ?? "idle");
+
+    const orderUpdate = handleOrderIntent(intent, conversation.pendingOrder, products);
+
+    const checkoutResult = await handleCheckoutIntent(
+      ctx,
+      intent,
+      conversation,
+      conversation.state ?? "idle"
+    );
 
     const responseResult = await ctx.runAction(api.ai.response.generateResponse, {
       intent: serializeIntent(intent),
@@ -265,13 +304,23 @@ export const processMessage = action({
       products: productContext,
       language: detectedLanguage,
       conversationState: conversation.state ?? "idle",
+      checkoutContext: checkoutResult.orderId
+        ? {
+            orderNumber: checkoutResult.orderNumber,
+            paymentLink: checkoutResult.paymentLink,
+            paymentMethod: intent.type === "payment_choice" ? intent.paymentMethod : undefined,
+          }
+        : conversation.pendingOrder
+          ? {
+              pendingOrderSummary: conversation.pendingOrder.items
+                .map((item: { quantity: number; productQuery: string }) => `${item.quantity}x ${item.productQuery}`)
+                .join(", "),
+              pendingOrderTotal: conversation.pendingOrder.total,
+            }
+          : undefined,
     });
     const response = responseResult.response;
     const responseTokens = responseResult.tokensUsed;
-
-    let newState = determineNewState(intent, conversation.state ?? "idle");
-
-    const orderUpdate = handleOrderIntent(intent, conversation.pendingOrder, products);
 
     if (shouldEscalate) {
       newState = "escalated";
@@ -281,11 +330,27 @@ export const processMessage = action({
         reason: escalationResult.reason || "Customer requested human assistance",
         customerId: conversation.customerId,
       });
+    } else if (checkoutResult.orderId) {
+      await ctx.runMutation(internal.ai.process.updateConversation, {
+        conversationId: args.conversationId,
+        state: newState,
+        clearPendingData: true,
+      });
+    } else if (checkoutResult.pendingDelivery) {
+      await ctx.runMutation(internal.ai.process.updateConversation, {
+        conversationId: args.conversationId,
+        state: newState,
+        pendingDelivery: checkoutResult.pendingDelivery,
+      });
     } else if (newState !== conversation.state || orderUpdate.pendingOrder !== undefined) {
+      const isReturningToOrdering = newState === "ordering" && 
+        (conversation.state === "confirming" || conversation.state === "payment");
+      
       await ctx.runMutation(internal.ai.process.updateConversation, {
         conversationId: args.conversationId,
         state: newState,
         pendingOrder: orderUpdate.pendingOrder,
+        clearPendingDelivery: isReturningToOrdering,
       });
     }
 
@@ -323,11 +388,16 @@ function determineNewState(
   intent: Intent,
   currentState: string
 ): string {
+  const checkoutStates = ["confirming", "payment"];
+  
   switch (intent.type) {
     case "order_start":
       return "ordering";
     case "order_modify":
-      return currentState === "idle" ? "ordering" : currentState;
+      if (currentState === "idle" || checkoutStates.includes(currentState)) {
+        return "ordering";
+      }
+      return currentState;
     case "product_question":
       if (currentState === "idle") {
         return "browsing";
@@ -335,6 +405,28 @@ function determineNewState(
       return currentState;
     case "escalation_request":
       return "escalated";
+    case "order_confirm":
+      if (currentState === "ordering") {
+        return "confirming";
+      }
+      return currentState;
+    case "delivery_choice":
+      if (currentState === "confirming") {
+        const isComplete = intent.deliveryType === "pickup" || 
+          (intent.deliveryType === "delivery" && intent.address);
+        return isComplete ? "payment" : currentState;
+      }
+      return currentState;
+    case "address_provided":
+      if (currentState === "confirming") {
+        return "payment";
+      }
+      return currentState;
+    case "payment_choice":
+      if (currentState === "payment") {
+        return "completed";
+      }
+      return currentState;
     default:
       return currentState;
   }
@@ -355,6 +447,19 @@ interface PendingOrder {
 interface OrderUpdateResult {
   pendingOrder?: PendingOrder;
   message?: string;
+}
+
+interface PendingDelivery {
+  type: "pickup" | "delivery";
+  address?: string;
+}
+
+interface CheckoutResult {
+  pendingDelivery?: PendingDelivery;
+  orderId?: Id<"orders">;
+  orderNumber?: string;
+  paymentLink?: string;
+  error?: string;
 }
 
 function handleOrderIntent(
@@ -439,6 +544,111 @@ function handleOrderIntent(
 
     if (intent.action === "change_quantity") {
       return { pendingOrder: currentOrder };
+    }
+  }
+
+  return {};
+}
+
+async function handleCheckoutIntent(
+  ctx: ActionCtx,
+  intent: Intent,
+  conversation: Doc<"conversations">,
+  currentState: string
+): Promise<CheckoutResult> {
+  if (intent.type === "delivery_choice") {
+    const isComplete = intent.deliveryType === "pickup" || 
+      (intent.deliveryType === "delivery" && intent.address);
+    
+    if (!isComplete) {
+      return {
+        pendingDelivery: {
+          type: "delivery",
+          address: undefined,
+        },
+      };
+    }
+    
+    return {
+      pendingDelivery: {
+        type: intent.deliveryType,
+        address: intent.address,
+      },
+    };
+  }
+
+  if (intent.type === "address_provided" && currentState === "confirming") {
+    return {
+      pendingDelivery: {
+        type: "delivery",
+        address: intent.address,
+      },
+    };
+  }
+
+  if (intent.type === "payment_choice" && currentState === "payment") {
+    const pendingOrder = conversation.pendingOrder;
+    const pendingDelivery = conversation.pendingDelivery;
+
+    if (!pendingOrder || pendingOrder.items.length === 0) {
+      return { error: "No items in order" };
+    }
+
+    const validItems = pendingOrder.items.filter(
+      (item): item is typeof item & { productId: Id<"products"> } =>
+        item.productId !== undefined
+    );
+
+    if (validItems.length === 0) {
+      return { error: "No valid products in order" };
+    }
+
+    try {
+      const orderId = await ctx.runMutation(api.orders.create, {
+        businessId: conversation.businessId,
+        conversationId: conversation._id,
+        items: validItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+        contactPhone: conversation.customerId,
+      });
+
+      if (pendingDelivery) {
+        await ctx.runMutation(api.orders.setDeliveryInfo, {
+          orderId,
+          deliveryType: pendingDelivery.type,
+          deliveryAddress: pendingDelivery.address,
+          contactPhone: conversation.customerId,
+        });
+      }
+
+      await ctx.runMutation(api.orders.setPaymentMethod, {
+        orderId,
+        paymentMethod: intent.paymentMethod,
+      });
+
+      let paymentLink: string | undefined;
+      if (intent.paymentMethod === "card") {
+        paymentLink = await ctx.runAction(api.orders.generatePaymentLink, {
+          orderId,
+        });
+      }
+
+      const order = await ctx.runQuery(internal.ai.process.getOrderDetails, {
+        orderId,
+      });
+
+      return {
+        orderId,
+        orderNumber: order?.orderNumber,
+        paymentLink,
+      };
+    } catch (error) {
+      console.error("Checkout error:", error);
+      return {
+        error: error instanceof Error ? error.message : "Failed to create order",
+      };
     }
   }
 

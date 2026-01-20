@@ -71,6 +71,16 @@ AI auto-detects language from customer's first message and responds in same lang
 - **Auth**: Better-Auth with Convex adapter
 - **UI**: Base UI + shadcn/ui components, CVA for variants
 - **Deployment**: Cloudflare via Alchemy
+- **AI**: OpenAI API via `openai` npm package
+
+### AI Configuration
+
+- **Default Model**: `gpt-5-nano` (set via `AI_MODEL` env var)
+- **SDK**: [openai-node](https://github.com/openai/openai-node) - Official OpenAI TypeScript SDK
+- **APIs Used**:
+  - **Responses API** (`client.responses.create`) - For gpt-5/o3/o4 models
+  - **Chat Completions API** (`client.chat.completions.create`) - For older models and function calling with tools
+- **Token Limits**: gpt-5+ models use `max_completion_tokens`, older models use `max_tokens`
 
 ### Monorepo Structure
 ```

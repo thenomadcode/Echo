@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/dashboard/orders/$orderId")({
+export const Route = createFileRoute("/orders_/$orderId")({
   component: RouteComponent,
 });
 
@@ -184,7 +184,7 @@ function OrderDetailPageContent() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate({ to: "/dashboard/orders" })}
+            onClick={() => navigate({ to: "/orders" })}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -224,7 +224,7 @@ function OrderDetailPageContent() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate({ to: "/dashboard/orders" })}
+          onClick={() => navigate({ to: "/orders" })}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

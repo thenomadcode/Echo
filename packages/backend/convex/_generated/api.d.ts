@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as ai_agent from "../ai/agent.js";
+import type * as ai_agentPrompt from "../ai/agentPrompt.js";
 import type * as ai_escalation from "../ai/escalation.js";
 import type * as ai_intent from "../ai/intent.js";
 import type * as ai_language from "../ai/language.js";
@@ -16,6 +18,7 @@ import type * as ai_prompts from "../ai/prompts.js";
 import type * as ai_providers_openai from "../ai/providers/openai.js";
 import type * as ai_response from "../ai/response.js";
 import type * as ai_settings from "../ai/settings.js";
+import type * as ai_tools from "../ai/tools.js";
 import type * as ai_types from "../ai/types.js";
 import type * as auth from "../auth.js";
 import type * as businesses from "../businesses.js";
@@ -42,6 +45,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "ai/agent": typeof ai_agent;
+  "ai/agentPrompt": typeof ai_agentPrompt;
   "ai/escalation": typeof ai_escalation;
   "ai/intent": typeof ai_intent;
   "ai/language": typeof ai_language;
@@ -50,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   "ai/providers/openai": typeof ai_providers_openai;
   "ai/response": typeof ai_response;
   "ai/settings": typeof ai_settings;
+  "ai/tools": typeof ai_tools;
   "ai/types": typeof ai_types;
   auth: typeof auth;
   businesses: typeof businesses;

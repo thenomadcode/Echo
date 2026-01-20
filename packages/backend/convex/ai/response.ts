@@ -59,6 +59,24 @@ interface ResponseGenerationResult {
   tokensUsed: number;
 }
 
+const checkoutContextValidator = v.optional(
+  v.object({
+    orderNumber: v.optional(v.string()),
+    paymentLink: v.optional(v.string()),
+    paymentMethod: v.optional(v.union(v.literal("cash"), v.literal("card"))),
+    pendingOrderSummary: v.optional(v.string()),
+    pendingOrderTotal: v.optional(v.number()),
+  })
+);
+
+interface CheckoutContext {
+  orderNumber?: string;
+  paymentLink?: string;
+  paymentMethod?: "cash" | "card";
+  pendingOrderSummary?: string;
+  pendingOrderTotal?: number;
+}
+
 export const generateResponse = action({
   args: {
     intent: intentValidator,
@@ -67,6 +85,7 @@ export const generateResponse = action({
     products: v.array(productValidator),
     language: v.string(),
     conversationState: v.optional(v.string()),
+    checkoutContext: checkoutContextValidator,
   },
   handler: async (_ctx, args): Promise<ResponseGenerationResult> => {
     const {
@@ -76,6 +95,7 @@ export const generateResponse = action({
       products,
       language,
       conversationState,
+      checkoutContext,
     } = args;
 
     const typedIntent = intent as unknown as Intent;
@@ -91,7 +111,7 @@ export const generateResponse = action({
       detectedLanguage: typedLanguage,
     });
 
-    const contextInstruction = buildContextInstruction(typedIntent, typedProducts);
+    const contextInstruction = buildContextInstruction(typedIntent, typedProducts, checkoutContext);
 
     const messages: Message[] = conversationHistory.slice(-10).map((msg) => ({
       role: msg.role,
@@ -147,7 +167,11 @@ function validateConversationState(state: string | undefined): ConversationState
   return "idle";
 }
 
-function buildContextInstruction(intent: Intent, products: Product[]): string {
+function buildContextInstruction(
+  intent: Intent,
+  products: Product[],
+  checkoutContext?: CheckoutContext
+): string {
   switch (intent.type) {
     case "greeting":
       return "The customer just greeted you. Respond with a friendly welcome and offer to help.";
@@ -192,6 +216,40 @@ function buildContextInstruction(intent: Intent, products: Product[]): string {
     case "small_talk":
       return "Customer is making small talk. Respond briefly and friendly, then gently redirect to how you can help them.";
 
+    case "order_confirm": {
+      const summary = checkoutContext?.pendingOrderSummary ?? "items";
+      const total = checkoutContext?.pendingOrderTotal;
+      const totalStr = total ? formatPrice(total, "USD") : "the total";
+      return `Customer is ready to complete their order. Their order contains: ${summary}. Total: ${totalStr}. Summarize their order, confirm the total, and ask if they want pickup or delivery.`;
+    }
+
+    case "delivery_choice": {
+      const deliveryType = intent.deliveryType;
+      if (deliveryType === "delivery" && intent.address) {
+        return `Customer chose delivery to: "${intent.address}". Confirm the delivery address and ask how they would like to pay (cash or card).`;
+      } else if (deliveryType === "delivery") {
+        return `Customer chose delivery but didn't provide an address. Ask for their delivery address.`;
+      }
+      return `Customer chose pickup. Confirm pickup and ask how they would like to pay (cash or card).`;
+    }
+
+    case "payment_choice": {
+      const paymentMethod = intent.paymentMethod;
+      const orderNumber = checkoutContext?.orderNumber ?? "your order";
+      const paymentLink = checkoutContext?.paymentLink;
+
+      if (paymentMethod === "cash") {
+        return `Customer chose to pay with cash. Order ${orderNumber} is confirmed! Thank them and let them know their order will be ready in approximately 15-20 minutes. Provide the order number for reference.`;
+      } else if (paymentMethod === "card" && paymentLink) {
+        return `Customer chose to pay with card. Order ${orderNumber} has been created. Provide this payment link: ${paymentLink}. Let them know that once payment is complete, their order will begin preparation. The link expires in 24 hours.`;
+      }
+      return `Customer chose to pay with card. There was an issue generating the payment link. Apologize and suggest they try again or choose cash payment.`;
+    }
+
+    case "address_provided": {
+      return `Customer provided their delivery address: "${intent.address}". Confirm the address and ask how they would like to pay (cash or card).`;
+    }
+
     case "unknown":
       return "Customer's intent is unclear. Politely ask for clarification and explain what you can help with (product info, orders, business questions).";
 
@@ -225,6 +283,14 @@ function getFallbackResponse(intentType: string, language: LanguageCode): string
       escalation_request:
         "I understand you'd like to speak with someone. Let me connect you with a team member.",
       small_talk: "I'm here to help! Is there anything I can assist you with?",
+      order_confirm:
+        "Great! Let me confirm your order. Would you like pickup or delivery?",
+      delivery_choice:
+        "Perfect! How would you like to pay - cash or card?",
+      payment_choice:
+        "Your order has been confirmed! Thank you for your order.",
+      address_provided:
+        "Got it! How would you like to pay - cash or card?",
       unknown:
         "I'm sorry, I didn't quite understand. I can help you with product information, placing orders, or answering questions about our business.",
       default:
@@ -241,6 +307,14 @@ function getFallbackResponse(intentType: string, language: LanguageCode): string
       escalation_request:
         "Entiendo que te gustaría hablar con alguien. Déjame conectarte con un miembro del equipo.",
       small_talk: "¡Estoy aquí para ayudarte! ¿Hay algo en lo que pueda asistirte?",
+      order_confirm:
+        "¡Perfecto! Déjame confirmar tu pedido. ¿Prefieres recoger o entrega a domicilio?",
+      delivery_choice:
+        "¡Excelente! ¿Cómo te gustaría pagar - efectivo o tarjeta?",
+      payment_choice:
+        "¡Tu pedido ha sido confirmado! Gracias por tu compra.",
+      address_provided:
+        "¡Entendido! ¿Cómo te gustaría pagar - efectivo o tarjeta?",
       unknown:
         "Lo siento, no entendí bien. Puedo ayudarte con información de productos, pedidos o preguntas sobre nuestro negocio.",
       default:
@@ -257,6 +331,14 @@ function getFallbackResponse(intentType: string, language: LanguageCode): string
       escalation_request:
         "Entendo que gostaria de falar com alguém. Deixe-me conectá-lo com um membro da equipe.",
       small_talk: "Estou aqui para ajudar! Há algo em que posso ajudá-lo?",
+      order_confirm:
+        "Ótimo! Deixe-me confirmar seu pedido. Você prefere retirar ou entrega?",
+      delivery_choice:
+        "Perfeito! Como gostaria de pagar - dinheiro ou cartão?",
+      payment_choice:
+        "Seu pedido foi confirmado! Obrigado pela compra.",
+      address_provided:
+        "Entendido! Como gostaria de pagar - dinheiro ou cartão?",
       unknown:
         "Desculpe, não entendi bem. Posso ajudá-lo com informações de produtos, pedidos ou perguntas sobre nosso negócio.",
       default:

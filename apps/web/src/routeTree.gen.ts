@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestAiRouteImport } from './routes/test-ai'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -22,8 +23,7 @@ import { Route as SettingsAiRouteImport } from './routes/settings_.ai'
 import { Route as ProductsNewRouteImport } from './routes/products/new'
 import { Route as ProductsCategoriesRouteImport } from './routes/products/categories'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
-import { Route as DashboardOrdersIndexRouteImport } from './routes/dashboard/orders/index'
-import { Route as DashboardOrdersOrderIdRouteImport } from './routes/dashboard/orders/$orderId'
+import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TestAiRoute = TestAiRouteImport.update({
@@ -39,6 +39,11 @@ const SignupRoute = SignupRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -91,15 +96,10 @@ const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
   path: '/products/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardOrdersIndexRoute = DashboardOrdersIndexRouteImport.update({
-  id: '/orders/',
-  path: '/orders/',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardOrdersOrderIdRoute = DashboardOrdersOrderIdRouteImport.update({
-  id: '/orders/$orderId',
+const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
+  id: '/orders_/$orderId',
   path: '/orders/$orderId',
-  getParentRoute: () => DashboardRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -109,30 +109,14 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/products/categories': typeof ProductsCategoriesRoute
-  '/products/new': typeof ProductsNewRoute
-  '/settings/ai': typeof SettingsAiRoute
-  '/settings/whatsapp': typeof SettingsWhatsappRoute
-  '/products/': typeof ProductsIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
-  '/dashboard/orders/': typeof DashboardOrdersIndexRoute
-}
-export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteWithChildren
-  '/login': typeof LoginRoute
-  '/onboarding': typeof OnboardingRoute
-  '/settings': typeof SettingsRoute
-  '/signup': typeof SignupRoute
-  '/test-ai': typeof TestAiRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
@@ -140,18 +124,36 @@ export interface FileRoutesByTo {
   '/settings/whatsapp': typeof SettingsWhatsappRoute
   '/products': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
-  '/dashboard/orders': typeof DashboardOrdersIndexRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/orders': typeof OrdersRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/test-ai': typeof TestAiRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products/categories': typeof ProductsCategoriesRoute
+  '/products/new': typeof ProductsNewRoute
+  '/settings/ai': typeof SettingsAiRoute
+  '/settings/whatsapp': typeof SettingsWhatsappRoute
+  '/products': typeof ProductsIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/orders': typeof OrdersRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
+  '/orders_/$orderId': typeof OrdersOrderIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
@@ -159,8 +161,6 @@ export interface FileRoutesById {
   '/settings_/whatsapp': typeof SettingsWhatsappRoute
   '/products/': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/dashboard/orders/$orderId': typeof DashboardOrdersOrderIdRoute
-  '/dashboard/orders/': typeof DashboardOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -169,27 +169,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/onboarding'
+    | '/orders'
     | '/settings'
     | '/signup'
     | '/test-ai'
-    | '/products/$productId'
-    | '/products/categories'
-    | '/products/new'
-    | '/settings/ai'
-    | '/settings/whatsapp'
-    | '/products/'
-    | '/api/auth/$'
-    | '/dashboard/orders/$orderId'
-    | '/dashboard/orders/'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/onboarding'
-    | '/settings'
-    | '/signup'
-    | '/test-ai'
+    | '/orders/$orderId'
     | '/products/$productId'
     | '/products/categories'
     | '/products/new'
@@ -197,17 +181,35 @@ export interface FileRouteTypes {
     | '/settings/whatsapp'
     | '/products'
     | '/api/auth/$'
-    | '/dashboard/orders/$orderId'
-    | '/dashboard/orders'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/onboarding'
+    | '/orders'
+    | '/settings'
+    | '/signup'
+    | '/test-ai'
+    | '/orders/$orderId'
+    | '/products/$productId'
+    | '/products/categories'
+    | '/products/new'
+    | '/settings/ai'
+    | '/settings/whatsapp'
+    | '/products'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/login'
     | '/onboarding'
+    | '/orders'
     | '/settings'
     | '/signup'
     | '/test-ai'
+    | '/orders_/$orderId'
     | '/products/$productId'
     | '/products/categories'
     | '/products/new'
@@ -215,18 +217,18 @@ export interface FileRouteTypes {
     | '/settings_/whatsapp'
     | '/products/'
     | '/api/auth/$'
-    | '/dashboard/orders/$orderId'
-    | '/dashboard/orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  OrdersRoute: typeof OrdersRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   TestAiRoute: typeof TestAiRoute
+  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsCategoriesRoute: typeof ProductsCategoriesRoute
   ProductsNewRoute: typeof ProductsNewRoute
@@ -257,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -290,7 +299,7 @@ declare module '@tanstack/react-router' {
     '/products/': {
       id: '/products/'
       path: '/products'
-      fullPath: '/products/'
+      fullPath: '/products'
       preLoaderRoute: typeof ProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -329,19 +338,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/orders/': {
-      id: '/dashboard/orders/'
-      path: '/orders'
-      fullPath: '/dashboard/orders/'
-      preLoaderRoute: typeof DashboardOrdersIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/orders/$orderId': {
-      id: '/dashboard/orders/$orderId'
+    '/orders_/$orderId': {
+      id: '/orders_/$orderId'
       path: '/orders/$orderId'
-      fullPath: '/dashboard/orders/$orderId'
-      preLoaderRoute: typeof DashboardOrdersOrderIdRouteImport
-      parentRoute: typeof DashboardRoute
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof OrdersOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -353,28 +355,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface DashboardRouteChildren {
-  DashboardOrdersOrderIdRoute: typeof DashboardOrdersOrderIdRoute
-  DashboardOrdersIndexRoute: typeof DashboardOrdersIndexRoute
-}
-
-const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardOrdersOrderIdRoute: DashboardOrdersOrderIdRoute,
-  DashboardOrdersIndexRoute: DashboardOrdersIndexRoute,
-}
-
-const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
-  DashboardRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  OrdersRoute: OrdersRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   TestAiRoute: TestAiRoute,
+  OrdersOrderIdRoute: OrdersOrderIdRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsCategoriesRoute: ProductsCategoriesRoute,
   ProductsNewRoute: ProductsNewRoute,
@@ -386,3 +376,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

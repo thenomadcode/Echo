@@ -38,6 +38,22 @@ For escalation request (talk to human, speak to person, need help, this is urgen
 For small talk (how are you, nice weather, thanks, bye):
 {"type": "small_talk"}
 
+For confirming order is complete - USE THIS when customer indicates they're done ordering:
+Examples: "That's all", "I'm done", "Ready to order", "Eso es todo", "É isso", "Ready", "Nothing else", "Nada más", "Só isso"
+{"type": "order_confirm"}
+
+For delivery choice - USE THIS when customer specifies pickup or delivery:
+Examples: "Pickup", "I'll pick it up", "Delivery", "Deliver to [address]", "Recoger", "Para recoger", "Entrega", "Entregar en [dirección]", "Vou buscar", "Entrega em [endereço]"
+{"type": "delivery_choice", "deliveryType": "<pickup|delivery>", "address": "<optional address for delivery>"}
+
+For payment method choice - USE THIS when customer specifies how they want to pay:
+Examples: "Cash", "Card", "Pay with card", "Efectivo", "Tarjeta", "Pagar con tarjeta", "Dinheiro", "Cartão", "Pagar com cartão"
+{"type": "payment_choice", "paymentMethod": "<cash|card>"}
+
+For address provided - USE THIS when customer provides a delivery address (street, number, neighborhood, etc.) in response to a request for their address:
+Examples: "123 Main St", "Calle 45 #12-34", "Rua das Flores 100", "Av. Principal 500, Apt 3B"
+{"type": "address_provided", "address": "<the full address provided>"}
+
 For unclear intent:
 {"type": "unknown"}
 
@@ -50,6 +66,9 @@ interface IntentResult {
   action?: string;
   item?: string;
   topic?: string;
+  deliveryType?: "pickup" | "delivery";
+  address?: string;
+  paymentMethod?: "cash" | "card";
 }
 
 function parseJsonResponse(content: string): IntentResult {
@@ -177,6 +196,28 @@ function mapToIntent(result: IntentResult): Intent {
     case "small_talk":
       return { type: "small_talk" };
 
+    case "order_confirm":
+      return { type: "order_confirm" };
+
+    case "delivery_choice":
+      return {
+        type: "delivery_choice",
+        deliveryType: validateDeliveryType(result.deliveryType),
+        address: result.address,
+      };
+
+    case "payment_choice":
+      return {
+        type: "payment_choice",
+        paymentMethod: validatePaymentMethod(result.paymentMethod),
+      };
+
+    case "address_provided":
+      return {
+        type: "address_provided",
+        address: result.address ?? "",
+      };
+
     default:
       return { type: "unknown" };
   }
@@ -187,4 +228,18 @@ function validateOrderAction(action: string | undefined): "add" | "remove" | "ch
     return action;
   }
   return "add";
+}
+
+function validateDeliveryType(deliveryType: string | undefined): "pickup" | "delivery" {
+  if (deliveryType === "pickup" || deliveryType === "delivery") {
+    return deliveryType;
+  }
+  return "pickup";
+}
+
+function validatePaymentMethod(paymentMethod: string | undefined): "cash" | "card" {
+  if (paymentMethod === "cash" || paymentMethod === "card") {
+    return paymentMethod;
+  }
+  return "cash";
 }

@@ -84,6 +84,30 @@ export interface SmallTalkIntent extends BaseIntent {
   type: "small_talk";
 }
 
+// Intent: "That's all", "I'm done", "Ready to order", "Eso es todo"
+export interface OrderConfirmIntent extends BaseIntent {
+  type: "order_confirm";
+}
+
+// Intent: "Pickup", "Delivery to [address]", "Recoger", "Entrega"
+export interface DeliveryChoiceIntent extends BaseIntent {
+  type: "delivery_choice";
+  deliveryType: "pickup" | "delivery";
+  address?: string;
+}
+
+// Intent: "Cash", "Card", "Efectivo", "Tarjeta"
+export interface PaymentChoiceIntent extends BaseIntent {
+  type: "payment_choice";
+  paymentMethod: "cash" | "card";
+}
+
+// Intent: User provides an address when asked (e.g., "123 Main St")
+export interface AddressProvidedIntent extends BaseIntent {
+  type: "address_provided";
+  address: string;
+}
+
 export interface UnknownIntent extends BaseIntent {
   type: "unknown";
 }
@@ -96,6 +120,10 @@ export type Intent =
   | BusinessQuestionIntent
   | EscalationRequestIntent
   | SmallTalkIntent
+  | OrderConfirmIntent
+  | DeliveryChoiceIntent
+  | PaymentChoiceIntent
+  | AddressProvidedIntent
   | UnknownIntent;
 
 export type IntentType = Intent["type"];
@@ -114,6 +142,9 @@ export interface SerializedIntent {
   action?: string;
   item?: string;
   topic?: string;
+  deliveryType?: "pickup" | "delivery";
+  address?: string;
+  paymentMethod?: "cash" | "card";
 }
 
 export function serializeIntent(intent: Intent): SerializedIntent {
@@ -128,6 +159,12 @@ export function serializeIntent(intent: Intent): SerializedIntent {
       return { ...base, action: intent.action, item: intent.item };
     case "business_question":
       return { ...base, topic: intent.topic };
+    case "delivery_choice":
+      return { ...base, deliveryType: intent.deliveryType, address: intent.address };
+    case "payment_choice":
+      return { ...base, paymentMethod: intent.paymentMethod };
+    case "address_provided":
+      return { ...base, address: intent.address };
     default:
       return base;
   }
@@ -153,6 +190,24 @@ export function parseIntent(serialized: SerializedIntent): Intent {
       return { type: "escalation_request" };
     case "small_talk":
       return { type: "small_talk" };
+    case "order_confirm":
+      return { type: "order_confirm" };
+    case "delivery_choice":
+      return {
+        type: "delivery_choice",
+        deliveryType: serialized.deliveryType ?? "pickup",
+        address: serialized.address,
+      };
+    case "payment_choice":
+      return {
+        type: "payment_choice",
+        paymentMethod: serialized.paymentMethod ?? "cash",
+      };
+    case "address_provided":
+      return {
+        type: "address_provided",
+        address: serialized.address ?? "",
+      };
     default:
       return { type: "unknown" };
   }

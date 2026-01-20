@@ -15,6 +15,23 @@
 
 ---
 
+## 2026-01-20 16:45 - S15: Add order status action handlers to detail page
+
+**What was implemented:**
+- Wired up Mark Preparing button to orders.markPreparing mutation
+- Wired up Mark Ready button to orders.markReady mutation
+- Wired up Mark Delivered button to orders.markDelivered mutation
+- Wired up Cancel Order button to orders.cancel mutation with window.confirm dialog
+- Toast notifications on success and error using sonner
+- Loading state with isProcessing flag and Loader2 spinner
+- Buttons disabled while processing
+- Query invalidation after successful mutation
+
+**Files changed:**
+- apps/web/src/routes/dashboard/orders/$orderId.tsx (added ~90 lines of handlers)
+
+---
+
 ## 2026-01-20 16:38 - S14: Create order detail dashboard page
 
 **What was implemented:**

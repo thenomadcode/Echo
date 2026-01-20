@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/dashboard/orders/")({
+export const Route = createFileRoute("/orders")({
   component: RouteComponent,
 });
 
@@ -138,7 +138,7 @@ function OrdersPage({ businessId }: OrdersPageProps) {
   };
 
   const handleRowClick = (orderId: Id<"orders">) => {
-    window.location.href = `/dashboard/orders/${orderId}`;
+    window.location.href = `/orders/${orderId}`;
   };
 
   return (

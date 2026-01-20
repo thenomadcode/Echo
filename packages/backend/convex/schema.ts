@@ -123,6 +123,12 @@ export default defineSchema({
         total: v.optional(v.number()),
       })
     ),
+    pendingDelivery: v.optional(
+      v.object({
+        type: v.union(v.literal("pickup"), v.literal("delivery")),
+        address: v.optional(v.string()),
+      })
+    ),
     escalationReason: v.optional(v.string()),
 
     createdAt: v.number(),

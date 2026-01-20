@@ -1,8 +1,24 @@
 import OpenAI from "openai";
 import type { AIProvider, CompleteParams, CompleteResult, Message } from "../types";
+import type { Tool, ToolCall } from "../tools";
 
 const DEFAULT_MODEL = "gpt-4o-mini";
 const DEFAULT_MAX_TOKENS = 4096;
+
+export interface CompleteWithToolsParams {
+  messages: Message[];
+  systemPrompt: string;
+  tools: Tool[];
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface CompleteWithToolsResult {
+  content: string | null;
+  toolCalls: ToolCall[];
+  tokensUsed: number;
+  model: string;
+}
 
 function getConfiguredModel(): string {
   return process.env.AI_MODEL || DEFAULT_MODEL;
@@ -21,6 +37,15 @@ function getConfiguredMaxTokens(): number {
 
 function usesResponsesAPI(model: string): boolean {
   return model.startsWith("gpt-5") || model.startsWith("o3") || model.startsWith("o4");
+}
+
+function usesMaxCompletionTokens(model: string): boolean {
+  return model.startsWith("o1") || model.startsWith("o3") || model.startsWith("o4") || 
+         model.startsWith("gpt-4o") || model.startsWith("gpt-5");
+}
+
+function supportsTemperature(model: string): boolean {
+  return !model.startsWith("o1") && !model.startsWith("o3") && !model.startsWith("o4") && !model.startsWith("gpt-5");
 }
 
 export class OpenAIProvider implements AIProvider {
@@ -99,11 +124,15 @@ export class OpenAIProvider implements AIProvider {
       })),
     ];
 
+    const tempParam = supportsTemperature(this.model)
+      ? { temperature: temperature ?? 0.7 }
+      : {};
+
     const requestParams: OpenAI.Chat.ChatCompletionCreateParams = {
       model: this.model,
       messages: chatMessages,
-      temperature: temperature ?? 0.7,
       max_tokens: tokenLimit,
+      ...tempParam,
     };
 
     if (responseFormat === "json") {
@@ -116,6 +145,62 @@ export class OpenAIProvider implements AIProvider {
 
     return {
       content,
+      tokensUsed: response.usage?.total_tokens ?? 0,
+      model: response.model,
+    };
+  }
+
+  async completeWithTools(params: CompleteWithToolsParams): Promise<CompleteWithToolsResult> {
+    const { messages, systemPrompt, tools, temperature, maxTokens } = params;
+    const tokenLimit = maxTokens ?? getConfiguredMaxTokens();
+
+    const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      ...messages.map((msg: Message) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      })),
+    ];
+
+    const tokenParam = usesMaxCompletionTokens(this.model)
+      ? { max_completion_tokens: tokenLimit }
+      : { max_tokens: tokenLimit };
+
+    const tempParam = supportsTemperature(this.model)
+      ? { temperature: temperature ?? 0.7 }
+      : {};
+
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: chatMessages,
+      tools: tools,
+      tool_choice: "auto",
+      ...tempParam,
+      ...tokenParam,
+    });
+
+    const message = response.choices[0]?.message;
+    const content = message?.content ?? null;
+    const toolCalls: ToolCall[] = [];
+
+    if (message?.tool_calls) {
+      for (const tc of message.tool_calls) {
+        if (tc.type === "function") {
+          try {
+            toolCalls.push({
+              name: tc.function.name,
+              arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
+            });
+          } catch {
+            console.error("Failed to parse tool call arguments:", tc.function.arguments);
+          }
+        }
+      }
+    }
+
+    return {
+      content,
+      toolCalls,
       tokensUsed: response.usage?.total_tokens ?? 0,
       model: response.model,
     };

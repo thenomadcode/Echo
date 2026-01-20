@@ -584,8 +584,8 @@ export const generatePaymentLink = action({
     const params: Record<string, string> = {
       mode: "payment",
       [`metadata[orderId]`]: args.orderId,
-      success_url: `${baseUrl}/dashboard/orders/${args.orderId}?payment=success`,
-      cancel_url: `${baseUrl}/dashboard/orders/${args.orderId}?payment=cancelled`,
+      success_url: `${baseUrl}/orders/${args.orderId}?payment=success`,
+      cancel_url: `${baseUrl}/orders/${args.orderId}?payment=cancelled`,
     };
 
     order.items.forEach((item: OrderItem, idx: number) => {

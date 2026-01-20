@@ -281,7 +281,7 @@
       "id": "S15",
       "title": "Add order status action handlers to detail page",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Wire up Mark Preparing button to orders.markPreparing mutation",

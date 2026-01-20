@@ -4,7 +4,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery, useAction } from "convex/react";
 import { useState, useRef, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, Cpu, Brain } from "lucide-react";
 
 import SignInForm from "@/components/sign-in-form";
 import { Button } from "@/components/ui/button";
@@ -103,17 +103,22 @@ interface Message {
   content: string;
   intent?: string;
   language?: string;
+  toolsUsed?: string[];
 }
+
+type ProcessorMode = "intent" | "agent";
 
 function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"businesses">; businessName: string; onBack?: () => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<Id<"conversations"> | null>(null);
+  const [processorMode, setProcessorMode] = useState<ProcessorMode>("agent");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const createConversation = useMutation(api.conversations.create);
   const processMessage = useAction(api.ai.process.processMessage);
+  const processWithAgent = useAction(api.ai.agent.processWithAgent);
   const storeCustomerMessage = useMutation(api.conversations.addMessage);
 
   useEffect(() => {
@@ -147,20 +152,36 @@ function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"busi
         sender: "customer",
       });
 
-      const result = await processMessage({
-        conversationId: activeConversationId,
-        message: userMessage,
-      });
+      if (processorMode === "agent") {
+        const result = await processWithAgent({
+          conversationId: activeConversationId,
+          message: userMessage,
+        });
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: result.response,
-          intent: result.intent.type,
-          language: result.detectedLanguage,
-        },
-      ]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: result.response,
+            toolsUsed: result.toolsUsed,
+          },
+        ]);
+      } else {
+        const result = await processMessage({
+          conversationId: activeConversationId,
+          message: userMessage,
+        });
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: result.response,
+            intent: result.intent.type,
+            language: result.detectedLanguage,
+          },
+        ]);
+      }
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -190,7 +211,29 @@ function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"busi
                 Testing AI for: <span className="font-medium">{businessName}</span>
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <div className="flex border rounded-md">
+                <Button
+                  variant={processorMode === "agent" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setProcessorMode("agent")}
+                  className="rounded-r-none"
+                  title="Agent mode with tools"
+                >
+                  <Brain className="h-4 w-4 mr-1" />
+                  Agent
+                </Button>
+                <Button
+                  variant={processorMode === "intent" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setProcessorMode("intent")}
+                  className="rounded-l-none"
+                  title="Intent-based mode"
+                >
+                  <Cpu className="h-4 w-4 mr-1" />
+                  Intent
+                </Button>
+              </div>
               {onBack && (
                 <Button variant="ghost" size="sm" onClick={onBack}>
                   Change Business
@@ -214,6 +257,29 @@ function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"busi
                 <li>"I want to order a cappuccino"</li>
                 <li>"I want to talk to a person" (escalation)</li>
               </ul>
+              <p className="text-sm mt-4 font-medium">Checkout Flow (Pickup):</p>
+              <ol className="text-sm mt-2 space-y-1 text-left max-w-xs mx-auto">
+                <li>1. "I want 2 lattes and a croissant"</li>
+                <li>2. "That's all"</li>
+                <li>3. "Pickup"</li>
+                <li>4. "Cash"</li>
+              </ol>
+              <p className="text-sm mt-4 font-medium">Checkout Flow (Delivery):</p>
+              <ol className="text-sm mt-2 space-y-1 text-left max-w-xs mx-auto">
+                <li>1. "I want a cappuccino"</li>
+                <li>2. "That's all"</li>
+                <li>3. "Delivery"</li>
+                <li>4. "123 Main Street, Apt 4B"</li>
+                <li>5. "Card"</li>
+              </ol>
+              <p className="text-sm mt-4 font-medium">Modify During Checkout:</p>
+              <ol className="text-sm mt-2 space-y-1 text-left max-w-xs mx-auto">
+                <li>1. "I want a latte"</li>
+                <li>2. "That's all"</li>
+                <li>3. "Delivery"</li>
+                <li>4. "Add a croissant" (goes back to ordering)</li>
+                <li>5. "That's all" → continue checkout</li>
+              </ol>
             </div>
           )}
           {messages.map((msg, i) => (
@@ -232,6 +298,11 @@ function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"busi
                 {msg.intent && (
                   <p className="text-xs mt-1 opacity-70">
                     Intent: {msg.intent} | Lang: {msg.language}
+                  </p>
+                )}
+                {msg.toolsUsed && msg.toolsUsed.length > 0 && (
+                  <p className="text-xs mt-1 opacity-70">
+                    Tools: {msg.toolsUsed.join(", ")}
                   </p>
                 )}
               </div>
