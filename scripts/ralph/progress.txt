@@ -17,6 +17,36 @@
 
 ---
 
+## 2026-01-20 22:35 - S17: Add desktop split-view layout for conversations
+
+**What was implemented:**
+- Updated conversations.tsx with split-view layout for desktop (lg: >= 1024px)
+- Added validateSearch for URL param type safety
+- Left panel: fixed width (400px), scrollable conversation list
+- Right panel: conversation detail with messages, action buttons, input
+- Desktop: clicking conversation updates URL param without full page nav
+- Mobile: clicking navigates to full-screen detail page
+- Selected conversation highlighted with bg-muted
+- Empty state placeholder when no conversation selected
+- ConversationDetail inline component with:
+  - Customer header + StatusBadge
+  - Escalation banner
+  - Related order card
+  - Messages with MessageBubble
+  - Action buttons (Take Over, Hand Back, Close, Reopen)
+  - MessageInput (disabled unless assigned)
+
+**Files changed:**
+- apps/web/src/routes/conversations.tsx (+300 lines, restructured)
+- apps/web/src/routeTree.gen.ts (updated)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S17 - Add desktop split-view layout for conversations (commit 4c7ea10)
+
+---
+
 ## 2026-01-20 22:32 - S16: Create notification bell UI component
 
 **What was implemented:**

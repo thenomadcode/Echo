@@ -206,7 +206,7 @@ function ConversationsPage({ businessId }: ConversationsPageProps) {
                           type="button"
                           onClick={() => handleConversationClick(conversation._id)}
                           className={cn(
-                            "w-full text-left rounded-lg p-3 transition-colors hover:bg-muted/50",
+                            "w-full text-left rounded-lg p-3 min-h-[72px] transition-colors hover:bg-muted/50",
                             selectedConversationId === conversation._id && "bg-muted",
                             conversation.status === "escalated" && "border-l-2 border-l-red-500"
                           )}

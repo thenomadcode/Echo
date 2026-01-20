@@ -68,7 +68,7 @@ export function MessageInput({
         }
         disabled={isDisabled}
         className={cn(
-          "flex-1",
+          "flex-1 h-11",
           disabled && "cursor-not-allowed opacity-60"
         )}
       />
@@ -76,9 +76,9 @@ export function MessageInput({
         onClick={handleSend}
         disabled={!canSend}
         size="icon"
-        className="shrink-0"
+        className="shrink-0 h-11 w-11"
       >
-        <Send className="size-4" />
+        <Send className="size-5" />
       </Button>
     </div>
   );

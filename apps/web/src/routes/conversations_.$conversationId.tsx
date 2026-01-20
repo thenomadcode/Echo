@@ -277,12 +277,12 @@ function ConversationDetailContent() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Messages</CardTitle>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {!isAssignedToSomeone && !isClosed && (
                   <Button
-                    size="sm"
                     onClick={handleTakeOver}
                     disabled={isProcessing}
+                    className="min-h-[44px] lg:min-h-0 lg:h-8"
                   >
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Take Over
@@ -290,10 +290,10 @@ function ConversationDetailContent() {
                 )}
                 {isAssignedToSomeone && !isClosed && (
                   <Button
-                    size="sm"
                     variant="outline"
                     onClick={handleHandBack}
                     disabled={isProcessing}
+                    className="min-h-[44px] lg:min-h-0 lg:h-8"
                   >
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Hand Back to AI
@@ -301,10 +301,10 @@ function ConversationDetailContent() {
                 )}
                 {!isClosed && (
                   <Button
-                    size="sm"
                     variant="destructive"
                     onClick={handleClose}
                     disabled={isProcessing}
+                    className="min-h-[44px] lg:min-h-0 lg:h-8"
                   >
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Close
@@ -312,9 +312,9 @@ function ConversationDetailContent() {
                 )}
                 {isClosed && (
                   <Button
-                    size="sm"
                     onClick={handleReopen}
                     disabled={isProcessing}
+                    className="min-h-[44px] lg:min-h-0 lg:h-8"
                   >
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Reopen

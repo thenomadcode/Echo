@@ -354,7 +354,7 @@
       "id": "S17",
       "title": "Add desktop split-view layout for conversations",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update /dashboard/conversations route for split-view on desktop",
