@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
-import type { DeliveryStatus } from "./types";
+
 
 export const processIncomingMessage = internalMutation({
   args: {

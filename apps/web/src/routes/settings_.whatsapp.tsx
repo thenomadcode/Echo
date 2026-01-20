@@ -73,9 +73,11 @@ function WhatsAppSettingsForm({ businessId }: { businessId: Id<"businesses"> }) 
   const [isTesting, setIsTesting] = useState(false);
   const [webhookCopied, setWebhookCopied] = useState(false);
 
-  const webhookUrl = typeof window !== "undefined" 
-    ? `${window.location.origin}/api/webhook/whatsapp`
-    : "/api/webhook/whatsapp";
+  // Webhook URL should point to Convex HTTP endpoint, not the web app
+  const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL;
+  const webhookUrl = convexSiteUrl 
+    ? `${convexSiteUrl}/webhook/whatsapp`
+    : "https://your-deployment.convex.site/webhook/whatsapp";
 
   const form = useForm({
     defaultValues: {
