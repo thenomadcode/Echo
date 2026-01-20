@@ -934,3 +934,40 @@
 
 ---
 
+## 2026-01-20 12:08 - S10: Handle order intent state transitions
+
+**What was implemented:**
+- Extended updateConversation to accept pendingOrder and escalationReason
+- Added pendingOrderItemValidator and pendingOrderValidator for type-safe order handling
+- handleOrderIntent() processes order_start and order_modify intents:
+  - order_start: creates new pendingOrder with matched products
+  - order_modify add: adds item to order or increments quantity if exists
+  - order_modify remove: removes item from order with graceful message if not found
+  - order_modify change_quantity: placeholder for quantity changes
+- findMatchingProduct() matches product queries to catalog:
+  - Exact name match (case-insensitive)
+  - Partial name match (product name contains query)
+  - Reverse partial match (query contains product name)
+- calculateOrderTotal() computes order total from matched prices
+- determineNewState() updated: order_modify transitions idle->ordering
+- Products matched to orders include productId and price for totals
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (expanded from 271 to 395 lines)
+
+**Learnings for future iterations:**
+- PendingOrder items need productId to track resolved product matches
+- Three-tier product matching (exact, partial, reverse) handles variations
+- Order total stored in cents for consistency with product prices
+- Return message from handleOrderIntent for graceful "item not in order" responses
+- State transitions should handle order_modify from idle state gracefully
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors
+- bun run check-types passes
+- Committed as: feat: S10 - Handle order intent state transitions
+- Updated PRD: S10 passes: true
+
+---
+

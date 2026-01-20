@@ -159,7 +159,7 @@
       "id": "S10",
       "title": "Handle order intent state transitions",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update processMessage to handle order_start intent",

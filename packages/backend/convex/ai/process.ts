@@ -56,11 +56,25 @@ export const loadContext = internalQuery({
   },
 });
 
+const pendingOrderItemValidator = v.object({
+  productQuery: v.string(),
+  quantity: v.number(),
+  productId: v.optional(v.id("products")),
+  price: v.optional(v.number()),
+});
+
+const pendingOrderValidator = v.object({
+  items: v.array(pendingOrderItemValidator),
+  total: v.optional(v.number()),
+});
+
 export const updateConversation = internalMutation({
   args: {
     conversationId: v.id("conversations"),
     detectedLanguage: v.optional(v.string()),
     state: v.optional(v.string()),
+    pendingOrder: v.optional(pendingOrderValidator),
+    escalationReason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const updates: Record<string, unknown> = {
@@ -72,6 +86,12 @@ export const updateConversation = internalMutation({
     }
     if (args.state !== undefined) {
       updates.state = args.state;
+    }
+    if (args.pendingOrder !== undefined) {
+      updates.pendingOrder = args.pendingOrder;
+    }
+    if (args.escalationReason !== undefined) {
+      updates.escalationReason = args.escalationReason;
     }
 
     await ctx.db.patch(args.conversationId, updates);
@@ -215,10 +235,13 @@ export const processMessage = action({
 
     const newState = determineNewState(intent, conversation.state ?? "idle");
 
-    if (newState !== conversation.state) {
+    const orderUpdate = handleOrderIntent(intent, conversation.pendingOrder, products);
+
+    if (newState !== conversation.state || orderUpdate.pendingOrder !== undefined) {
       await ctx.runMutation(internal.ai.process.updateConversation, {
         conversationId: args.conversationId,
         state: newState,
+        pendingOrder: orderUpdate.pendingOrder,
       });
     }
 
@@ -257,6 +280,8 @@ function determineNewState(
   switch (intent.type) {
     case "order_start":
       return "ordering";
+    case "order_modify":
+      return currentState === "idle" ? "ordering" : currentState;
     case "product_question":
       if (currentState === "idle") {
         return "browsing";
@@ -267,4 +292,138 @@ function determineNewState(
     default:
       return currentState;
   }
+}
+
+interface PendingOrderItem {
+  productQuery: string;
+  quantity: number;
+  productId?: Id<"products">;
+  price?: number;
+}
+
+interface PendingOrder {
+  items: PendingOrderItem[];
+  total?: number;
+}
+
+interface OrderUpdateResult {
+  pendingOrder?: PendingOrder;
+  message?: string;
+}
+
+function handleOrderIntent(
+  intent: Intent,
+  currentOrder: PendingOrder | undefined,
+  products: Doc<"products">[]
+): OrderUpdateResult {
+  if (intent.type === "order_start") {
+    const newItems = intent.items.map((item) => {
+      const matchedProduct = findMatchingProduct(item.productQuery, products);
+      return {
+        productQuery: item.productQuery,
+        quantity: item.quantity,
+        productId: matchedProduct?._id,
+        price: matchedProduct?.price,
+      };
+    });
+
+    const total = calculateOrderTotal(newItems);
+
+    return {
+      pendingOrder: {
+        items: newItems,
+        total,
+      },
+    };
+  }
+
+  if (intent.type === "order_modify") {
+    const items = currentOrder?.items ?? [];
+
+    if (intent.action === "add") {
+      const matchedProduct = findMatchingProduct(intent.item, products);
+      const existingIndex = items.findIndex(
+        (i) => i.productQuery.toLowerCase() === intent.item.toLowerCase()
+      );
+
+      let newItems: PendingOrderItem[];
+      if (existingIndex >= 0) {
+        newItems = items.map((item, idx) =>
+          idx === existingIndex
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        newItems = [
+          ...items,
+          {
+            productQuery: intent.item,
+            quantity: 1,
+            productId: matchedProduct?._id,
+            price: matchedProduct?.price,
+          },
+        ];
+      }
+
+      return {
+        pendingOrder: {
+          items: newItems,
+          total: calculateOrderTotal(newItems),
+        },
+      };
+    }
+
+    if (intent.action === "remove") {
+      const existingIndex = items.findIndex(
+        (i) => i.productQuery.toLowerCase().includes(intent.item.toLowerCase())
+      );
+
+      if (existingIndex === -1) {
+        return { message: `"${intent.item}" is not in your order.` };
+      }
+
+      const newItems = items.filter((_, idx) => idx !== existingIndex);
+      return {
+        pendingOrder: {
+          items: newItems,
+          total: calculateOrderTotal(newItems),
+        },
+      };
+    }
+
+    if (intent.action === "change_quantity") {
+      return { pendingOrder: currentOrder };
+    }
+  }
+
+  return {};
+}
+
+function findMatchingProduct(
+  query: string,
+  products: Doc<"products">[]
+): Doc<"products"> | undefined {
+  const normalizedQuery = query.toLowerCase();
+
+  const exactMatch = products.find(
+    (p) => p.available && p.name.toLowerCase() === normalizedQuery
+  );
+  if (exactMatch) return exactMatch;
+
+  const partialMatch = products.find(
+    (p) => p.available && p.name.toLowerCase().includes(normalizedQuery)
+  );
+  if (partialMatch) return partialMatch;
+
+  const reverseMatch = products.find(
+    (p) => p.available && normalizedQuery.includes(p.name.toLowerCase())
+  );
+  return reverseMatch;
+}
+
+function calculateOrderTotal(items: PendingOrderItem[]): number {
+  return items.reduce((sum, item) => {
+    const price = item.price ?? 0;
+    return sum + price * item.quantity;
+  }, 0);
 }
