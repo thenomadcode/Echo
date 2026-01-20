@@ -17,6 +17,33 @@
 
 ---
 
+## 2026-01-20 22:10 - S07: Create send message as human mutation
+
+**What was implemented:**
+- Created packages/backend/convex/messages.ts with sendAsHuman mutation
+- Validates conversation exists and is assigned to current user
+- Saves message to messages table with sender: "human"
+- Uses ctx.scheduler.runAfter to trigger async WhatsApp send
+- Created sendToWhatsApp internalMutation for Twilio API integration
+- Handles failures gracefully: stores deliveryStatus "failed" with errorMessage
+- On success: stores externalId (Twilio SID) and deliveryStatus "sent"
+
+**Files changed:**
+- packages/backend/convex/messages.ts (created, 115 lines)
+
+**Learnings:**
+- Use ctx.scheduler.runAfter(0, ...) for async operations to avoid blocking mutation
+- internalMutation can do external API calls (fetch) in Convex
+- Store both success and failure states in message for UI feedback
+
+**Verification:**
+- Convex dev compiles successfully
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S07 - Create send message as human mutation (commit 89ad42c)
+
+---
+
 ## 2026-01-20 22:08 - S06: Create close and reopen mutations
 
 **What was implemented:**

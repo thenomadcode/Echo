@@ -124,7 +124,7 @@
       "id": "S07",
       "title": "Create send message as human mutation",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create messages.sendAsHuman mutation in packages/backend/convex/messages.ts",
