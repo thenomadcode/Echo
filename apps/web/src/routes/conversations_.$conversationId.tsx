@@ -128,10 +128,13 @@ function ConversationDetailContent() {
 
   const takeOver = useMutation(api.conversations.takeOver);
   const handBack = useMutation(api.conversations.handBack);
+  const closeConversation = useMutation(api.conversations.close);
+  const reopenConversation = useMutation(api.conversations.reopen);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const isAssignedToSomeone = !!conversation.assignedTo;
-  const canSendMessage = isAssignedToSomeone;
+  const isClosed = conversation.status === "closed";
+  const canSendMessage = isAssignedToSomeone && !isClosed;
 
   const handleTakeOver = async () => {
     setIsProcessing(true);
@@ -155,6 +158,30 @@ function ConversationDetailContent() {
       toast.success("Conversation handed back to AI");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to hand back");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleClose = async () => {
+    setIsProcessing(true);
+    try {
+      await closeConversation({ conversationId: conversationId as Id<"conversations"> });
+      toast.success("Conversation closed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to close conversation");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    setIsProcessing(true);
+    try {
+      await reopenConversation({ conversationId: conversationId as Id<"conversations"> });
+      toast.success("Conversation reopened");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reopen conversation");
     } finally {
       setIsProcessing(false);
     }
@@ -244,7 +271,7 @@ function ConversationDetailContent() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Messages</CardTitle>
               <div className="flex gap-2">
-                {!isAssignedToSomeone && conversation.status !== "closed" && (
+                {!isAssignedToSomeone && !isClosed && (
                   <Button
                     size="sm"
                     onClick={handleTakeOver}
@@ -254,7 +281,7 @@ function ConversationDetailContent() {
                     Take Over
                   </Button>
                 )}
-                {isAssignedToSomeone && (
+                {isAssignedToSomeone && !isClosed && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -263,6 +290,27 @@ function ConversationDetailContent() {
                   >
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Hand Back to AI
+                  </Button>
+                )}
+                {!isClosed && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleClose}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Close
+                  </Button>
+                )}
+                {isClosed && (
+                  <Button
+                    size="sm"
+                    onClick={handleReopen}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Reopen
                   </Button>
                 )}
               </div>

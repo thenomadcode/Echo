@@ -262,7 +262,7 @@
       "id": "S13",
       "title": "Create take over and hand back UI buttons",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add action buttons section to conversation detail page",
