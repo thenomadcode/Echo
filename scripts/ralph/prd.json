@@ -174,7 +174,7 @@
       "id": "S10",
       "title": "Add payment environment variables",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update packages/env/src/server.ts with payment provider env vars",

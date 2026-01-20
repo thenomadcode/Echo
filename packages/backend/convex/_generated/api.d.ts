@@ -30,6 +30,8 @@ import type * as integrations_whatsapp_twilio from "../integrations/whatsapp/twi
 import type * as integrations_whatsapp_types from "../integrations/whatsapp/types.js";
 import type * as integrations_whatsapp_webhook from "../integrations/whatsapp/webhook.js";
 import type * as integrations_whatsapp_window from "../integrations/whatsapp/window.js";
+import type * as lib_orderNumber from "../lib/orderNumber.js";
+import type * as orders from "../orders.js";
 import type * as privateData from "../privateData.js";
 import type * as products from "../products.js";
 
@@ -62,6 +64,8 @@ declare const fullApi: ApiFromModules<{
   "integrations/whatsapp/types": typeof integrations_whatsapp_types;
   "integrations/whatsapp/webhook": typeof integrations_whatsapp_webhook;
   "integrations/whatsapp/window": typeof integrations_whatsapp_window;
+  "lib/orderNumber": typeof lib_orderNumber;
+  orders: typeof orders;
   privateData: typeof privateData;
   products: typeof products;
 }>;

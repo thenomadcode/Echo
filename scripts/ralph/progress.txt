@@ -15,6 +15,19 @@
 
 ---
 
+## 2026-01-20 16:05 - S10: Add payment environment variables
+
+**What was implemented:**
+- Added STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY to packages/env/src/server.ts
+- All Stripe env vars are optional (z.string().optional())
+- Created packages/backend/.env.local.example with placeholder values and comment
+
+**Files changed:**
+- packages/env/src/server.ts (added 3 lines)
+- packages/backend/.env.local.example (created)
+
+---
+
 ## 2026-01-20 16:02 - S09: Create order queries
 
 **What was implemented:**
