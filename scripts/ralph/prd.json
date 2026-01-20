@@ -232,7 +232,7 @@
       "id": "S13",
       "title": "Create orders list dashboard page",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/dashboard/orders/index.tsx",

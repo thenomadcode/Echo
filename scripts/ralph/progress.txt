@@ -15,6 +15,25 @@
 
 ---
 
+## 2026-01-20 16:35 - S13: Create orders list dashboard page
+
+**What was implemented:**
+- Created apps/web/src/routes/dashboard/orders/index.tsx
+- Protected route using Authenticated/Unauthenticated pattern
+- Fetches orders using convexQuery with orders.listByBusiness
+- Table with columns: Order #, Status, Items Count, Total, Date
+- Status badges with color coding per spec
+- Status filter dropdown (All + 7 statuses)
+- Currency formatting (cents to dollars with Intl.NumberFormat)
+- Row click navigates to order detail page
+- Empty state with "No orders yet" message
+
+**Files changed:**
+- apps/web/src/routes/dashboard/orders/index.tsx (created)
+- apps/web/src/routeTree.gen.ts (updated via router-cli)
+
+---
+
 ## 2026-01-20 16:28 - S12: Create Stripe webhook handler
 
 **What was implemented:**
