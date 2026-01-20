@@ -254,4 +254,13 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_number", ["orderNumber"])
     .index("by_payment_session", ["stripeSessionId"]),
+
+  // Conversation Dashboard notifications
+  notifications: defineTable({
+    userId: v.id("users"),
+    type: v.union(v.literal("escalation"), v.literal("new_order")),
+    conversationId: v.id("conversations"),
+    read: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId", "read", "createdAt"]),
 });

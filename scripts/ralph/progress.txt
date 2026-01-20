@@ -12,6 +12,29 @@
 - Uniqueness validation: query by index in loop, append suffix if exists
 - Queries return null/empty arrays for unauthorized access; mutations throw errors
 - Lib utilities: create under `convex/lib/` using `GenericDatabaseReader<DataModel>` for db access
+- Dashboard conversation status: active | escalated | closed (separate from AI state machine)
+- Human assignment: assignedTo field with v.id("users"), null means AI handling
+
+---
+
+## 2026-01-20 21:55 - S01: Update conversations schema for dashboard features
+
+**What was implemented:**
+- Updated conversations table status field from `v.optional(v.string())` to `v.optional(v.union(v.literal("active"), v.literal("escalated"), v.literal("closed")))`
+- Added `assignedTo: v.optional(v.id("users"))` - null means AI handling, user ID means human assigned
+- Added `lastReadAt: v.optional(v.number())` - for unread message indicator
+- Added `closedAt: v.optional(v.number())` - timestamp when conversation was closed
+- Added `by_business_status` index on [businessId, status] for efficient filtered queries
+- Added `by_status` index on [status] for global status filtering
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+23 lines, -2 lines)
+
+**Verification:**
+- Convex dev confirmed schema compiles: "Added table indexes: conversations.by_business_status, conversations.by_status"
+- LSP diagnostics: no errors on schema.ts
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S01 - Update conversations schema for dashboard features (commit 3789be5)
 
 ---
 
