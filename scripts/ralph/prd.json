@@ -138,7 +138,7 @@
       "id": "S09",
       "title": "Create main processMessage orchestrator",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create packages/backend/convex/ai/process.ts",

@@ -893,3 +893,44 @@
 
 ---
 
+## 2026-01-20 12:05 - S09: Create main processMessage orchestrator
+
+**What was implemented:**
+- Created packages/backend/convex/ai/process.ts with processMessage action
+- processMessage orchestrates the full AI conversation flow:
+  1. loadContext internalQuery: loads conversation, business, products, messages
+  2. detectLanguage: called on first message or when language not set
+  3. classifyIntent: classifies customer intent
+  4. detectEscalation: checks if human handoff needed
+  5. generateResponse: generates AI response based on context
+  6. State update: determines new conversation state based on intent
+  7. Logging: stores response message and logs to aiLogs table
+- updateConversation internalMutation: updates language and state
+- logAIInteraction internalMutation: logs AI interaction metrics
+- storeMessage internalMutation: stores AI response message
+- determineNewState(): maps intents to state transitions (order_start->ordering, product_question->browsing)
+- Returns ProcessMessageResult matching AIResponse type
+- Uses api.ai.* for public actions (language, intent, response)
+- Uses internal.ai.process.* for internal queries/mutations
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (created, 260 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Public actions called with api.module.function, internal functions with internal.module.function
+- Convex codegen must run to update _generated/api.d.ts when adding new modules
+- Actions can call other actions via ctx.runAction(api.module.action, args)
+- InternalQuery/Mutation used for database operations within actions
+- satisfies operator validates return type matches interface
+- Type casting needed for conversation state from optional to union type
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on process.ts
+- bun run check-types passes
+- Committed as: feat: S09 - Create main processMessage orchestrator
+- Updated PRD: S09 passes: true
+
+---
+
