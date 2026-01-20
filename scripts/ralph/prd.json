@@ -1,138 +1,230 @@
 {
-  "projectName": "whatsapp-integration",
-  "branchName": "feature/whatsapp-integration",
+  "projectName": "ai-conversation-engine",
+  "branchName": "feature/ai-conversation-engine",
   "userStories": [
     {
       "id": "S01",
-      "title": "Create WhatsApp data model",
+      "title": "Create AI data model and update conversations schema",
       "priority": 1,
       "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
-        "Create whatsappConnections table in schema with fields: businessId (Id<businesses>), provider (string), phoneNumberId (string), phoneNumber (string), credentials (object), verified (boolean), createdAt (number)",
-        "Add index by_business on whatsappConnections [businessId]",
-        "Add index by_phone on whatsappConnections [phoneNumber]",
-        "Update conversations table: add channel (string), channelId (string), lastCustomerMessageAt (number)",
-        "Update messages table: add externalId (string), deliveryStatus (string), mediaUrl (string), mediaType (string)"
+        "Create aiLogs table in packages/backend/convex/schema.ts with fields: conversationId (Id<conversations>), messageId (Id<messages>), intent (object), prompt (string), response (string), model (string), tokensUsed (number), latencyMs (number), createdAt (number)",
+        "Add index by_conversation on aiLogs [conversationId]",
+        "Update conversations table: add state (string: idle|browsing|ordering|confirming|payment|completed|escalated), detectedLanguage (string), pendingOrder (optional object), escalationReason (optional string)",
+        "Run npx convex dev to verify schema compiles without errors"
       ]
     },
     {
       "id": "S02",
-      "title": "Create BSP abstraction layer",
+      "title": "Create AI provider abstraction and types",
       "priority": 2,
       "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/integrations/whatsapp/types.ts with WhatsAppProvider interface",
-        "Interface includes: sendText(to, message), sendImage(to, imageUrl, caption?), sendButtons(to, body, buttons), sendList(to, body, sections), parseWebhook(payload), verifyWebhook(payload, signature) methods",
-        "Define Button type with id and title fields",
-        "Define ListSection type with title and rows fields",
-        "Define MessageResult type with success, messageId, error fields",
-        "Define ParsedMessage type with from, content, timestamp, mediaUrl, mediaType, messageType fields",
-        "Create packages/backend/convex/integrations/whatsapp/twilio.ts with TwilioWhatsAppProvider class implementing WhatsAppProvider interface"
+        "Create packages/backend/convex/ai/types.ts with AIProvider interface including complete(params) method",
+        "Define Message type with role (system|user|assistant) and content (string)",
+        "Define CompleteParams type with messages (Message[]), systemPrompt (string), temperature (optional number), maxTokens (optional number), responseFormat (optional text|json)",
+        "Define Intent union type with all intents: greeting, product_question (with query string), order_start (with items array), order_modify (with action and item), business_question (with topic string), escalation_request, small_talk, unknown",
+        "Define OrderItem type with productQuery (string) and quantity (number)",
+        "Define AIResponse type with response (string), intent (Intent), shouldEscalate (boolean), detectedLanguage (string)",
+        "Export all types for use in other modules"
       ]
     },
     {
       "id": "S03",
-      "title": "Receive customer message via webhook",
+      "title": "Implement OpenAI provider",
       "priority": 3,
       "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create HTTP POST endpoint at /webhook/whatsapp in packages/backend/convex/http.ts",
-        "Create GET endpoint at /webhook/whatsapp for webhook verification (Meta/Twilio requirement)",
-        "Verify webhook signature using WEBHOOK_VERIFY_TOKEN environment variable",
-        "Parse message payload: sender phone, content, timestamp, media URL",
-        "Look up business by incoming phone number using by_phone index on whatsappConnections",
-        "Create whatsapp.processIncomingMessage internal mutation",
-        "Create or find existing conversation for customer using channelId",
-        "Store incoming message in messages table with sender: customer",
-        "Handle message types: text, image, voice, document",
-        "Return 200 OK response within 500ms to avoid webhook timeout"
+        "Create packages/backend/convex/ai/providers/openai.ts",
+        "Implement OpenAIProvider class implementing AIProvider interface",
+        "Use OPENAI_API_KEY from environment variables",
+        "Support gpt-4o-mini as default model",
+        "Implement complete() method that calls OpenAI chat completions API",
+        "Handle JSON response format when responseFormat is json",
+        "Return response content as string",
+        "Handle API errors gracefully with descriptive error messages"
       ]
     },
     {
       "id": "S04",
-      "title": "Send text response to customer",
+      "title": "Create language detection function",
       "priority": 4,
       "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create whatsapp.sendMessage action in packages/backend/convex/integrations/whatsapp/actions.ts",
-        "Accept args: conversationId, content, type (text)",
-        "Load business WhatsApp credentials from whatsappConnections table",
-        "Send plain text message via Twilio WhatsApp API",
-        "Handle rate limits with exponential backoff (max 3 retries)",
-        "Store sent message in messages table with sender: business, externalId from API response",
-        "Set initial deliveryStatus to sent"
+        "Create packages/backend/convex/ai/language.ts",
+        "Create detectLanguage action that takes message string and returns language code (es|pt|en)",
+        "Use lightweight prompt to classify language",
+        "Default to 'en' if detection fails or is ambiguous",
+        "Support Spanish, Portuguese, and English detection",
+        "Return language code within 500ms"
       ]
     },
     {
       "id": "S05",
-      "title": "Send rich messages with buttons and lists",
+      "title": "Implement intent classification function",
       "priority": 5,
-      "passes": true,
-      "ultrawork": false,
+      "passes": false,
+      "ultrawork": true,
       "acceptanceCriteria": [
-        "Extend whatsapp.sendMessage action to support type: buttons, list, image",
-        "For buttons: send interactive button message (up to 3 buttons per WhatsApp limit)",
-        "For list: send list message with sections for product selection",
-        "For image: send image message with imageUrl and optional caption",
-        "Implement fallback to plain text if rich message API call fails",
-        "Store message type and content structure in messages table"
+        "Create packages/backend/convex/ai/intent.ts",
+        "Create classifyIntent action accepting: message (string), conversationHistory (Message[]), productNames (string[])",
+        "Use structured JSON output from AI to extract intent type and entities",
+        "For product_question: extract the product query string",
+        "For order_start/order_modify: extract product name and quantity (default 1)",
+        "For business_question: extract the topic (hours, location, delivery, payment)",
+        "Handle misspellings and variations in product names",
+        "Return typed Intent object matching the Intent union type",
+        "Complete classification within 500ms using gpt-4o-mini"
       ]
     },
     {
       "id": "S06",
-      "title": "Handle WhatsApp 24-hour messaging window",
+      "title": "Create system prompt builder",
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Update lastCustomerMessageAt on conversation when receiving customer message",
-        "Create isWithin24HourWindow helper function checking if lastCustomerMessageAt is within 24 hours",
-        "In sendMessage action: within 24h allow any message type",
-        "After 24h: only allow sending approved message templates",
-        "Create packages/backend/convex/integrations/whatsapp/templates.ts with at least one re-engagement template definition",
-        "Add windowExpiresAt computed field to conversation queries"
+        "Create packages/backend/convex/ai/prompts.ts",
+        "Create buildSystemPrompt function accepting: business info, products list, conversation state, detected language",
+        "Include business name, type, hours, address, delivery info in prompt",
+        "Format products with name, price, description",
+        "Include current conversation state",
+        "Add rules: only mention real products, admit when unsure, offer human help for frustrated customers",
+        "Include configurable AI tone from business settings",
+        "Support language instruction to respond in customer's language"
       ]
     },
     {
       "id": "S07",
-      "title": "Process webhook status updates",
+      "title": "Implement response generation function",
       "priority": 7,
-      "passes": true,
-      "ultrawork": false,
+      "passes": false,
+      "ultrawork": true,
       "acceptanceCriteria": [
-        "Extend /webhook/whatsapp POST handler to detect status update payloads vs message payloads",
-        "Parse status updates: sent, delivered, read, failed",
-        "Create whatsapp.updateMessageStatus internal mutation",
-        "Update message deliveryStatus in database by matching externalId",
-        "Log failed message deliveries with error details for debugging"
+        "Create packages/backend/convex/ai/response.ts",
+        "Create generateResponse action accepting: intent, conversationHistory, businessContext, products, language",
+        "Use system prompt builder to create context-aware prompt",
+        "Generate natural, conversational responses in customer's language",
+        "For product_question: include actual product info from database",
+        "For order_start: confirm items and prices",
+        "For business_question: use configured business info",
+        "For greeting: friendly welcome with offer to help",
+        "For unknown: politely redirect to what AI can help with",
+        "Complete generation within 2s"
       ]
     },
     {
       "id": "S08",
-      "title": "Create WhatsApp connection settings page",
+      "title": "Implement escalation detection function",
       "priority": 8,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create apps/web/src/routes/settings/whatsapp.tsx page",
-        "Display current connection status with visual indicator (Connected: green, Not Connected: red)",
-        "Show step-by-step instructions for BSP setup with link to Twilio WhatsApp docs",
-        "Form with fields: provider dropdown (Twilio selected), Account SID, Auth Token, WhatsApp Phone Number",
-        "Display webhook URL for copy-paste into BSP dashboard configuration",
-        "Create whatsapp.saveCredentials mutation to store encrypted credentials",
-        "Create whatsapp.testConnection action to verify credentials work",
-        "Create whatsapp.getConnectionStatus query for current business",
-        "Test Connection button triggers testConnection with success/error toast feedback",
-        "Show last message received timestamp when connection is verified",
-        "BROWSER TEST: Navigate to /settings/whatsapp, verify page renders",
-        "BROWSER TEST: Connection status indicator is visible (green or red)",
-        "BROWSER TEST: Form renders with provider dropdown and credential fields",
-        "BROWSER TEST: Webhook URL is displayed in a copyable format",
-        "BROWSER TEST: Test Connection button is present and clickable"
+        "Create packages/backend/convex/ai/escalation.ts",
+        "Create detectEscalation function accepting: message, conversationHistory, failureCount",
+        "Return shouldEscalate (boolean) and reason (string)",
+        "Trigger escalation for explicit requests: 'talk to person', 'human help', 'speak to someone'",
+        "Trigger escalation for 'urgent' keyword",
+        "Trigger escalation after 3+ consecutive AI failures (failureCount >= 3)",
+        "Detect frustrated/angry tone using sentiment keywords",
+        "Include escalation reason in response"
+      ]
+    },
+    {
+      "id": "S09",
+      "title": "Create main processMessage orchestrator",
+      "priority": 9,
+      "passes": false,
+      "ultrawork": true,
+      "acceptanceCriteria": [
+        "Create packages/backend/convex/ai/process.ts",
+        "Create processMessage action accepting: conversationId, message",
+        "Load conversation and business context from database",
+        "Load products for the business",
+        "Call detectLanguage on first message, store in conversation",
+        "Call classifyIntent with message and context",
+        "Call detectEscalation to check if human handoff needed",
+        "Call generateResponse with intent and context",
+        "Update conversation state based on intent",
+        "Log to aiLogs table: intent, prompt, response, model, tokens, latency",
+        "Return AIResponse with response text, intent, shouldEscalate, language",
+        "Total processing time under 3s"
+      ]
+    },
+    {
+      "id": "S10",
+      "title": "Handle order intent state transitions",
+      "priority": 10,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Update processMessage to handle order_start intent",
+        "Transition conversation state: idle -> ordering when order starts",
+        "Store pending order items in conversation.pendingOrder",
+        "Handle order_modify intent: add, remove, change quantity",
+        "Update pendingOrder items list on modifications",
+        "Generate confirmation response listing items and total price",
+        "Transition to confirming state when customer confirms",
+        "Provide graceful response for 'remove X' when item not in order"
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "Handle escalation and conversation handoff",
+      "priority": 11,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Update processMessage to handle shouldEscalate=true",
+        "Transition conversation state to 'escalated'",
+        "Store escalationReason in conversation",
+        "Generate graceful handoff message explaining human will take over",
+        "Create ai.notifyEscalation internal mutation to alert business",
+        "Mark conversation as needing attention in database",
+        "Stop AI from responding to escalated conversations until reset"
+      ]
+    },
+    {
+      "id": "S12",
+      "title": "Create AI settings page",
+      "priority": 12,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/routes/settings/ai.tsx page",
+        "Create ai.getSettings query returning current AI config for business",
+        "Create ai.updateSettings mutation to save AI configuration",
+        "Form field: AI tone/personality (text input for custom tone)",
+        "Form field: Custom greeting message (textarea)",
+        "Form field: Escalation keywords (comma-separated input)",
+        "Save button calls updateSettings mutation with toast feedback",
+        "Load existing settings on page mount",
+        "BROWSER TEST: Navigate to /settings/ai, verify page renders",
+        "BROWSER TEST: Form renders with tone, greeting, and escalation fields",
+        "BROWSER TEST: Save button is visible and clickable"
+      ]
+    },
+    {
+      "id": "S13",
+      "title": "Create AI usage stats component",
+      "priority": 13,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/web/src/components/ai/usage-stats.tsx component",
+        "Create ai.getUsageStats query returning: totalTokens, totalConversations, avgLatency, estimatedCost",
+        "Query aggregates from aiLogs table for current business",
+        "Display total tokens used this month",
+        "Display total AI conversations handled",
+        "Display average response latency",
+        "Display estimated cost (tokens * rate)",
+        "Add usage stats section to /settings/ai page",
+        "BROWSER TEST: Navigate to /settings/ai, verify usage stats section renders",
+        "BROWSER TEST: Stats display token count, conversation count, latency, and cost"
       ]
     }
   ]

@@ -624,3 +624,129 @@
 
 ---
 
+## 2026-01-20 11:40 - S01: Create AI data model and update conversations schema
+
+**What was implemented:**
+- Created aiLogs table in packages/backend/convex/schema.ts with fields:
+  - conversationId (v.id("conversations"))
+  - messageId (v.id("messages"))
+  - intent (v.object with type, optional query, items, action, item, topic fields)
+  - prompt, response, model (strings)
+  - tokensUsed, latencyMs, createdAt (numbers)
+- Added by_conversation index on aiLogs for efficient lookup by conversation
+- Updated conversations table with new AI Conversation Engine fields:
+  - state: union of 7 states (idle, browsing, ordering, confirming, payment, completed, escalated)
+  - detectedLanguage: optional string for customer's language
+  - pendingOrder: optional object with items array (productQuery, quantity, optional productId, price) and total
+  - escalationReason: optional string for human handoff context
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+55 lines)
+
+**Learnings for future iterations:**
+- Intent object structure designed to accommodate all intent types from S02 (greeting, product_question, order_start, etc.)
+- pendingOrder items include productQuery string for fuzzy matching plus optional productId for resolved matches
+- State machine uses union of literals for type-safe conversation state tracking
+- All new fields are optional to maintain backward compatibility with existing conversations
+
+**Verification:**
+- Convex codegen passed successfully
+- LSP diagnostics show no errors on schema.ts
+- Committed as: feat: S01 - Create AI data model and update conversations schema (commit 5a00bf3)
+- Updated PRD: S01 passes: true
+
+---
+
+## 2026-01-20 11:45 - S02: Create AI provider abstraction and types
+
+**What was implemented:**
+- Created packages/backend/convex/ai/types.ts with comprehensive AI provider abstraction
+- AIProvider interface with complete(params) method returning CompleteResult
+- Message type with role (system|user|assistant) and content (string)
+- CompleteParams type with messages, systemPrompt, temperature, maxTokens, responseFormat
+- CompleteResult type with content, tokensUsed, model fields
+- Intent union type with 8 variants:
+  - GreetingIntent, ProductQuestionIntent (with query), OrderStartIntent (with items)
+  - OrderModifyIntent (with action, item), BusinessQuestionIntent (with topic)
+  - EscalationRequestIntent, SmallTalkIntent, UnknownIntent
+- OrderItem type with productQuery and quantity
+- OrderAction type: add | remove | change_quantity
+- AIResponse type with response, intent, shouldEscalate, detectedLanguage
+- SerializedIntent type for database storage compatibility
+- serializeIntent() and parseIntent() helper functions for type conversion
+
+**Files changed:**
+- packages/backend/convex/ai/types.ts (created, 159 lines)
+
+**Learnings for future iterations:**
+- Intent types use discriminated union pattern with BaseIntent interface
+- SerializedIntent type mirrors aiLogs.intent schema structure for database compatibility
+- Helper functions serializeIntent/parseIntent enable type-safe conversion between runtime types and database format
+- Intent examples in comments help classify customer messages during implementation
+
+**Verification:**
+- LSP diagnostics show no errors on types.ts
+- tsc --noEmit passes in apps/web
+- Committed as: feat: S02 - Create AI provider abstraction and types (commit 96c54d8)
+- Updated PRD: S02 passes: true
+
+---
+
+## 2026-01-20 11:50 - S03: Implement OpenAI provider
+
+**What was implemented:**
+- Created packages/backend/convex/ai/providers/openai.ts with OpenAIProvider class implementing AIProvider interface
+- Constructor accepts optional apiKey and model, defaults to process.env.OPENAI_API_KEY and gpt-4o-mini
+- Implemented complete() method calling OpenAI chat completions API via fetch
+- Handles JSON response format via OpenAI's "json_object" response_format type
+- Descriptive error handling with specific messages for 401/429/5xx errors
+- Factory function createOpenAIProvider() for convenient instantiation
+
+**Files changed:**
+- packages/backend/convex/ai/providers/openai.ts (created, 163 lines)
+
+**Learnings for future iterations:**
+- OpenAI uses "json_object" as the response_format type value for JSON outputs
+- process.env.OPENAI_API_KEY works in Convex actions (env vars accessible at runtime)
+- Using fetch() directly (like TwilioWhatsAppProvider) is cleaner than SDK for simple API calls
+- OpenAI error responses have nested structure: { error: { message, type, code } }
+- Always guard response.json() in try-catch since it can throw on invalid JSON
+
+**Verification:**
+- LSP diagnostics show no errors on openai.ts
+- bun run check-types passes
+- Committed as: feat: S03 - Implement OpenAI provider (commit 5765286)
+- Updated PRD: S03 passes: true
+
+---
+
+## 2026-01-20 11:50 - S04: Create language detection function
+
+**What was implemented:**
+- Created packages/backend/convex/ai/language.ts with detectLanguage action
+- Action accepts message string and returns language code: "es", "pt", or "en"
+- Uses lightweight prompt with gpt-4o-mini for classification
+- Truncates input to 200 chars for fast processing
+- Temperature set to 0 for deterministic responses
+- maxTokens set to 5 to minimize latency
+- Handles edge cases: empty messages, detection failures
+- Defaults to "en" (English) if detection fails or is ambiguous
+- Handles alternate responses like "spanish", "portuguese", "english" in addition to codes
+
+**Files changed:**
+- packages/backend/convex/ai/language.ts (created, 58 lines)
+
+**Learnings for future iterations:**
+- Convex actions use action() from _generated/server with handler returning Promise
+- Low maxTokens (5) and temperature (0) optimize for speed in classification tasks
+- Input truncation (200 chars) sufficient for language detection while keeping latency low
+- Graceful fallback on errors ensures system remains functional even if AI provider fails
+
+**Verification:**
+- LSP diagnostics show no errors on language.ts
+- bun run check-types passes
+- Committed as: feat: S04 - Create language detection function
+- Updated PRD: S04 passes: true
+
+---
+
