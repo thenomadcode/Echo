@@ -288,7 +288,7 @@
       "id": "S14",
       "title": "Create close conversation UI",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add Close button to conversation detail page action buttons",

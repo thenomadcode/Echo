@@ -183,9 +183,21 @@ export const notifyEscalation = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.conversationId, {
       state: "escalated",
+      status: "escalated",
       escalationReason: args.reason,
       updatedAt: Date.now(),
     });
+
+    const business = await ctx.db.get(args.businessId);
+    if (business) {
+      await ctx.db.insert("notifications", {
+        userId: business.ownerId,
+        type: "escalation",
+        conversationId: args.conversationId,
+        read: false,
+        createdAt: Date.now(),
+      });
+    }
 
     console.log(
       `[ESCALATION] Business ${args.businessId}: Conversation ${args.conversationId} escalated. ` +

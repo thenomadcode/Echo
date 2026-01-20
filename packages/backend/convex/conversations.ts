@@ -342,6 +342,16 @@ export const takeOver = mutation({
 
     await ctx.db.patch(args.conversationId, updates);
 
+    const notifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_user", (q) => q.eq("userId", userId).eq("read", false))
+      .filter((q) => q.eq(q.field("conversationId"), args.conversationId))
+      .collect();
+
+    for (const notification of notifications) {
+      await ctx.db.patch(notification._id, { read: true });
+    }
+
     return await ctx.db.get(args.conversationId);
   },
 });
