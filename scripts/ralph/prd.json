@@ -176,7 +176,7 @@
       "id": "S11",
       "title": "Handle escalation and conversation handoff",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update processMessage to handle shouldEscalate=true",

@@ -154,6 +154,27 @@ export const storeMessage = internalMutation({
   },
 });
 
+export const notifyEscalation = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    businessId: v.id("businesses"),
+    reason: v.string(),
+    customerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.conversationId, {
+      state: "escalated",
+      escalationReason: args.reason,
+      updatedAt: Date.now(),
+    });
+
+    console.log(
+      `[ESCALATION] Business ${args.businessId}: Conversation ${args.conversationId} escalated. ` +
+        `Customer: ${args.customerId}. Reason: ${args.reason}`
+    );
+  },
+});
+
 export const processMessage = action({
   args: {
     conversationId: v.id("conversations"),
@@ -171,6 +192,15 @@ export const processMessage = action({
     }
 
     const { conversation, business, products, messages } = context;
+
+    if (conversation.state === "escalated") {
+      return {
+        response: getEscalatedConversationResponse(conversation.detectedLanguage ?? "en"),
+        intent: { type: "unknown" },
+        shouldEscalate: true,
+        detectedLanguage: conversation.detectedLanguage ?? "en",
+      };
+    }
 
     let detectedLanguage = conversation.detectedLanguage ?? "en";
     const isFirstMessage = messages.length === 0;
@@ -233,11 +263,19 @@ export const processMessage = action({
       conversationState: conversation.state ?? "idle",
     });
 
-    const newState = determineNewState(intent, conversation.state ?? "idle");
+    let newState = determineNewState(intent, conversation.state ?? "idle");
 
     const orderUpdate = handleOrderIntent(intent, conversation.pendingOrder, products);
 
-    if (newState !== conversation.state || orderUpdate.pendingOrder !== undefined) {
+    if (shouldEscalate) {
+      newState = "escalated";
+      await ctx.runMutation(internal.ai.process.notifyEscalation, {
+        conversationId: args.conversationId,
+        businessId: conversation.businessId,
+        reason: escalationResult.reason || "Customer requested human assistance",
+        customerId: conversation.customerId,
+      });
+    } else if (newState !== conversation.state || orderUpdate.pendingOrder !== undefined) {
       await ctx.runMutation(internal.ai.process.updateConversation, {
         conversationId: args.conversationId,
         state: newState,
@@ -426,4 +464,13 @@ function calculateOrderTotal(items: PendingOrderItem[]): number {
     const price = item.price ?? 0;
     return sum + price * item.quantity;
   }, 0);
+}
+
+function getEscalatedConversationResponse(language: string): string {
+  const responses: Record<string, string> = {
+    en: "This conversation has been escalated to a human agent. A team member will respond shortly. Thank you for your patience.",
+    es: "Esta conversación ha sido escalada a un agente humano. Un miembro del equipo responderá pronto. Gracias por su paciencia.",
+    pt: "Esta conversa foi escalada para um agente humano. Um membro da equipe responderá em breve. Obrigado pela paciência.",
+  };
+  return responses[language] ?? responses["en"] ?? "";
 }

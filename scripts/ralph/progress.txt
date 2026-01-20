@@ -971,3 +971,39 @@
 
 ---
 
+## 2026-01-20 12:10 - S11: Handle escalation and conversation handoff
+
+**What was implemented:**
+- Added notifyEscalation internal mutation to process.ts:
+  - Updates conversation state to "escalated"
+  - Stores escalationReason in conversation
+  - Logs escalation event with business ID, customer ID, reason
+- Updated processMessage to check for escalated state at start:
+  - Returns localized message if conversation already escalated
+  - Prevents AI from generating new responses for escalated conversations
+- Updated processMessage escalation flow:
+  - When shouldEscalate is true, calls notifyEscalation
+  - Sets newState to "escalated"
+  - Escalation reason comes from detectEscalation or defaults to "Customer requested human assistance"
+- getEscalatedConversationResponse() provides localized responses in en/es/pt
+  - Informs customer that conversation is escalated to human
+  - Assures them a team member will respond shortly
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (added ~50 lines)
+
+**Learnings for future iterations:**
+- Early return pattern for state-based guards keeps processMessage clean
+- console.log in Convex functions shows in deployment logs for debugging
+- Escalation notification currently logs - can be extended to send push notifications
+- Language-specific responses ensure good UX for LATAM market
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors
+- bun run check-types passes
+- Committed as: feat: S11 - Handle escalation and conversation handoff
+- Updated PRD: S11 passes: true
+
+---
+
