@@ -212,7 +212,7 @@
       "id": "S13",
       "title": "Create AI usage stats component",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/ai/usage-stats.tsx component",

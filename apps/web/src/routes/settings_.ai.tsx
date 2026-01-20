@@ -9,6 +9,7 @@ import { useEffect } from "react";
 
 import SignInForm from "@/components/sign-in-form";
 import BusinessSwitcher from "@/components/business-switcher";
+import UsageStats from "@/components/ai/usage-stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -207,6 +208,8 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
           <Button type="submit" className="w-full">
             Save Settings
           </Button>
+
+          <UsageStats businessId={businessId} />
         </div>
       </form>
     </div>

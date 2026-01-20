@@ -1055,3 +1055,42 @@
 
 ---
 
+## 2026-01-20 12:15 - S13: Create AI usage stats component
+
+**What was implemented:**
+- Added getUsageStats query to packages/backend/convex/ai/settings.ts:
+  - Aggregates from aiLogs table for the business's conversations
+  - Filters to last 30 days
+  - Returns: totalTokens, totalConversations, avgLatencyMs, estimatedCostUsd
+  - Cost calculation: $0.00015 per 1K tokens (gpt-4o-mini rate)
+- Created apps/web/src/components/ai/usage-stats.tsx:
+  - Displays stats in 4-column grid
+  - Uses lucide-react icons (Zap, MessageSquare, Activity, DollarSign)
+  - StatCard subcomponent for consistent stat display
+  - Loading and error states handled
+- Integrated UsageStats into /settings/ai page below Save button
+
+**Files changed:**
+- packages/backend/convex/ai/settings.ts (+52 lines)
+- apps/web/src/components/ai/usage-stats.tsx (created, 82 lines)
+- apps/web/src/routes/settings_.ai.tsx (+3 lines for import and usage)
+
+**Learnings for future iterations:**
+- aiLogs doesn't have direct business index, so query via conversations first
+- Set for unique conversation counting avoids duplicates
+- Cost estimation uses gpt-4o-mini pricing ($0.15 per 1M tokens)
+- Grid layout (2 cols mobile, 4 cols desktop) works well for stats cards
+
+**Browser tests (manual verification required):**
+- Navigate to /settings/ai: usage stats section visible
+- Stats show token count, conversation count, latency, and cost
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors
+- bun run check-types passes
+- Committed as: feat: S13 - Create AI usage stats component
+- Updated PRD: S13 passes: true
+
+---
+
