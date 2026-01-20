@@ -1094,3 +1094,40 @@
 
 ---
 
+
+## 2026-01-20 15:35 - S01: Create orders schema and data model
+
+**What was implemented:**
+- Created orders table in packages/backend/convex/schema.ts
+- Added businessId (Id<businesses>) and conversationId (Id<conversations>) relationships
+- Added orderNumber string field for human-readable order identification
+- Added status union type: draft, confirmed, paid, preparing, ready, delivered, cancelled
+- Added items array with productId, name, quantity, unitPrice, totalPrice per item
+- Added pricing fields: subtotal, deliveryFee (optional), total, currency
+- Added deliveryType union: delivery, pickup
+- Added deliveryAddress and deliveryNotes optional fields
+- Added contactPhone and contactName fields
+- Added paymentMethod union: card, cash
+- Added paymentStatus union: pending, paid, failed, refunded
+- Added Stripe payment fields: paymentLinkUrl, paymentLinkExpiresAt, stripeSessionId
+- Added fulfillment fields: estimatedReadyTime, notes
+- Added timestamps: createdAt, updatedAt, cancelledAt, cancellationReason
+- Created indexes: by_business [businessId, status, createdAt], by_conversation [conversationId], by_number [orderNumber], by_payment_session [stripeSessionId]
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+54 lines for orders table)
+
+**Learnings for future iterations:**
+- Orders table follows same pattern as conversations: relationships via v.id(), timestamps as v.number()
+- Composite index by_business includes status and createdAt for efficient filtered queries
+- Items stored as array of objects - denormalized product name/price to capture values at order time
+- stripeSessionId index enables webhook reconciliation when payment completes
+- All prices stored in smallest currency unit (centavos) as integers per AGENTS.md
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on schema.ts
+- Committed as: feat: S01 - Create orders schema and data model (commit 7828f11)
+- Updated PRD: S01 passes: true
+
+---
