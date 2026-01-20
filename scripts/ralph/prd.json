@@ -330,7 +330,7 @@
       "id": "S16",
       "title": "Create notification bell UI component",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/NotificationBell.tsx",

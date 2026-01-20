@@ -17,6 +17,33 @@
 
 ---
 
+## 2026-01-20 22:32 - S16: Create notification bell UI component
+
+**What was implemented:**
+- Created apps/web/src/components/NotificationBell.tsx
+- Bell icon with unread count badge (red, hidden when 0)
+- DropdownMenu with notification list (limit 10)
+- Type icons: AlertCircle (escalation), ShoppingCart (new_order)
+- Message format: "Escalation: Customer needs help" / "New order received"
+- Relative time using formatDistanceToNow
+- Unread indicator (blue dot and bg highlight)
+- Click marks notification as read and navigates to conversation
+- "Mark all as read" link in dropdown header
+- Empty state with BellOff icon
+- Integrated into conversations.tsx and conversations_.$conversationId.tsx headers
+
+**Files changed:**
+- apps/web/src/components/NotificationBell.tsx (created, ~130 lines)
+- apps/web/src/routes/conversations.tsx (+8 lines)
+- apps/web/src/routes/conversations_.$conversationId.tsx (+10 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S16 - Create notification bell UI component (commit 34ab1b1)
+
+---
+
 ## 2026-01-20 22:29 - S15: Create escalation notification trigger
 
 **What was implemented:**
