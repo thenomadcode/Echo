@@ -819,3 +819,41 @@
 
 ---
 
+## 2026-01-20 11:58 - S07: Implement response generation function
+
+**What was implemented:**
+- Created packages/backend/convex/ai/response.ts with generateResponse action
+- Accepts: intent, conversationHistory, businessContext, products, language, conversationState
+- Uses buildSystemPrompt() to create context-aware system prompt
+- buildContextInstruction() adds intent-specific guidance to prompt:
+  - greeting: friendly welcome
+  - product_question: includes matching products from database
+  - order_start: confirms items and looks up prices
+  - order_modify: acknowledges change
+  - business_question: uses business info
+  - escalation_request: acknowledges and offers human
+  - small_talk: brief friendly response
+  - unknown: asks for clarification
+- Temperature 0.7 for natural conversation, maxTokens 500 for responses
+- getFallbackResponse() provides localized fallbacks in en/es/pt for all intent types
+- Validation helpers for language and conversation state
+- Uses last 10 conversation messages for context
+
+**Files changed:**
+- packages/backend/convex/ai/response.ts (created, 247 lines)
+
+**Learnings for future iterations:**
+- Context instructions appended to system prompt help AI focus on current task
+- Fallback responses in all supported languages ensure graceful degradation
+- Product matching uses case-insensitive search on name and description
+- Type casting needed when Convex validators don't exactly match TypeScript types
+- Record<LanguageCode, Record<string, string>> provides clean fallback lookup structure
+
+**Verification:**
+- LSP diagnostics show no errors on response.ts
+- bun run check-types passes
+- Committed as: feat: S07 - Implement response generation function
+- Updated PRD: S07 passes: true
+
+---
+
