@@ -121,7 +121,7 @@
       "id": "S07",
       "title": "Create order cancel mutation",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.cancel mutation in packages/backend/convex/orders.ts",

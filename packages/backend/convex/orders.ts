@@ -313,3 +313,72 @@ export const cancel = mutation({
     return args.orderId;
   },
 });
+
+export const markPreparing = mutation({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (order.status !== "confirmed" && order.status !== "paid") {
+      throw new Error("Order must be confirmed or paid to start preparing");
+    }
+
+    await ctx.db.patch(args.orderId, {
+      status: "preparing",
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.orderId);
+  },
+});
+
+export const markReady = mutation({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (order.status !== "preparing") {
+      throw new Error("Order must be preparing to mark as ready");
+    }
+
+    await ctx.db.patch(args.orderId, {
+      status: "ready",
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.orderId);
+  },
+});
+
+export const markDelivered = mutation({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (order.status !== "ready") {
+      throw new Error("Order must be ready to mark as delivered");
+    }
+
+    await ctx.db.patch(args.orderId, {
+      status: "delivered",
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.orderId);
+  },
+});

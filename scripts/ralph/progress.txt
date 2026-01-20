@@ -15,6 +15,20 @@
 
 ---
 
+## 2026-01-20 15:56 - S07: Create order cancel mutation
+
+**What was implemented:**
+- Created orders.cancel mutation
+- Args: orderId, reason (optional)
+- Only allows cancellation if status is 'draft' or 'confirmed'
+- Throws error for paid/preparing/ready/delivered orders
+- Sets cancelledAt and stores cancellationReason
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added 27 lines)
+
+---
+
 ## 2026-01-20 15:54 - S06: Create order payment method mutation
 
 **What was implemented:**
