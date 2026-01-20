@@ -2,10 +2,12 @@ import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
-import { ArrowLeft, ExternalLink, MapPin, Phone, User, CreditCard, Truck, Package } from "lucide-react";
+import { Authenticated, AuthLoading, Unauthenticated, useMutation } from "convex/react";
+import { ArrowLeft, ExternalLink, MapPin, Phone, User, CreditCard, Truck, Package, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import SignInForm from "@/components/sign-in-form";
 import BusinessSwitcher from "@/components/business-switcher";
@@ -75,13 +77,78 @@ function RouteComponent() {
 
 function OrderDetailPageContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { orderId } = Route.useParams();
+
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const orderQuery = useQuery(
     convexQuery(api.orders.get, { orderId: orderId as Id<"orders"> })
   );
 
   const order = orderQuery.data;
+
+  const markPreparing = useMutation(api.orders.markPreparing);
+  const markReady = useMutation(api.orders.markReady);
+  const markDelivered = useMutation(api.orders.markDelivered);
+  const cancelOrder = useMutation(api.orders.cancel);
+
+  const handleMarkPreparing = async () => {
+    setIsProcessing(true);
+    try {
+      await markPreparing({ orderId: orderId as Id<"orders"> });
+      toast.success("Order marked as preparing");
+      await queryClient.invalidateQueries();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update order");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMarkReady = async () => {
+    setIsProcessing(true);
+    try {
+      await markReady({ orderId: orderId as Id<"orders"> });
+      toast.success("Order marked as ready");
+      await queryClient.invalidateQueries();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update order");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMarkDelivered = async () => {
+    setIsProcessing(true);
+    try {
+      await markDelivered({ orderId: orderId as Id<"orders"> });
+      toast.success("Order marked as delivered");
+      await queryClient.invalidateQueries();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update order");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this order? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    try {
+      await cancelOrder({ orderId: orderId as Id<"orders"> });
+      toast.success("Order cancelled");
+      await queryClient.invalidateQueries();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
@@ -370,22 +437,26 @@ function OrderDetailPageContent() {
               <CardContent>
                 <div className="flex flex-wrap gap-3">
                   {showMarkPreparing && (
-                    <Button>
+                    <Button onClick={handleMarkPreparing} disabled={isProcessing}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Mark Preparing
                     </Button>
                   )}
                   {showMarkReady && (
-                    <Button>
+                    <Button onClick={handleMarkReady} disabled={isProcessing}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Mark Ready
                     </Button>
                   )}
                   {showMarkDelivered && (
-                    <Button>
+                    <Button onClick={handleMarkDelivered} disabled={isProcessing}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Mark Delivered
                     </Button>
                   )}
                   {showCancel && (
-                    <Button variant="destructive">
+                    <Button variant="destructive" onClick={handleCancelOrder} disabled={isProcessing}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Cancel Order
                     </Button>
                   )}

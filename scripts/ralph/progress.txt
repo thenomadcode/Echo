@@ -15,6 +15,28 @@
 
 ---
 
+## 2026-01-20 16:38 - S14: Create order detail dashboard page
+
+**What was implemented:**
+- Created apps/web/src/routes/dashboard/orders/$orderId.tsx with dynamic param
+- Protected route with auth pattern
+- Fetches order using orders.get query
+- Shows 404 state if order not found
+- Order header with order # and status badge
+- Timestamps section (created, updated, cancelled if applicable)
+- Items table with name, quantity, unit price, total price
+- Totals section with subtotal, delivery fee, grand total
+- Delivery section with type, address, notes
+- Customer section with phone and name
+- Payment section with method, status, payment link
+- Action buttons rendered (not wired up): Mark Preparing, Mark Ready, Mark Delivered, Cancel Order
+
+**Files changed:**
+- apps/web/src/routes/dashboard/orders/$orderId.tsx (created)
+- apps/web/src/routeTree.gen.ts (updated via router-cli)
+
+---
+
 ## 2026-01-20 16:35 - S13: Create orders list dashboard page
 
 **What was implemented:**

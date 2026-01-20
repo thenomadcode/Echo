@@ -255,7 +255,7 @@
       "id": "S14",
       "title": "Create order detail dashboard page",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/dashboard/orders/$orderId.tsx",
