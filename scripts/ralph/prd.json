@@ -139,7 +139,7 @@
       "id": "S08",
       "title": "Create order status update mutations",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.markPreparing mutation - transitions from confirmed/paid to preparing",

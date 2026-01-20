@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { generateOrderNumber } from "./lib/orderNumber";
+import { authComponent } from "./auth";
 
 export const create = mutation({
   args: {
@@ -380,5 +381,140 @@ export const markDelivered = mutation({
     });
 
     return await ctx.db.get(args.orderId);
+  },
+});
+
+export const get = query({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      return null;
+    }
+
+    const business = await ctx.db.get(order.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return null;
+    }
+
+    return order;
+  },
+});
+
+export const getByConversation = query({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return null;
+    }
+
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return null;
+    }
+
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("desc")
+      .first();
+
+    return orders;
+  },
+});
+
+export const getByOrderNumber = query({
+  args: {
+    orderNumber: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_number", (q) => q.eq("orderNumber", args.orderNumber))
+      .first();
+
+    if (!order) {
+      return null;
+    }
+
+    const business = await ctx.db.get(order.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return null;
+    }
+
+    return order;
+  },
+});
+
+export const listByBusiness = query({
+  args: {
+    businessId: v.id("businesses"),
+    status: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("confirmed"),
+        v.literal("paid"),
+        v.literal("preparing"),
+        v.literal("ready"),
+        v.literal("delivered"),
+        v.literal("cancelled")
+      )
+    ),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return { orders: [], nextCursor: null };
+    }
+
+    const business = await ctx.db.get(args.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return { orders: [], nextCursor: null };
+    }
+
+    const limit = args.limit ?? 50;
+
+    let ordersQuery = ctx.db
+      .query("orders")
+      .withIndex("by_business", (q) => {
+        if (args.status) {
+          return q.eq("businessId", args.businessId).eq("status", args.status);
+        }
+        return q.eq("businessId", args.businessId);
+      })
+      .order("desc");
+
+    const orders = await ordersQuery.take(limit + 1);
+
+    const hasMore = orders.length > limit;
+    const page = hasMore ? orders.slice(0, limit) : orders;
+    const nextCursor = hasMore && page.length > 0 ? page[page.length - 1]._id : null;
+
+    return {
+      orders: page,
+      nextCursor,
+    };
   },
 });

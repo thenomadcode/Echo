@@ -15,6 +15,20 @@
 
 ---
 
+## 2026-01-20 15:58 - S08: Create order status update mutations
+
+**What was implemented:**
+- Created orders.markPreparing: transitions confirmed/paid -> preparing
+- Created orders.markReady: transitions preparing -> ready
+- Created orders.markDelivered: transitions ready -> delivered
+- All mutations validate current status allows transition
+- All mutations return updated order
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added 66 lines)
+
+---
+
 ## 2026-01-20 15:56 - S07: Create order cancel mutation
 
 **What was implemented:**
