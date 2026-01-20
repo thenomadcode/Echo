@@ -15,6 +15,30 @@
 
 ---
 
+## 2026-01-20 16:28 - S12: Create Stripe webhook handler
+
+**What was implemented:**
+- Added POST /webhook/stripe route in http.ts
+- Verifies webhook signature using STRIPE_WEBHOOK_SECRET
+- Pure JavaScript SHA-256 and HMAC implementation (Convex doesn't have Web Crypto API)
+- Handles checkout.session.completed event - updates order status to 'paid' and paymentStatus to 'paid'
+- Handles checkout.session.expired event - updates paymentStatus to 'failed'
+- Handles payment_intent.payment_failed event - logs failure
+- Returns 200 OK for all successfully processed events
+- Returns 400 for invalid signatures
+- Created updateOrderPaymentStatus internalMutation to update orders by stripeSessionId
+
+**Files changed:**
+- packages/backend/convex/http.ts (added ~200 lines)
+- packages/backend/convex/orders.ts (added updateOrderPaymentStatus mutation)
+
+**Learnings for future iterations:**
+- Convex runtime doesn't have Web Crypto API, need pure JS crypto implementations
+- Stripe webhook signature format: t={timestamp},v1={hmac_hex}
+- Use by_payment_session index to look up orders by stripeSessionId
+
+---
+
 ## 2026-01-20 16:18 - S11: Create payment link generation action
 
 **What was implemented:**

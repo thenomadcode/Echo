@@ -22,6 +22,7 @@ import { Route as SettingsAiRouteImport } from './routes/settings_.ai'
 import { Route as ProductsNewRouteImport } from './routes/products/new'
 import { Route as ProductsCategoriesRouteImport } from './routes/products/categories'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
+import { Route as DashboardOrdersIndexRouteImport } from './routes/dashboard/orders/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TestAiRoute = TestAiRouteImport.update({
@@ -89,6 +90,11 @@ const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
   path: '/products/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardOrdersIndexRoute = DashboardOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -97,7 +103,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
@@ -108,12 +114,13 @@ export interface FileRoutesByFullPath {
   '/products/new': typeof ProductsNewRoute
   '/settings/ai': typeof SettingsAiRoute
   '/settings/whatsapp': typeof SettingsWhatsappRoute
-  '/products': typeof ProductsIndexRoute
+  '/products/': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/orders/': typeof DashboardOrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
@@ -126,11 +133,12 @@ export interface FileRoutesByTo {
   '/settings/whatsapp': typeof SettingsWhatsappRoute
   '/products': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/orders': typeof DashboardOrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/settings_/whatsapp': typeof SettingsWhatsappRoute
   '/products/': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/orders/': typeof DashboardOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,8 +168,9 @@ export interface FileRouteTypes {
     | '/products/new'
     | '/settings/ai'
     | '/settings/whatsapp'
-    | '/products'
+    | '/products/'
     | '/api/auth/$'
+    | '/dashboard/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/settings/whatsapp'
     | '/products'
     | '/api/auth/$'
+    | '/dashboard/orders'
   id:
     | '__root__'
     | '/'
@@ -193,11 +204,12 @@ export interface FileRouteTypes {
     | '/settings_/whatsapp'
     | '/products/'
     | '/api/auth/$'
+    | '/dashboard/orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   SettingsRoute: typeof SettingsRoute
@@ -266,7 +278,7 @@ declare module '@tanstack/react-router' {
     '/products/': {
       id: '/products/'
       path: '/products'
-      fullPath: '/products'
+      fullPath: '/products/'
       preLoaderRoute: typeof ProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -305,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/orders/': {
+      id: '/dashboard/orders/'
+      path: '/orders'
+      fullPath: '/dashboard/orders/'
+      preLoaderRoute: typeof DashboardOrdersIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -315,9 +334,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardOrdersIndexRoute: typeof DashboardOrdersIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardOrdersIndexRoute: DashboardOrdersIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   SettingsRoute: SettingsRoute,
@@ -334,12 +365,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

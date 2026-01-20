@@ -211,7 +211,7 @@
       "id": "S12",
       "title": "Create Stripe webhook handler",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create packages/backend/convex/http.ts if not exists, or update existing",
