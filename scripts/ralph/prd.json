@@ -192,7 +192,7 @@
       "id": "S12",
       "title": "Create AI settings page",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/settings/ai.tsx page",

@@ -1007,3 +1007,51 @@
 
 ---
 
+## 2026-01-20 12:12 - S12: Create AI settings page
+
+**What was implemented:**
+- Extended businesses schema with aiTone and aiEscalationKeywords fields
+- Created packages/backend/convex/ai/settings.ts with:
+  - getSettings query: returns AI config (aiTone, aiGreeting, aiEscalationKeywords)
+  - updateSettings mutation: updates AI configuration for business
+  - Both validate ownership via authComponent
+- Created apps/web/src/routes/settings_.ai.tsx page:
+  - Uses flat route pattern for /settings/ai
+  - Authenticated/Unauthenticated/AuthLoading pattern
+  - BusinessSwitcher integration
+  - TanStack Form for form management
+- Form fields:
+  - AI Tone/Personality: text input for custom tone description
+  - Custom Greeting Message: textarea for greeting message
+  - Escalation Keywords: comma-separated input
+- Created apps/web/src/components/ui/textarea.tsx component
+- Save button calls updateSettings with toast feedback
+- Settings loaded on mount via useQuery and populated to form
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+2 lines for new fields)
+- packages/backend/convex/ai/settings.ts (created, 74 lines)
+- apps/web/src/routes/settings_.ai.tsx (created, 202 lines)
+- apps/web/src/components/ui/textarea.tsx (created, 17 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Flat route pattern (settings_.ai.tsx) creates /settings/ai without requiring Outlet in parent
+- Escalation keywords stored as string array, converted to/from comma-separated for UI
+- useEffect with form.setFieldValue populates form when settings load
+- Textarea component follows same styling pattern as Input for consistency
+
+**Browser tests (manual verification required):**
+- Navigate to /settings/ai: page should render with title
+- Form renders with tone, greeting, escalation fields
+- Save button visible and clickable
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors
+- bun run check-types passes
+- Committed as: feat: S12 - Create AI settings page
+- Updated PRD: S12 passes: true
+
+---
+
