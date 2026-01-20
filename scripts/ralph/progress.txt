@@ -15,6 +15,19 @@
 
 ---
 
+## 2026-01-20 15:54 - S06: Create order payment method mutation
+
+**What was implemented:**
+- Created orders.setPaymentMethod mutation
+- Args: orderId, paymentMethod (card|cash)
+- If 'cash' selected, updates status to 'confirmed' (ready for fulfillment)
+- If 'card' selected, keeps status as 'draft' (awaiting payment link)
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added 24 lines)
+
+---
+
 ## 2026-01-20 15:52 - S05: Create order delivery mutation
 
 **What was implemented:**

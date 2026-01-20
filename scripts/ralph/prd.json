@@ -105,7 +105,7 @@
       "id": "S06",
       "title": "Create order payment method mutation",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.setPaymentMethod mutation in packages/backend/convex/orders.ts",

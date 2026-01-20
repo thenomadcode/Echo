@@ -285,3 +285,31 @@ export const setPaymentMethod = mutation({
     return args.orderId;
   },
 });
+
+export const cancel = mutation({
+  args: {
+    orderId: v.id("orders"),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    const nonCancellableStatuses = ["paid", "preparing", "ready", "delivered"];
+    if (nonCancellableStatuses.includes(order.status)) {
+      throw new Error("Order already paid, requires manual refund");
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(args.orderId, {
+      status: "cancelled",
+      cancelledAt: now,
+      cancellationReason: args.reason,
+      updatedAt: now,
+    });
+
+    return args.orderId;
+  },
+});
