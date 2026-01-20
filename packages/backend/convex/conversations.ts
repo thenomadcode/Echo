@@ -3,6 +3,111 @@ import { query, mutation } from "./_generated/server";
 import { getWindowExpiresAt } from "./integrations/whatsapp/window";
 import { authComponent } from "./auth";
 
+export const list = query({
+  args: {
+    businessId: v.id("businesses"),
+    status: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("escalated"),
+        v.literal("closed")
+      )
+    ),
+    search: v.optional(v.string()),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return { conversations: [], nextCursor: null };
+    }
+
+    const business = await ctx.db.get(args.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return { conversations: [], nextCursor: null };
+    }
+
+    const limit = args.limit ?? 50;
+
+    let conversationsQuery;
+    if (args.status) {
+      conversationsQuery = ctx.db
+        .query("conversations")
+        .withIndex("by_business_status", (q) =>
+          q.eq("businessId", args.businessId).eq("status", args.status)
+        );
+    } else {
+      conversationsQuery = ctx.db
+        .query("conversations")
+        .withIndex("by_business", (q) => q.eq("businessId", args.businessId));
+    }
+
+    let conversations = await conversationsQuery.collect();
+
+    if (args.search) {
+      const searchLower = args.search.toLowerCase();
+      conversations = conversations.filter(
+        (c) => c.customerId.toLowerCase().includes(searchLower)
+      );
+    }
+
+    conversations.sort((a, b) => {
+      if (a.status === "escalated" && b.status !== "escalated") return -1;
+      if (a.status !== "escalated" && b.status === "escalated") return 1;
+      return b.lastCustomerMessageAt - a.lastCustomerMessageAt;
+    });
+
+    const cursorIndex = args.cursor
+      ? conversations.findIndex((c) => c._id === args.cursor)
+      : -1;
+    const startIndex = cursorIndex >= 0 ? cursorIndex + 1 : 0;
+    const paginatedConversations = conversations.slice(
+      startIndex,
+      startIndex + limit
+    );
+
+    const lastMessage = await Promise.all(
+      paginatedConversations.map(async (conv) => {
+        const messages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .order("desc")
+          .take(1);
+        return messages[0] ?? null;
+      })
+    );
+
+    const enrichedConversations = paginatedConversations.map((conv, idx) => {
+      const msg = lastMessage[idx];
+      const hasUnread =
+        msg && conv.lastReadAt ? msg.createdAt > conv.lastReadAt : !!msg;
+
+      return {
+        _id: conv._id,
+        customerId: conv.customerId,
+        status: conv.status ?? "active",
+        assignedTo: conv.assignedTo ?? null,
+        lastCustomerMessageAt: conv.lastCustomerMessageAt,
+        lastReadAt: conv.lastReadAt ?? null,
+        lastMessagePreview: msg?.content?.slice(0, 100) ?? null,
+        lastMessageAt: msg?.createdAt ?? conv.lastCustomerMessageAt,
+        hasUnread,
+      };
+    });
+
+    const hasMore = startIndex + limit < conversations.length;
+    const nextCursor = hasMore
+      ? paginatedConversations[paginatedConversations.length - 1]?._id ?? null
+      : null;
+
+    return {
+      conversations: enrichedConversations,
+      nextCursor,
+    };
+  },
+});
+
 export const get = query({
   args: {
     conversationId: v.id("conversations"),

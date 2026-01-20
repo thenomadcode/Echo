@@ -24,7 +24,7 @@
       "id": "S02",
       "title": "Create notifications table schema",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create notifications table in packages/backend/convex/schema.ts",

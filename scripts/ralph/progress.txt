@@ -17,6 +17,23 @@
 
 ---
 
+## 2026-01-20 21:59 - S02: Create notifications table schema
+
+**What was implemented:**
+- Added notifications table to packages/backend/convex/schema.ts
+- Fields: userId (v.id("users")), type (union of "escalation" | "new_order"), conversationId (v.id("conversations")), read (v.boolean()), createdAt (v.number())
+- Index: by_user on [userId, read, createdAt] for efficient user notification queries
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+8 lines)
+
+**Verification:**
+- Convex dev confirmed: "Added table indexes: notifications.by_user"
+- LSP diagnostics: no errors
+- Committed as: feat: S02 - Create notifications table schema (commit 52caa0c)
+
+---
+
 ## 2026-01-20 21:55 - S01: Update conversations schema for dashboard features
 
 **What was implemented:**
