@@ -104,7 +104,7 @@
       "id": "S06",
       "title": "Create close and reopen mutations",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create conversations.close mutation in packages/backend/convex/conversations.ts",
