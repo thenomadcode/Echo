@@ -189,7 +189,7 @@
       "id": "S10",
       "title": "Create conversation list page with filtering",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/dashboard/conversations/index.tsx",

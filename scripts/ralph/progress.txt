@@ -17,6 +17,34 @@
 
 ---
 
+## 2026-01-20 22:15 - S10: Create conversation list page with filtering
+
+**What was implemented:**
+- Created apps/web/src/routes/conversations.tsx
+- Route with auth pattern (Authenticated/Unauthenticated/AuthLoading)
+- BusinessSwitcher, AppNav, UserMenu in header
+- statusFilter and searchQuery state
+- Uses convexQuery with api.conversations.list
+- Table with Customer, Last Message, Status (StatusBadge), Time columns
+- Escalated conversations have bg-red-50 highlight
+- Unread indicator (blue dot) when hasUnread is true
+- Filter dropdown (All, Active, Escalated, Closed)
+- Search input for customer phone
+- Empty state with MessageSquare icon
+- Row click navigates to /conversations/[id]
+- Real-time updates via Convex reactive queries
+
+**Files changed:**
+- apps/web/src/routes/conversations.tsx (created, ~200 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S10 - Create conversation list page with filtering (commit ce3bd88)
+
+---
+
 ## 2026-01-20 22:13 - S09: Create StatusBadge and MessageBubble components
 
 **What was implemented:**

@@ -25,6 +25,7 @@ import { Route as ProductsNewRouteImport } from './routes/products/new'
 import { Route as ProductsCategoriesRouteImport } from './routes/products/categories'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
+import { Route as ConversationsConversationIdRouteImport } from './routes/conversations_.$conversationId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TestAiRoute = TestAiRouteImport.update({
@@ -107,6 +108,12 @@ const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConversationsConversationIdRoute =
+  ConversationsConversationIdRouteImport.update({
+    id: '/conversations_/$conversationId',
+    path: '/conversations/$conversationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -123,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
+  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
+  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
@@ -162,6 +171,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
+  '/conversations_/$conversationId': typeof ConversationsConversationIdRoute
   '/orders_/$orderId': typeof OrdersOrderIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/categories': typeof ProductsCategoriesRoute
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/test-ai'
+    | '/conversations/$conversationId'
     | '/orders/$orderId'
     | '/products/$productId'
     | '/products/categories'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/test-ai'
+    | '/conversations/$conversationId'
     | '/orders/$orderId'
     | '/products/$productId'
     | '/products/categories'
@@ -221,6 +233,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/test-ai'
+    | '/conversations_/$conversationId'
     | '/orders_/$orderId'
     | '/products/$productId'
     | '/products/categories'
@@ -241,6 +254,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   TestAiRoute: typeof TestAiRoute
+  ConversationsConversationIdRoute: typeof ConversationsConversationIdRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsCategoriesRoute: typeof ProductsCategoriesRoute
@@ -365,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conversations_/$conversationId': {
+      id: '/conversations_/$conversationId'
+      path: '/conversations/$conversationId'
+      fullPath: '/conversations/$conversationId'
+      preLoaderRoute: typeof ConversationsConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -385,6 +406,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   TestAiRoute: TestAiRoute,
+  ConversationsConversationIdRoute: ConversationsConversationIdRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsCategoriesRoute: ProductsCategoriesRoute,
