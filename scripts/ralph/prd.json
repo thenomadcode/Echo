@@ -81,7 +81,7 @@
       "id": "S05",
       "title": "Create take over and hand back mutations",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create conversations.takeOver mutation in packages/backend/convex/conversations.ts",

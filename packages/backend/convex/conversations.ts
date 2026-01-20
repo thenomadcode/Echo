@@ -376,3 +376,63 @@ export const handBack = mutation({
     return await ctx.db.get(args.conversationId);
   },
 });
+
+export const close = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      throw new Error("Not authorized");
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      status: "closed",
+      closedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.conversationId);
+  },
+});
+
+export const reopen = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      throw new Error("Not authorized");
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      status: "active",
+      closedAt: undefined,
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.conversationId);
+  },
+});

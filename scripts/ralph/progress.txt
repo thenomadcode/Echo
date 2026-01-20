@@ -13,7 +13,36 @@
 - Queries return null/empty arrays for unauthorized access; mutations throw errors
 - Lib utilities: create under `convex/lib/` using `GenericDatabaseReader<DataModel>` for db access
 - Dashboard conversation status: active | escalated | closed (separate from AI state machine)
-- Human assignment: assignedTo field with v.id("users"), null means AI handling
+- Human assignment: assignedTo field with v.string() (user ID from better-auth), null/undefined means AI handling
+
+---
+
+## 2026-01-20 22:07 - S05: Create take over and hand back mutations
+
+**What was implemented:**
+- Created conversations.takeOver mutation
+- Sets assignedTo to current user's ID, updates lastReadAt
+- If status was 'escalated', changes to 'active'
+- Validates auth and business ownership
+- Created conversations.handBack mutation
+- Sets assignedTo to undefined (AI resumes handling)
+- Validates conversation is currently assigned to this user
+- Both mutations return the updated conversation
+- Fixed schema: changed assignedTo and userId from v.id("users") to v.string() since better-auth user table is managed by component
+
+**Files changed:**
+- packages/backend/convex/conversations.ts (+55 lines)
+- packages/backend/convex/schema.ts (changed v.id("users") to v.string() for assignedTo and notifications.userId)
+
+**Learnings:**
+- better-auth creates a "user" table managed by its component, not in our schema
+- Use v.string() instead of v.id("user") for user ID references since authUser._id is a string
+
+**Verification:**
+- Convex dev compiles successfully
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S05 - Create take over and hand back mutations (commit a87d4f0)
 
 ---
 
