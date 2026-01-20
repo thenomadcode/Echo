@@ -750,3 +750,38 @@
 
 ---
 
+## 2026-01-20 11:52 - S05: Implement intent classification function
+
+**What was implemented:**
+- Created packages/backend/convex/ai/intent.ts with classifyIntent action
+- Action accepts: message (string), conversationHistory (Message[]), productNames (string[])
+- Uses structured JSON output (responseFormat: "json") for reliable intent extraction
+- Prompt includes available products list for fuzzy matching with misspellings
+- Extracts entities per intent type:
+  - product_question: query string
+  - order_start: items array with productQuery and quantity (default 1)
+  - order_modify: action (add/remove/change_quantity) and item
+  - business_question: topic (hours/location/delivery/payment)
+- Includes last 5 conversation messages for context
+- mapToIntent() function converts AI response to typed Intent object
+- validateOrderAction() ensures valid action enum values
+- Graceful fallback to "unknown" intent on parse errors
+
+**Files changed:**
+- packages/backend/convex/ai/intent.ts (created, 143 lines)
+
+**Learnings for future iterations:**
+- Convex validators for arrays: v.array(v.object({...})) works for typed arrays
+- JSON response format requires explicit examples in prompt for consistent structure
+- Limiting conversation history (last 5 messages) balances context vs token cost
+- Type mapping functions ensure AI output conforms to TypeScript types
+- Default values in mapping (quantity: 1, action: "add") handle missing fields gracefully
+
+**Verification:**
+- LSP diagnostics show no errors on intent.ts
+- bun run check-types passes
+- Committed as: feat: S05 - Implement intent classification function
+- Updated PRD: S05 passes: true
+
+---
+

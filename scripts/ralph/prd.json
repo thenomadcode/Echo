@@ -67,7 +67,7 @@
       "id": "S05",
       "title": "Implement intent classification function",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create packages/backend/convex/ai/intent.ts",
