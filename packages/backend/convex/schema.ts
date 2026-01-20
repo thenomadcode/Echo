@@ -173,4 +173,58 @@ export default defineSchema({
     latencyMs: v.number(),
     createdAt: v.number(),
   }).index("by_conversation", ["conversationId"]),
+
+  // Order Flow tables
+  orders: defineTable({
+    businessId: v.id("businesses"),
+    conversationId: v.id("conversations"),
+    orderNumber: v.string(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("confirmed"),
+      v.literal("paid"),
+      v.literal("preparing"),
+      v.literal("ready"),
+      v.literal("delivered"),
+      v.literal("cancelled")
+    ),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        name: v.string(),
+        quantity: v.number(),
+        unitPrice: v.number(),
+        totalPrice: v.number(),
+      })
+    ),
+    subtotal: v.number(),
+    deliveryFee: v.optional(v.number()),
+    total: v.number(),
+    currency: v.string(),
+    deliveryType: v.union(v.literal("delivery"), v.literal("pickup")),
+    deliveryAddress: v.optional(v.string()),
+    deliveryNotes: v.optional(v.string()),
+    contactPhone: v.string(),
+    contactName: v.optional(v.string()),
+    paymentMethod: v.union(v.literal("card"), v.literal("cash")),
+    paymentStatus: v.union(
+      v.literal("pending"),
+      v.literal("paid"),
+      v.literal("failed"),
+      v.literal("refunded")
+    ),
+    paymentLinkUrl: v.optional(v.string()),
+    paymentLinkExpiresAt: v.optional(v.number()),
+    stripeSessionId: v.optional(v.string()),
+    estimatedReadyTime: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    cancelledAt: v.optional(v.number()),
+    cancellationReason: v.optional(v.string()),
+  })
+    .index("by_business", ["businessId", "status", "createdAt"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_number", ["orderNumber"])
+    .index("by_payment_session", ["stripeSessionId"]),
 });
