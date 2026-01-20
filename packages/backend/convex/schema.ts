@@ -95,7 +95,24 @@ export default defineSchema({
     channel: v.string(),
     channelId: v.string(),
     lastCustomerMessageAt: v.number(),
-    status: v.optional(v.string()),
+
+    // Dashboard status field (active, escalated, closed)
+    status: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("escalated"),
+        v.literal("closed")
+      )
+    ),
+
+    // Human assignment - null means AI handling, user ID means human assigned
+    assignedTo: v.optional(v.id("users")),
+
+    // For unread indicator - timestamp of when user last read the conversation
+    lastReadAt: v.optional(v.number()),
+
+    // When conversation was closed
+    closedAt: v.optional(v.number()),
 
     // AI Conversation Engine fields
     state: v.optional(
@@ -129,13 +146,17 @@ export default defineSchema({
         address: v.optional(v.string()),
       })
     ),
+
+    // Escalation reason - why AI escalated to human
     escalationReason: v.optional(v.string()),
 
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_business", ["businessId"])
-    .index("by_channel", ["channelId", "businessId"]),
+    .index("by_channel", ["channelId", "businessId"])
+    .index("by_business_status", ["businessId", "status"])
+    .index("by_status", ["status"]),
 
   messages: defineTable({
     conversationId: v.id("conversations"),
