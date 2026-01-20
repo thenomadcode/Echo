@@ -44,7 +44,7 @@
       "id": "S03",
       "title": "Create orders.create mutation",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/orders.ts with orders.create mutation",

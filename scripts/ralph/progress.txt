@@ -15,6 +15,29 @@
 
 ---
 
+## 2026-01-20 15:42 - S03: Create orders.create mutation
+
+**What was implemented:**
+- Created packages/backend/convex/orders.ts with orders.create mutation
+- Validates business exists
+- Validates all products exist, belong to the business, and are not deleted
+- Looks up product prices and names server-side
+- Calculates unitPrice and totalPrice for each item
+- Calculates subtotal as sum of all totalPrice values
+- Generates unique orderNumber using the lib/orderNumber utility
+- Creates order with status 'draft', paymentStatus 'pending', defaults to 'pickup' and 'cash'
+- Gets currency from first product, falls back to 'USD'
+
+**Files changed:**
+- packages/backend/convex/orders.ts (created, 75 lines)
+
+**Learnings for future iterations:**
+- Use explicit type annotation for items array to satisfy Convex insert types
+- Default values for enums (deliveryType, paymentMethod) set at creation time
+- Currency derived from first product's currency field
+
+---
+
 ## 2026-01-20 15:38 - S02: Create order number generation utility
 
 **What was implemented:**

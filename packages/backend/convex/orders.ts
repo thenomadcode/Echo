@@ -76,3 +76,146 @@ export const create = mutation({
     return orderId;
   },
 });
+
+export const addItem = mutation({
+  args: {
+    orderId: v.id("orders"),
+    productId: v.id("products"),
+    quantity: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    if (order.status !== "draft") {
+      throw new Error("Can only add items to draft orders");
+    }
+
+    const product = await ctx.db.get(args.productId);
+    if (!product) {
+      throw new Error("Product not found");
+    }
+    if (product.businessId !== order.businessId) {
+      throw new Error("Product does not belong to this business");
+    }
+    if (product.deleted) {
+      throw new Error(`Product ${product.name} is no longer available`);
+    }
+
+    const quantity = args.quantity ?? 1;
+    const existingIndex = order.items.findIndex(
+      (item) => item.productId === args.productId
+    );
+
+    let items: typeof order.items;
+    if (existingIndex >= 0) {
+      items = order.items.map((item, idx) =>
+        idx === existingIndex
+          ? {
+              ...item,
+              quantity: item.quantity + quantity,
+              totalPrice: item.unitPrice * (item.quantity + quantity),
+            }
+          : item
+      );
+    } else {
+      items = [
+        ...order.items,
+        {
+          productId: args.productId,
+          name: product.name,
+          quantity,
+          unitPrice: product.price,
+          totalPrice: product.price * quantity,
+        },
+      ];
+    }
+
+    const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const total = subtotal + (order.deliveryFee ?? 0);
+
+    await ctx.db.patch(args.orderId, {
+      items,
+      subtotal,
+      total,
+      updatedAt: Date.now(),
+    });
+
+    return args.orderId;
+  },
+});
+
+export const removeItem = mutation({
+  args: {
+    orderId: v.id("orders"),
+    productId: v.id("products"),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    if (order.status !== "draft") {
+      throw new Error("Can only remove items from draft orders");
+    }
+
+    const items = order.items.filter((item) => item.productId !== args.productId);
+
+    const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const total = subtotal + (order.deliveryFee ?? 0);
+
+    await ctx.db.patch(args.orderId, {
+      items,
+      subtotal,
+      total,
+      updatedAt: Date.now(),
+    });
+
+    return args.orderId;
+  },
+});
+
+export const updateItemQuantity = mutation({
+  args: {
+    orderId: v.id("orders"),
+    productId: v.id("products"),
+    quantity: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    if (order.status !== "draft") {
+      throw new Error("Can only update items in draft orders");
+    }
+
+    let items: typeof order.items;
+    if (args.quantity <= 0) {
+      items = order.items.filter((item) => item.productId !== args.productId);
+    } else {
+      items = order.items.map((item) =>
+        item.productId === args.productId
+          ? {
+              ...item,
+              quantity: args.quantity,
+              totalPrice: item.unitPrice * args.quantity,
+            }
+          : item
+      );
+    }
+
+    const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const total = subtotal + (order.deliveryFee ?? 0);
+
+    await ctx.db.patch(args.orderId, {
+      items,
+      subtotal,
+      total,
+      updatedAt: Date.now(),
+    });
+
+    return args.orderId;
+  },
+});
