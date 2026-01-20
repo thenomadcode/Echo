@@ -15,6 +15,21 @@
 
 ---
 
+## 2026-01-20 16:02 - S09: Create order queries
+
+**What was implemented:**
+- Created orders.get: returns single order by ID
+- Created orders.getByConversation: returns most recent order for conversation
+- Created orders.getByOrderNumber: returns order by human-readable number
+- Created orders.listByBusiness: lists orders with optional status filter and pagination
+- All queries validate caller has access to business via authComponent
+- Pagination uses cursor-based approach with take(limit + 1) pattern
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added 122 lines, now imports query and authComponent)
+
+---
+
 ## 2026-01-20 15:58 - S08: Create order status update mutations
 
 **What was implemented:**

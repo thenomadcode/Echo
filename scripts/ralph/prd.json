@@ -154,7 +154,7 @@
       "id": "S09",
       "title": "Create order queries",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.get query in packages/backend/convex/orders.ts",
