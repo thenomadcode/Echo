@@ -374,7 +374,7 @@
       "id": "S18",
       "title": "Add mobile responsive layout",
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "On screens < 1024px: single column layout",
@@ -396,7 +396,7 @@
       "id": "S19",
       "title": "Add offline support with caching",
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Convex provides offline support out of box - verify it works",

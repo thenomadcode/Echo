@@ -17,6 +17,7 @@ import { authClient } from "@/lib/auth-client";
 import { getToken } from "@/lib/auth-server";
 
 import Header from "../components/header";
+import { OfflineIndicator } from "../components/OfflineIndicator";
 import appCss from "../index.css?url";
 
 const getAuth = createServerFn({ method: "GET" }).handler(async () => {
@@ -81,6 +82,7 @@ function RootDocument() {
             <Outlet />
           </div>
           <Toaster richColors />
+          <OfflineIndicator />
           <TanStackRouterDevtools position="bottom-left" />
           <Scripts />
         </body>

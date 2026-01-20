@@ -17,6 +17,56 @@
 
 ---
 
+## 2026-01-20 21:58 - S19: Add offline support with caching
+
+**What was implemented:**
+- Created apps/web/src/components/OfflineIndicator.tsx
+  - Monitors navigator.onLine state for browser connectivity
+  - Monitors Convex client connectionState() for WebSocket status
+  - Three states: connected (hidden), disconnected (red banner), reconnecting (yellow banner)
+  - Fixed position at bottom center with rounded pill design
+  - Uses lucide-react icons: WifiOff for offline, RefreshCw (animated) for reconnecting
+- Integrated OfflineIndicator into apps/web/src/routes/__root.tsx
+  - Added after Toaster, before TanStackRouterDevtools
+  - Appears globally on all pages
+
+**Note:** Convex provides offline caching out of the box - cached conversations remain visible when offline. Optimistic updates queue mutations until reconnection. This story focused on the user-facing indicator.
+
+**Files changed:**
+- apps/web/src/components/OfflineIndicator.tsx (created, 76 lines)
+- apps/web/src/routes/__root.tsx (+2 lines: import and component)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+
+---
+
+## 2026-01-20 22:39 - S18: Add mobile responsive layout
+
+**What was implemented:**
+- Single column layout for screens < 1024px (already implemented in S17)
+- Full page navigation to detail page on mobile (already implemented)
+- Back button on detail page returns to list (already existed)
+- Touch-friendly button sizing:
+  - MessageInput send button: h-11 w-11 (44px)
+  - MessageInput text field: h-11 (44px)
+  - Action buttons: min-h-[44px] on mobile, h-8 on desktop (lg:)
+- Conversation list items: min-h-[72px] for adequate tap targets
+- Flex-wrap on action buttons to handle narrow screens
+
+**Files changed:**
+- apps/web/src/components/conversation/MessageInput.tsx (h-11 for input and button)
+- apps/web/src/routes/conversations.tsx (min-h-[72px] for list items)
+- apps/web/src/routes/conversations_.$conversationId.tsx (min-h-[44px] for action buttons)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S18 - Add mobile responsive layout (commit c1cd761)
+
+---
+
 ## 2026-01-20 22:35 - S17: Add desktop split-view layout for conversations
 
 **What was implemented:**
