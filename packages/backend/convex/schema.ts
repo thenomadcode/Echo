@@ -44,40 +44,76 @@ export default defineSchema({
     .index("by_owner", ["ownerId"])
     .index("by_slug", ["slug"]),
 
+  // Product CMS tables
   categories: defineTable({
-    // Relationships
     businessId: v.string(),
-
-    // Required fields
     name: v.string(),
     order: v.number(),
-
-    // Timestamps
     createdAt: v.number(),
   })
     .index("by_business", ["businessId"]),
 
   products: defineTable({
-    // Relationships
     businessId: v.string(),
     categoryId: v.optional(v.string()),
     imageId: v.optional(v.string()),
-
-    // Required fields
     name: v.string(),
     price: v.number(),
     currency: v.string(),
     available: v.boolean(),
     deleted: v.boolean(),
     order: v.number(),
-
-    // Optional fields
     description: v.optional(v.string()),
-
-    // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_business", ["businessId", "deleted"])
     .index("by_category", ["categoryId", "deleted", "available"]),
+
+  // WhatsApp Integration tables
+  whatsappConnections: defineTable({
+    businessId: v.id("businesses"),
+    provider: v.string(),
+    phoneNumberId: v.string(),
+    phoneNumber: v.string(),
+    credentials: v.object({
+      accountSid: v.optional(v.string()),
+      authToken: v.optional(v.string()),
+      apiKey: v.optional(v.string()),
+    }),
+    verified: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_phone", ["phoneNumber"]),
+
+  conversations: defineTable({
+    businessId: v.id("businesses"),
+    customerId: v.string(),
+    channel: v.string(),
+    channelId: v.string(),
+    lastCustomerMessageAt: v.number(),
+    status: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_channel", ["channelId", "businessId"]),
+
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    sender: v.string(),
+    content: v.string(),
+    messageType: v.optional(v.string()),
+    richContent: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    deliveryStatus: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    mediaUrl: v.optional(v.string()),
+    mediaType: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_external_id", ["externalId"]),
 });

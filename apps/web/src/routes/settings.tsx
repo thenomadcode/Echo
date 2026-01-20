@@ -1,7 +1,7 @@
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
 import { api } from "@echo/backend/convex/_generated/api";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery } from "convex/react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageCircle, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -54,7 +55,7 @@ function SettingsPage() {
       </Authenticated>
       <Unauthenticated>
         <div className="mx-auto mt-10 max-w-md p-6">
-          <SignInForm onSwitchToSignUp={() => {}} />
+          <SignInForm />
         </div>
       </Unauthenticated>
       <AuthLoading>
@@ -425,6 +426,30 @@ function SettingsForm({
                 )}
               </form.Field>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Integrations</CardTitle>
+            <CardDescription>Connect external services to your business</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              to="/settings/whatsapp"
+              className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-green-100 text-green-600">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-medium">WhatsApp Business</p>
+                  <p className="text-sm text-muted-foreground">Connect your WhatsApp to receive customer messages</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Link>
           </CardContent>
         </Card>
 

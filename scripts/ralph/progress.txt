@@ -14,7 +14,54 @@
 
 ---
 
-## 2026-01-16 15:20 - S03: Create business queries
+## 2026-01-19 21:25 - S03: Receive customer message via webhook
+
+**What was implemented:**
+- Created HTTP GET endpoint at /webhook/whatsapp for Meta/Twilio webhook verification
+  - Verifies hub.verify_token against WEBHOOK_VERIFY_TOKEN environment variable
+  - Returns challenge for successful verification
+- Created HTTP POST endpoint at /webhook/whatsapp for receiving messages
+  - Handles both JSON and form-urlencoded payloads (Twilio uses form data)
+  - Extracts recipient phone number from payload
+  - Looks up business by phone number using by_phone index
+  - Uses TwilioWhatsAppProvider.parseWebhook() to parse message
+  - Calls processIncomingMessage internal mutation
+  - Returns 200 OK immediately for fast webhook response
+- Created whatsapp.processIncomingMessage internal mutation in webhook.ts
+  - Creates channelId format: whatsapp:{customerPhone}:{businessId}
+  - Creates new conversation or updates existing one via by_channel index
+  - Updates lastCustomerMessageAt on existing conversations
+  - Stores message in messages table with sender: "customer"
+  - Handles message types: text, image, voice, document via mediaType
+- Created whatsapp.getBusinessByPhoneNumber internal mutation
+  - Looks up WhatsApp connection by phone number
+  - Returns business credentials and provider info
+- Fixed twilio.ts to remove Node.js-specific crypto import (not needed for current verification)
+- Replaced Buffer.from() with btoa() for base64 encoding (Web API compatible)
+
+**Files changed:**
+- packages/backend/convex/http.ts (expanded from 10 to 107 lines)
+- packages/backend/convex/integrations/whatsapp/webhook.ts (created, 111 lines)
+- packages/backend/convex/integrations/whatsapp/twilio.ts (removed crypto import, replaced Buffer with btoa)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Convex HTTP actions use httpAction from _generated/server, not convex/server
+- Nested module paths use dots in API: internal.integrations.whatsapp.webhook.functionName
+- Convex runtime doesn't support Node.js crypto module - use Web Crypto API or format validation only
+- Form-urlencoded webhooks need URLSearchParams parsing: new URLSearchParams(await request.text())
+- Return 200 OK quickly for webhooks to avoid timeouts - process async if needed
+- channelId pattern enables finding conversations across channels
+
+**Verification:**
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on new/modified backend files
+- Pre-existing errors in dashboard.tsx and settings.tsx are unrelated to S03
+- Committed as: feat: S03 - Receive customer message via webhook (commit 0c05eab)
+- Updated PRD: S03 passes: true
+
+---
+
 
 **What was implemented:**
 - Added `businesses.list` query that returns all businesses owned by authenticated user
@@ -298,692 +345,282 @@
 
 ---
 
-
-## 2026-01-19 13:15 - S01: Create products and categories schema
+## 2026-01-19 16:35 - S01: Create WhatsApp data model
 
 **What was implemented:**
-- Created products table in Convex schema with all required fields:
-  - Relationships: businessId (v.string), categoryId (v.optional(v.string)), imageId (v.optional(v.string))
-  - Required fields: name, price (v.number for centavos), currency (v.string), available (v.boolean), deleted (v.boolean), order (v.number)
-  - Optional fields: description (v.optional(v.string))
-  - Timestamps: createdAt, updatedAt (both v.number)
-- Created categories table with all required fields:
-  - Relationships: businessId (v.string)
-  - Required fields: name (v.string), order (v.number)
-  - Timestamps: createdAt (v.number)
-- Added products indexes:
-  - by_business on [businessId, deleted]
-  - by_category on [categoryId, deleted, available]
-- Added categories index:
-  - by_business on [businessId]
-- Price stored as v.number (integer representing centavos)
-- Currency stored as v.string (defaults will be handled in mutations: COP, BRL, MXN, USD)
+- Created whatsappConnections table in packages/backend/convex/schema.ts
+  - Fields: businessId (v.id("businesses")), provider, phoneNumberId, phoneNumber, credentials (nested object with accountSid, authToken, apiKey), verified, createdAt
+  - Indexes: by_business [businessId], by_phone [phoneNumber]
+- Created conversations table for tracking customer conversations
+  - Fields: businessId, customerId, channel, channelId, lastCustomerMessageAt, status (optional), createdAt, updatedAt
+  - Indexes: by_business [businessId], by_channel [channelId, businessId]
+- Created messages table for individual messages
+  - Fields: conversationId, sender, content, externalId (optional), deliveryStatus (optional), mediaUrl (optional), mediaType (optional), createdAt
+  - Index: by_conversation [conversationId]
 
 **Files changed:**
-- packages/backend/convex/schema.ts (added 37 lines for products and categories tables)
+- packages/backend/convex/schema.ts (added 41 lines for 3 new tables)
 
 **Learnings for future iterations:**
-- Products table needs all fields for comprehensive product management (name, description, price, currency, category, image, availability, soft delete)
-- Categories table is simpler with just business relationship, name, and order for reordering
-- Multi-field indexes improve query performance (e.g., by_business on [businessId, deleted] allows filtering non-deleted products efficiently)
-- Composite index on [categoryId, deleted, available] enables fast filtered queries by category and availability
-- Price as integer (centavos) prevents floating-point precision issues with currency
-- Currency stored as string allows flexibility for different markets without schema changes
-- Soft delete pattern (deleted: boolean) preserves data integrity and allows recovery
+- WhatsApp BSP credentials stored in nested object for flexibility across providers (Twilio, 360dialog)
+- Conversations track channel type (whatsapp, web) and channelId for lookup
+- lastCustomerMessageAt enables 24-hour messaging window tracking
+- Messages use optional externalId for WhatsApp message ID correlation
+- deliveryStatus tracks sent/delivered/read/failed states from webhook updates
 
 **Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Committed as: feat: S01 - Create products and categories schema (commit 8db5079)
+- LSP diagnostics show no TypeScript errors
+- Committed as: feat: S01 - Create WhatsApp data model (commit 3760aca)
 - Updated PRD: S01 passes: true
 
 ---
 
-## 2026-01-19 13:20 - S02: Create categories backend functions
+## 2026-01-19 21:10 - S02: Create BSP abstraction layer
 
 **What was implemented:**
-- Created packages/backend/convex/categories.ts with complete CRUD operations
-- Implemented categories.create mutation with businessId, name, order args
-- Implemented categories.update mutation with categoryId, optional name and order args
-- Implemented categories.deleteCategory mutation with categoryId arg (hard delete)
-- Implemented categories.list query with businessId arg, returns categories sorted by order
-- Implemented categories.reorder mutation with businessId and orderedIds args for drag-and-drop reordering
-- All mutations validate authentication using authComponent.safeGetAuthUser pattern
-- All mutations verify business ownership before allowing operations
-- List query returns empty array for unauthenticated/unauthorized users
-- Queries use by_business index for efficient lookups
+- Created packages/backend/convex/integrations/whatsapp/ directory structure
+- Created types.ts (116 lines) with comprehensive WhatsApp BSP abstraction types:
+  - WhatsAppProvider interface with sendText, sendImage, sendButtons, sendList, parseWebhook, verifyWebhook methods
+  - Button type with id and title fields
+  - ListRow type with id, title, description fields
+  - ListSection type with title and rows fields
+  - MessageResult type with success, messageId, error fields
+  - ParsedMessage type with from, content, timestamp, mediaUrl, mediaType, messageType, externalId fields
+  - MessageType union: "text" | "image" | "voice" | "document" | "buttons" | "list"
+  - WebhookVerification type with valid and challenge fields
+  - ProviderCredentials type for multi-provider support
+- Created twilio.ts (216 lines) with TwilioWhatsAppProvider class implementing WhatsAppProvider:
+  - sendText: Sends plain text via Twilio API
+  - sendImage: Sends image with optional caption via MediaUrl
+  - sendButtons: Falls back to numbered text options (Twilio requires pre-approved templates for buttons)
+  - sendList: Falls back to formatted text sections (same template limitation)
+  - parseWebhook: Parses Twilio webhook payload into ParsedMessage
+  - verifyWebhook: Validates Twilio X-Twilio-Signature header format
+  - computeSignature: Helper for full HMAC-SHA1 signature computation
+  - sendTwilioMessage: Private method handling Twilio API HTTP requests with Basic auth
 
 **Files changed:**
-- packages/backend/convex/categories.ts (created, 180 lines)
+- packages/backend/convex/integrations/whatsapp/types.ts (created, 116 lines)
+- packages/backend/convex/integrations/whatsapp/twilio.ts (created, 216 lines)
 
 **Learnings for future iterations:**
-- Business access validation pattern: query businesses table by _id using filter + eq, then check ownerId matches authUser._id
-- For queries, return empty arrays for unauthorized access (graceful degradation)
-- For mutations, throw errors for unauthorized access (fail fast)
-- Named export `deleteCategory` instead of `delete` to avoid conflicts with reserved keyword
-- Reorder mutation updates order field by iterating through orderedIds array with index
-- Sort categories in list query using .sort((a, b) => a.order - b.order) for consistent ordering
-- Use Record<string, unknown> type for update objects to avoid optional field conflicts
+- Twilio WhatsApp interactive messages (buttons, lists) require pre-approved templates - fallback to text format is practical
+- WhatsApp phone numbers must be in E.164 format (e.g., +573001234567)
+- Twilio webhooks use X-Twilio-Signature header with HMAC-SHA1 of URL + sorted POST params
+- Provider abstraction enables easy switching between Twilio, 360dialog, Meta Cloud API
+- MessageType union allows type-safe handling of different WhatsApp message formats
+- externalId field in ParsedMessage enables message status tracking via webhooks
 
 **Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Committed as: feat: S02 - Create categories backend functions (commit c50da7c)
+- LSP diagnostics show no TypeScript errors on types.ts and twilio.ts
+- Committed as: feat: S02 - Create BSP abstraction layer (commit 3b664ba)
 - Updated PRD: S02 passes: true
 
 ---
 
-## 2026-01-19 13:35 - S03: Create products CRUD backend functions
+## 2026-01-19 21:37 - S04: Send text response to customer
 
 **What was implemented:**
-- Created products.ts in packages/backend/convex/ with complete CRUD operations (250 lines)
-- Implemented products.create mutation with businessId, name, description, price, categoryId, imageId args
-- Auto-generates currency from business defaultLanguage (es->COP, pt->BRL, default->USD)
-- Auto-increments order field for new products based on existing max order
-- Implemented products.update mutation with productId and all optional fields (name, description, price, categoryId, imageId, available)
-- Implemented products.deleteProduct mutation with soft delete (sets deleted: true, updates updatedAt)
-- Implemented products.get query with productId arg, returns null for unauthenticated/unauthorized users
-- Implemented products.list query with comprehensive filtering:
-  - businessId (required), categoryId (optional), available (optional), search (optional)
-  - Pagination support with limit and cursor args
-  - Search filters by name and description (case-insensitive)
-  - Returns object with products array, hasMore boolean, nextCursor number
-- All queries use by_business index with [businessId, deleted] for efficient lookups
-- List query excludes deleted products by default (deleted: false in index query)
-- New products default to available: true, deleted: false
-- All mutations validate authentication and business ownership before operations
+- Created whatsapp.sendMessage action in packages/backend/convex/integrations/whatsapp/actions.ts
+- Action accepts args: conversationId, content, type (text)
+- Created loadConversationData internalQuery to load conversation, business, and WhatsApp credentials
+- Created storeOutgoingMessage internalMutation to store sent messages
+- Integrated TwilioWhatsAppProvider.sendText() for actual message delivery
+- Implemented exponential backoff with max 3 retries for rate limit handling (1s, 2s, 4s delays)
+- Detects rate limit errors via 429 status code or "rate limit" / "Too Many Requests" strings
+- Stores successful messages with sender: "business", externalId from Twilio API, deliveryStatus: "sent"
+- Stores failed messages with deliveryStatus: "failed" after all retries exhausted
 
 **Files changed:**
-- packages/backend/convex/products.ts (created, 250 lines)
+- packages/backend/convex/integrations/whatsapp/actions.ts (created, 152 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
 
 **Learnings for future iterations:**
-- Currency inference pattern: Use business.defaultLanguage to set appropriate currency (es->COP, pt->BRL, else USD)
-- Order field auto-increment: Query all products, find max order, increment by 1 for new product
-- Soft delete pattern: Don't actually delete from DB, just set deleted: true and update timestamp
-- List query pagination: Return object with { products, hasMore, nextCursor } for client-side pagination
-- Search implementation: Filter in-memory after index query (Convex doesn't support full-text search on indexed queries)
-- Composite index usage: .withIndex("by_business", q => q.eq("businessId", x).eq("deleted", false)) efficiently excludes deleted items
-- Named export for delete: Use deleteProduct instead of delete to avoid reserved keyword conflicts
+- Convex actions use ctx.runQuery and ctx.runMutation for database operations
+- Internal functions use internal.module.path.functionName syntax
+- Rate limit handling requires explicit detection of 429 status or rate limit keywords
+- Exponential backoff formula: Math.pow(2, attempt) * 1000 gives 1s, 2s, 4s delays
+- Always store failed messages with status to enable retry/debugging later
+- sleep() helper implemented with Promise and setTimeout
 
 **Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Committed as: feat: S03 - Create products CRUD backend functions (commit ef921a9)
-- Updated PRD: S03 passes: true
-
----
-
-## 2026-01-19 13:45 - S04: Create image upload backend functions
-
-**What was implemented:**
-- Created products.generateUploadUrl mutation in packages/backend/convex/products.ts
-- Mutation validates authentication using authComponent.safeGetAuthUser pattern
-- Returns upload URL from ctx.storage.generateUploadUrl() for client-side file upload
-- Created products.getImageUrl query with storageId arg
-- Query validates authentication before returning public URL
-- Uses ctx.storage.getUrl(storageId) to retrieve public URL from Convex file storage
-- Product imageId can already be updated via existing products.update mutation
-- All file storage operations require authenticated users
-
-**Files changed:**
-- packages/backend/convex/products.ts (added 26 lines for image upload functions)
-
-**Learnings for future iterations:**
-- Convex file storage pattern: ctx.storage.generateUploadUrl() generates temporary upload URL for client
-- Client uploads file to the URL, receives storageId in response
-- Store storageId as string in database (imageId field)
-- Retrieve public URL with ctx.storage.getUrl(storageId) when needed
-- Upload URL generation should be authenticated to prevent abuse
-- getImageUrl query validates auth but could be made public if product images should be accessible to customers
-- File storage IDs are strings (not v.id type), use v.optional(v.string()) in schema
-
-**Verification:**
-- LSP diagnostics show no TypeScript errors
-- Committed as: feat: S04 - Create image upload backend functions (commit 0955b72)
+- bun run check-types passed successfully
+- LSP diagnostics show no errors on actions.ts
+- Committed as: feat: S04 - Send text response to customer (commit e2cec92)
 - Updated PRD: S04 passes: true
 
 ---
 
-## 2026-01-19 13:50 - S05: Create bulk operations backend functions
+## 2026-01-19 22:17 - S05: Send rich messages with buttons and lists
 
 **What was implemented:**
-- Created products.bulkUpdateAvailability mutation accepting productIds array and available boolean
-- Created products.bulkDelete mutation accepting productIds array (soft delete pattern)
-- Created products.bulkUpdateCategory mutation accepting productIds array and optional categoryId
-- All bulk mutations iterate through productIds array and validate ownership for each product
-- Each mutation checks authentication using authComponent.safeGetAuthUser
-- For each product, verifies business ownership matches authenticated user before updating
-- Throws error if user doesn't own business associated with ANY product (fail-fast validation)
-- Updates updatedAt timestamp for all modified products
-- Returns integer count of successfully updated products
-- Bulk delete sets deleted: true (soft delete), consistent with single delete pattern
+- Extended whatsapp.sendMessage action to support message types: text, buttons, list, image
+- Added Convex validators for Button and ListSection types (buttonValidator, listRowValidator, listSectionValidator)
+- Updated action args with optional fields: buttons, sections, imageUrl, caption, buttonText
+- Implemented validation: buttons array required for buttons type (max 3), sections required for list type, imageUrl required for image type
+- Implemented automatic fallback to plain text for all rich message types when API call fails
+- Created formatButtonsAsFallback(): converts buttons to numbered list text
+- Created formatListAsFallback(): converts sections to formatted text with asterisk-bold titles
+- Created formatImageAsFallback(): includes image URL in text message
+- Updated storeOutgoingMessage mutation with new fields: messageType, richContent, mediaUrl
+- Updated messages table schema with messageType (string) and richContent (JSON-encoded structured data)
+- Stores original structured content in richContent as JSON string for reconstruction/analytics
+- Tracks usedFallback flag to correctly record messageType as "text" when fallback is used
 
 **Files changed:**
-- packages/backend/convex/products.ts (added 134 lines for bulk operations)
+- packages/backend/convex/integrations/whatsapp/actions.ts (expanded from 152 to 279 lines)
+- packages/backend/convex/schema.ts (added messageType and richContent fields to messages table)
 
 **Learnings for future iterations:**
-- Bulk operations pattern: iterate through array, validate each item, track success count
-- Fail-fast on authorization errors to prevent partial updates across tenant boundaries
-- Skip non-existent products (continue loop) but throw on authorization failures
-- Bulk mutations return count instead of IDs for simpler client handling
-- Consistent timestamp updates across all bulk operations
-- Bulk operations reuse same business ownership validation as single operations
-- categoryId can be v.optional to support "remove from category" use case
+- Rich message fallback should be attempted only once per send operation (usedFallback flag)
+- Storing structured content as JSON string in richContent enables future analytics/reconstruction
+- Convex validators can be composed: listSectionValidator uses listRowValidator via v.array()
+- Type casting with `as Button[]` works when Convex validator structure matches TypeScript interface
+- WhatsApp button limit (3) should be validated before attempting to send
+- Image fallback includes URL in text so customers can still access the image
 
 **Verification:**
-- LSP diagnostics show no TypeScript errors
-- Committed as: feat: S05 - Create bulk operations backend functions (commit 7bd63c6)
+- Convex codegen passes successfully (22:16:42)
+- LSP diagnostics show no errors on actions.ts and schema.ts
+- Pre-existing errors in dashboard.tsx and settings.tsx are unrelated to S05
+- Committed as: feat: S05 - Send rich messages with buttons and lists (commit ef52aff)
 - Updated PRD: S05 passes: true
 
 ---
 
-## 2026-01-19 14:40 - S06: Create CategoryManager component and page
+## 2026-01-19 22:20 - S06: Handle WhatsApp 24-hour messaging window
 
 **What was implemented:**
-- Created CategoryManager component in apps/web/src/components/products/CategoryManager.tsx (245 lines)
-- Created category management page at apps/web/src/routes/products/categories.tsx (79 lines)
-- Component displays list of categories with product count for each category
-- Create category form with name field inline in Card component
-- Edit category inline with Input field and Save/Cancel buttons
-- Delete category with confirmation dialog (modal overlay)
-- Product count calculation for each category using products.list query
-- Uncategorized products count shown at bottom of list with special styling (bg-muted/50)
-- Empty state card shown when no categories exist with helpful message
-- Uses Convex queries: categories.list and products.list
-- Uses Convex mutations: categories.create, categories.update, categories.deleteCategory
-- Toast notifications for all success/error states
-- Back to Dashboard button with ArrowLeft icon for navigation
-- Auth flow with Authenticated/Unauthenticated/AuthLoading components
-- Redirect to onboarding if no businesses exist
-- Generated TanStack Router types for /products/categories route
+- Created packages/backend/convex/integrations/whatsapp/window.ts with:
+  - isWithin24HourWindow(lastCustomerMessageAt) - checks if within 24h window
+  - getWindowExpiresAt(lastCustomerMessageAt) - returns expiration timestamp
+  - getWindowRemainingMs(lastCustomerMessageAt) - returns remaining ms in window
+- Created packages/backend/convex/integrations/whatsapp/templates.ts with:
+  - MessageTemplate and TemplateVariable interfaces
+  - RE_ENGAGEMENT_TEMPLATE - re-engagement template with {{1}}=business name, {{2}}=context
+  - ORDER_UPDATE_TEMPLATE - order status template with {{1}}=customer, {{2}}=order#, {{3}}=status
+  - renderTemplate() - renders template with variable substitution
+  - getTemplate() - retrieves template by name
+- Updated sendMessage action in actions.ts:
+  - Added type: "template" as valid message type
+  - Added templateName and templateVariables arguments
+  - Check isWithin24HourWindow before sending non-template messages
+  - Throws error outside 24h window unless type is "template"
+  - Template case renders template with provided variables
+- Created packages/backend/convex/conversations.ts with queries:
+  - get(conversationId) - returns conversation with windowExpiresAt computed field
+  - listByBusiness(businessId) - lists all conversations with windowExpiresAt
+  - getWithMessages(conversationId, limit?) - returns conversation with messages and windowExpiresAt
+- Verified lastCustomerMessageAt already updated in processIncomingMessage (webhook.ts line 48)
 
 **Files changed:**
-- apps/web/src/components/products/CategoryManager.tsx (created, 245 lines)
-- apps/web/src/routes/products/categories.tsx (created, 79 lines)
-- apps/web/src/routeTree.gen.ts (auto-generated route types)
-- Created directories: apps/web/src/components/products and apps/web/src/routes/products
+- packages/backend/convex/integrations/whatsapp/window.ts (created, 25 lines)
+- packages/backend/convex/integrations/whatsapp/templates.ts (created, 61 lines)
+- packages/backend/convex/integrations/whatsapp/actions.ts (modified, added template support and 24h check)
+- packages/backend/convex/conversations.ts (created, 57 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
 
 **Learnings for future iterations:**
-- CategoryManager accepts businessId prop for multi-tenant isolation
-- Product count calculated client-side by filtering products.products array
-- Inline editing pattern: track editingId state, show Input when editing, normal display otherwise
-- Modal overlay pattern: use fixed inset-0 with bg-black/50 for simple dialogs
-- Delete confirmation requires explicit state (deleteConfirmId) to show/hide dialog
-- Uncategorized products filter: products.filter(p => !p.categoryId)
-- lucide-react icons (Pencil, Trash2, ArrowLeft) integrate seamlessly
-- TanStack Router requires bunx @tanstack/router-cli generate after adding new routes
-- Convex dev --once regenerates API types when backend functions change
+- WhatsApp 24h window uses customer's lastCustomerMessageAt timestamp + 24 hours
+- Template variables are 1-indexed per WhatsApp Business API spec: {{1}}, {{2}}, etc.
+- getWindowExpiresAt returns null if no customer message yet (window never opened)
+- Convex queries can add computed fields by spreading document and adding new properties
+- Template rendering should provide default values for optional variables
 
 **Verification:**
-- LSP diagnostics show no TypeScript errors after route generation
-- Committed as: feat: S06 - Create CategoryManager component and page (commit e08c97a)
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on all new/modified files
+- Pre-existing errors in dashboard.tsx and settings.tsx are unrelated to S06
+- Committed as: feat: S06 - Handle WhatsApp 24-hour messaging window (commit aae5f0c)
 - Updated PRD: S06 passes: true
 
 ---
 
-## 2026-01-19 14:45 - S07: Create PriceInput component
+## 2026-01-19 22:25 - S07: Process webhook status updates
 
 **What was implemented:**
-- Created PriceInput component in apps/web/src/components/ui/PriceInput.tsx (116 lines)
-- Component accepts currency prop (COP, BRL, MXN, USD)
-- Displays appropriate currency symbol ($, R$) in left position using absolute positioning
-- Currency symbols mapped: COP=$, BRL=R$, MXN=$, USD=$
-- Locale-specific formatting using Intl.NumberFormat with locales: es-CO, pt-BR, es-MX, en-US
-- Handles decimal input validation with regex /^[\d.]*$/
-- Converts display value to centavos (integer) internally using Math.round(value * 100)
-- Formats display value with thousand separators and 2 decimal places
-- Focus/blur behavior: shows raw decimal on focus, formatted with separators on blur
-- Controlled input with value (number in centavos) and onChange (valueInCents: number) props
-- Uses forwardRef for ref forwarding to underlying Input component
-- Additional props: className, id, name, placeholder, disabled
-- Input mode set to "decimal" for mobile numeric keyboard
+- Extended /webhook/whatsapp POST handler in http.ts to detect status update payloads vs message payloads
+- Added TwilioWhatsAppProvider.isStatusUpdate() static method to detect status callbacks (has MessageStatus and MessageSid, no Body)
+- Added TwilioWhatsAppProvider.parseStatusUpdate() method to parse status webhooks into StatusUpdate type
+- Created StatusUpdate interface and DeliveryStatus type ("sent" | "delivered" | "read" | "failed" | "undelivered") in types.ts
+- Added ErrorCode and ErrorMessage fields to TwilioWebhookPayload interface
+- Created whatsapp.updateMessageStatus internal mutation in webhook.ts:
+  - Looks up message by externalId using new by_external_id index
+  - Updates deliveryStatus in database
+  - Stores errorCode and errorMessage for failed/undelivered messages
+  - Logs failed deliveries with console.error for debugging
+- Added by_external_id index to messages table in schema.ts for efficient lookup
+- Added errorCode and errorMessage optional fields to messages table for failure tracking
+- Refactored http.ts POST handler into handleStatusUpdate() and handleIncomingMessage() helpers for clarity
 
 **Files changed:**
-- apps/web/src/components/ui/PriceInput.tsx (created, 116 lines)
+- packages/backend/convex/http.ts (expanded from 111 to 145 lines, refactored into helper functions)
+- packages/backend/convex/integrations/whatsapp/twilio.ts (added isStatusUpdate and parseStatusUpdate methods)
+- packages/backend/convex/integrations/whatsapp/types.ts (added StatusUpdate interface and DeliveryStatus type)
+- packages/backend/convex/integrations/whatsapp/webhook.ts (added updateMessageStatus mutation)
+- packages/backend/convex/schema.ts (added by_external_id index, errorCode, errorMessage fields)
 
 **Learnings for future iterations:**
-- Price values stored as integers (centavos) prevent floating-point precision issues
-- Intl.NumberFormat provides locale-aware thousand separators and decimal formatting
-- Focus state controls display format: raw decimal when editing, formatted when not focused
-- Currency symbol positioned absolutely with pl-8 to offset Input padding
-- forwardRef required for components wrapping Input to support form refs
-- inputMode="decimal" triggers appropriate mobile keyboard (numeric with decimal point)
-- Parse display value by removing non-digit/decimal characters before conversion
-- Update parent state only on blur to avoid re-rendering during typing
+- Twilio status callbacks have MessageStatus and MessageSid fields but no Body field - use this to distinguish from message webhooks
+- Status values from Twilio: sent, delivered, read, failed, undelivered
+- Failed/undelivered messages include ErrorCode (e.g., 30003) and ErrorMessage fields
+- Using a static method for payload type detection (isStatusUpdate) avoids needing credentials for detection
+- parseStatusUpdate can use a dummy provider instance since it only parses payload, doesn't send
 
 **Verification:**
-- LSP diagnostics show no TypeScript errors
-- Committed as: feat: S07 - Create PriceInput component (commit 812bef9)
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on all modified files
+- Committed as: feat: S07 - Process webhook status updates
 - Updated PRD: S07 passes: true
 
 ---
 
-## 2026-01-19 14:50 - S08: Create ImageUpload component
+## 2026-01-19 22:30 - S08: Create WhatsApp connection settings page
 
 **What was implemented:**
-- Created ImageUpload component in apps/web/src/components/ui/ImageUpload.tsx (194 lines)
-- Drag and drop zone with visual feedback (border-primary bg-primary/5 when dragging)
-- Click to browse file picker using hidden input with type="file" and ref
-- Preview uploaded image using FileReader and data URL
-- Upload to Convex file storage flow:
-  1. Call products.generateUploadUrl mutation to get temporary upload URL
-  2. POST file to URL with Content-Type header
-  3. Extract storageId from response JSON
-  4. Pass storageId to onChange callback
-- File validation: only image/* types, max 5MB size
-- Replace existing image with X button (absolute positioned top-right)
-- Upload progress indicator: spinning loader overlay with bg-background/80
-- Controlled component with value (storageId string) and onChange props
-- Disabled state support with opacity and cursor changes
-- Toast notifications for success/error states
-- lucide-react icons: Upload (drop zone), X (remove button)
+- Created packages/backend/convex/integrations/whatsapp/settings.ts with:
+  - getConnectionStatus query - returns connection status, provider, phone, verified flag, lastMessageAt
+  - saveCredentials mutation - stores/updates WhatsApp BSP credentials
+  - markVerified internalMutation - marks connection as verified after test
+  - getConnectionForTest internalQuery - loads connection for action
+  - testConnection action - validates Twilio credentials via API call
+- Created apps/web/src/routes/settings_.whatsapp.tsx (flat route for /settings/whatsapp):
+  - Connection status card with visual indicator (green CheckCircle2 / red XCircle)
+  - Setup instructions with numbered steps and links to Twilio docs
+  - Webhook URL display with copy-to-clipboard button
+  - Form with provider dropdown (Twilio), Account SID, Auth Token, Phone Number fields
+  - Test Connection button (disabled until credentials saved)
+  - Save Credentials button
+  - Toast feedback for save/test operations
+  - Business switcher integration
+- Updated routeTree.gen.ts with new route
 
 **Files changed:**
-- apps/web/src/components/ui/ImageUpload.tsx (created, 194 lines)
+- packages/backend/convex/integrations/whatsapp/settings.ts (created, 217 lines)
+- apps/web/src/routes/settings_.whatsapp.tsx (created, 375 lines)
+- apps/web/src/routeTree.gen.ts (updated)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
 
 **Learnings for future iterations:**
-- Convex file upload pattern: generateUploadUrl → POST file → extract storageId from response
-- FileReader.readAsDataURL creates preview without full upload
-- Drag events require preventDefault() to enable custom drop handling
-- Hidden file input controlled via ref for programmatic click triggering
-- Upload progress overlay uses absolute positioning with semi-transparent background
-- Image preview with object-contain maintains aspect ratio
-- Accept attribute on input filters file picker to images only
-- Stop propagation on remove button click to prevent triggering container click
-- Display truncated storageId when no preview available (first 8 chars)
+- TanStack Router nested routes require parent to render <Outlet /> - use flat route pattern (settings_.whatsapp.tsx) to avoid this
+- Flat route naming: use underscore (settings_.whatsapp.tsx) to create /settings/whatsapp without nesting
+- Convex actions can test external APIs (Twilio) and then call mutations to update state
+- internalMutation/internalQuery bypass auth for internal use but must be called from actions
+- Connection test pattern: fetch Twilio account endpoint to verify credentials before marking verified
+
+**Browser Test Results:**
+- Navigate to /settings/whatsapp - PASSED (page renders with correct title)
+- Connection status indicator visible - PASSED (shows red X for no connection)
+- Form with provider dropdown and fields - PASSED (all 4 fields visible)
+- Webhook URL in copyable format - PASSED (text input + copy button)
+- Test Connection button present - PASSED (disabled until credentials saved)
 
 **Verification:**
-- LSP diagnostics show no TypeScript errors
-- Committed as: feat: S08 - Create ImageUpload component (commit fda3110)
+- Convex codegen passes successfully
+- LSP diagnostics show no errors on new files
+- Browser tests all pass
+- Committed as: feat: S08 - Create WhatsApp connection settings page (commit c894d1e)
 - Updated PRD: S08 passes: true
-
----
-
-## 2026-01-19 14:15 - S09: Create ProductForm component
-
-**What was implemented:**
-- Created ProductForm component in apps/web/src/components/products/ProductForm.tsx (239 lines)
-- Implemented comprehensive form with all required fields:
-  - Name field (required with validation)
-  - Description field (optional textarea)
-  - Price field (required, using PriceInput component)
-  - Category dropdown (optional, populated from categories.list)
-  - Image upload (optional, using ImageUpload component)
-- Used TanStack Form with Zod validation schema
-- Zod validation for name (min 1 character) and price (min 1, greater than 0)
-- Validation errors displayed inline with red text below each field
-- Support for both create and edit modes via mode prop
-- Mode prop determines: form title, button text, and which mutation to call
-- Create mode calls products.create mutation with businessId
-- Edit mode calls products.update mutation with productId
-- Currency auto-detected from business.defaultLanguage (es->COP, pt->BRL, default->USD)
-- Success toast notifications after successful create/update
-- Optional onSuccess callback prop for parent component handling
-- Card-based layout using shadcn/ui Card components
-- Native select element for category dropdown with clean styling
-- Native textarea for description with consistent input styling
-- Loading state while categories and business data loads
-
-**Files changed:**
-- apps/web/src/components/products/ProductForm.tsx (created, 239 lines)
-
-**Learnings for future iterations:**
-- TanStack Form field pattern: `<form.Field name="fieldName">{(field) => ...}</form.Field>`
-- Zod safeParse returns success boolean and issues array (not errors array)
-- Access Zod validation errors: `validated.error.issues[0].message`
-- Type casting for Convex Id types: `businessId as Id<"businesses">`
-- PriceInput accepts value in centavos (integer) and onChange callback with valueInCents
-- ImageUpload accepts value (storageId string) and onChange callback with storageId or undefined
-- Currency inference pattern: Use business.defaultLanguage to determine currency for PriceInput
-- Native select/textarea elements can be styled consistently with shadcn Input using same classes
-- Form submission pattern: e.preventDefault(), e.stopPropagation(), form.handleSubmit()
-- Optional fields should be sent as undefined (not empty strings) to Convex mutations
-- Mode prop pattern allows single component to handle both create and edit use cases
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- LSP diagnostics show no errors
-- Committed as: feat: S09 - Create ProductForm component (commit 04687a2)
-- Updated PRD: S09 passes: true
-
----
-
-## 2026-01-19 14:20 - S10: Create ProductCard component
-
-**What was implemented:**
-- Created ProductCard component in apps/web/src/components/products/ProductCard.tsx (156 lines)
-- Created Switch component in apps/web/src/components/ui/switch.tsx (22 lines) using Base UI primitives
-- Component displays all required product information:
-  - Product image thumbnail from Convex storage via products.getImageUrl query
-  - Placeholder image ("No image") when no imageId provided
-  - Product name with conditional styling (muted when unavailable)
-  - Formatted price using Intl.NumberFormat with locale-specific currency formatting
-  - Category name (fetched from categories.list and matched by categoryId)
-  - Availability badge showing "Unavailable" for unavailable products
-- Implemented availability toggle switch at bottom of card
-- Switch updates product availability via products.update mutation
-- Success toast notifications for availability changes
-- Click on card navigates to /products/{productId} edit page
-- Checkbox for bulk selection with onSelectChange callback
-- Visual indicators for unavailable products:
-  - Card opacity reduced to 60% when unavailable
-  - Text color muted for product name
-  - "Unavailable" badge displayed
-- Price formatting with CURRENCY_LOCALES mapping (COP->es-CO, BRL->pt-BR, MXN->es-MX, USD->en-US)
-- Converts price from centavos to major units (price / 100) before formatting
-- Card hover effect with shadow transition
-- Event propagation stopped for checkbox and switch to prevent card click
-
-**Files changed:**
-- apps/web/src/components/products/ProductCard.tsx (created, 156 lines)
-- apps/web/src/components/ui/switch.tsx (created, 22 lines)
-
-**Learnings for future iterations:**
-- Base UI Switch component pattern: SwitchPrimitive.Root with SwitchPrimitive.Thumb
-- Switch styling uses data-checked state for conditional styles
-- Thumb translation with data-checked:translate-x-4 for toggle animation
-- Image loading from Convex storage: useQuery with products.getImageUrl and storageId
-- Conditional query pattern: imageId ? { storageId: imageId } : "skip" to avoid unnecessary queries
-- formatPrice helper uses Intl.NumberFormat with locale and currency for proper formatting
-- Category lookup: find category in categories array by matching _id with categoryId
-- Event.stopPropagation() prevents parent onClick when interacting with checkbox/switch
-- Card opacity pattern: opacity-60 for unavailable items provides subtle visual feedback
-- Checkbox onCheckedChange receives boolean | "indeterminate" - must type guard before using
-- Navigate pattern: navigate({ to: `/products/${productId}` }) for type-safe routing
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- LSP diagnostics show no errors
-- Committed as: feat: S10 - Create ProductCard component (commit e5ab003)
-- Updated PRD: S10 passes: true
-
----
-
-
-## 2026-01-19 14:20 - S11: Create ProductTable component
-
-**What was implemented:**
-- Created shadcn/ui Table component in apps/web/src/components/ui/table.tsx (125 lines)
-- Table component includes: Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell, TableCaption
-- Created ProductTable component in apps/web/src/components/products/ProductTable.tsx (260 lines)
-- Implemented all required table columns: checkbox, image thumbnail, name, price, category, availability toggle
-- Added sortable columns for name, price, and category with ChevronUp/ChevronDown icons
-- Sort state tracked with sortField and sortOrder (asc/desc)
-- Click on column header toggles sort order (asc ↔ desc) or changes sort field
-- Row click navigation to /products/{productId} edit page
-- Checkbox in header for select all functionality
-- Select all checkbox shows checked when all products selected, unchecked otherwise
-- Visual distinction for unavailable products using opacity-60 and text-muted-foreground
-- Availability toggle switch in each row with immediate update via products.update mutation
-- Product images loaded via products.getImageUrl query with "No img" placeholder
-- Category names resolved from categories.list query
-- Created separate ProductTableRow component to avoid violating React hooks rules
-- useQuery calls moved to ProductTableRow to comply with rules of hooks
-- Price formatting using Intl.NumberFormat with locale-specific currency formatting
-- Empty state shown when no products exist ("No products found.")
-
-**Files changed:**
-- apps/web/src/components/ui/table.tsx (created, 125 lines)
-- apps/web/src/components/products/ProductTable.tsx (created, 260 lines)
-
-**Learnings for future iterations:**
-- shadcn/ui Table component structure: Table wraps the entire component, div with overflow-auto for responsive scrolling
-- Table styling uses Tailwind CSS classes with hover states, border handling, and padding
-- TableHead includes special styling for checkbox columns: [&:has([role=checkbox])]:pr-0
-- TableCell has similar checkbox handling for consistent layout
-- React hooks rules: Cannot call useQuery inside .map() loop - must extract to separate component
-- ProductTableRow pattern: Separate component per row allows hooks to be called at proper level
-- Sortable columns pattern: Track sortField and sortOrder state, toggle on header click
-- Sort icon display: Conditionally render ChevronUp/ChevronDown based on current sortField
-- Sort implementation: Create sorted array with [...products].sort() to avoid mutating original
-- Category name resolution: Query categories once, find matching category in sort/render logic
-- Select all checkbox: Calculate allSelected as products.every() check
-- Base UI Checkbox doesn't support "indeterminate" string value - only boolean checked prop
-- Row click with nested interactive elements: Use e.stopPropagation() on nested onClick handlers
-- Availability toggle: Inline Switch component with optimistic update feel
-- Image loading pattern: useQuery with conditional "skip" when imageId is undefined
-- formatPrice helper: Reuse CURRENCY_LOCALES mapping from ProductCard for consistency
-- Empty state: Use TableRow with colSpan={6} to span all columns with centered message
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Committed as: feat: S11 - Create ProductTable component (commit 40a3621)
-- Updated PRD: S11 passes: true
-
----
-
-
-## 2026-01-19 14:30 - S12: Create product list page
-
-**What was implemented:**
-- Created product list page at apps/web/src/routes/products/index.tsx (309 lines)
-- Implemented view toggle between grid (ProductCard) and table (ProductTable) modes
-- View mode state managed with useState, toggle buttons with Grid/List icons from lucide-react
-- Added comprehensive filter controls:
-  - Search input for product name and description (case-insensitive)
-  - Category dropdown filter (all categories, uncategorized, or specific category)
-  - Availability filter dropdown (all, available only, unavailable only)
-- Filter logic uses useMemo to optimize filtering performance
-- Integrated ProductCard component for grid view in responsive grid (sm:2, lg:3, xl:4 columns)
-- Integrated ProductTable component for table view with full functionality
-- Bulk selection state management using Set<Id<"products">>
-- handleSelectProduct adds/removes products from selection Set
-- handleSelectAll selects all filtered products or clears selection
-- Selection banner shows count of selected products with "Clear Selection" button
-- Add Product button in header linking to /products/new (with Plus icon)
-- Manage Categories button in header linking to /products/categories (with Settings icon)
-- Empty state with CTA when no products exist
-- Empty state differentiates between "no products at all" vs "no products match filters"
-- "Add Your First Product" button shown only when product catalog is truly empty
-- Auth protection using Authenticated wrapper component from Convex
-- Auto-redirect to /onboarding if user has no businesses
-- BusinessSwitcher component integrated in header for multi-tenant support
-- Active business ID persisted in localStorage with same pattern as dashboard/settings
-- Generated TanStack Router route types for /products/ route
-
-**Files changed:**
-- apps/web/src/routes/products/index.tsx (created, 309 lines)
-- apps/web/src/routeTree.gen.ts (auto-generated route types)
-
-**Learnings for future iterations:**
-- View toggle pattern: Single state variable with "grid" | "table" union type
-- Button variant="default" for active view, variant="outline" for inactive
-- Filter state management: Separate useState for each filter (search, category, availability)
-- useMemo for expensive filtering operations prevents re-computation on every render
-- Filter composition: Chain multiple filter conditions (search AND category AND availability)
-- Category filter "uncategorized" option: Special case for products without categoryId
-- Select behavior: Native select element with consistent styling matches Input component classes
-- Bulk selection with Set: Efficient add/delete operations, .has() for checking selection
-- Selection banner: Conditional render when selectedProducts.size > 0
-- Empty state logic: Check products.length === 0 vs filteredProducts.length === 0
-- Grid responsive breakpoints: sm:grid-cols-2, lg:grid-cols-3, xl:grid-cols-4 for optimal layout
-- Selected products passed to both ProductCard and ProductTable for consistent selection UI
-- onSelectChange callback prop pattern allows parent to manage selection state
-- TanStack Router generation must run after creating new route files
-- Route generation command: bunx @tanstack/router-cli generate in apps/web directory
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Generated route types successfully
-- Committed as: feat: S12 - Create product list page (commit 625a037)
-- Updated PRD: S12 passes: true
-
----
-
-
-## 2026-01-19 14:35 - S13: Create add product page
-
-**What was implemented:**
-- Created add product page at apps/web/src/routes/products/new.tsx (97 lines)
-- Page wrapped with Authenticated component for auth protection
-- Renders ProductForm component in "create" mode
-- Passes businessId prop to ProductForm from active business state
-- Back button linking to /products with ArrowLeft icon
-- Button uses variant="ghost" and size="sm" for subtle appearance
-- onSuccess callback navigates user to /products list after successful creation
-- ProductForm handles form validation, submission, and toast notifications
-- Product available field defaults to true (set in ProductForm component)
-- Same active business ID pattern as products list and dashboard
-- Retrieves active business from localStorage or defaults to first business
-- Auto-redirects to /onboarding if user has no businesses
-- BusinessSwitcher integrated in header for multi-tenant support
-- Card layout with CardHeader and CardTitle for consistent UI
-- Loading state shown while businesses query loads
-- Generated TanStack Router route types for /products/new
-
-**Files changed:**
-- apps/web/src/routes/products/new.tsx (created, 97 lines)
-- apps/web/src/routeTree.gen.ts (auto-generated route types)
-- apps/web/bun.lockb (lockfile updates from route generation)
-
-**Learnings for future iterations:**
-- Reusable form component pattern: ProductForm accepts mode="create" or mode="edit"
-- onSuccess callback pattern allows parent route to control post-submission behavior
-- Simple navigation: navigate({ to: "/products" }) after successful creation
-- ProductForm already has toast success notification, no need to duplicate in parent
-- Back button placement: Above Card component provides clear navigation hierarchy
-- Arrow icon convention: ArrowLeft for back navigation, Plus for create actions
-- Active business pattern is consistent across all product pages
-- Same localStorage key ("echo:activeBusinessId") ensures consistent business context
-- Route generation resolves TypeScript errors for navigate() type checking
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Generated route types successfully
-- Committed as: feat: S13 - Create add product page (commit 08b448f)
-- Updated PRD: S13 passes: true
-
----
-
-
-## 2026-01-19 14:40 - S14: Create edit product page
-
-**What was implemented:**
-- Created edit product page at apps/web/src/routes/products/$productId.tsx (168 lines)
-- Dynamic route using TanStack Router's $productId parameter syntax
-- Loaded product data using products.get query with productId parameter
-- Route.useParams() hook to extract productId from URL
-- Rendered ProductForm in "edit" mode with initialData prop
-- initialData populated from loaded product (name, description, price, categoryId, imageId)
-- Back button in header linking to /products with ArrowLeft icon
-- Delete button in header with Trash2 icon and variant="destructive"
-- Cancel button below form to discard changes and navigate back
-- Delete confirmation dialog using modal overlay pattern
-- Modal shows product name in confirmation message
-- Delete button disabled during deletion with "Deleting..." text
-- Successful deletion triggers toast and navigation to /products
-- Product deletion uses products.deleteProduct mutation (soft delete)
-- Loading state shown while product query is loading
-- "Product not found" state shown when product query returns null
-- BusinessSwitcher integrated in header for multi-tenant support
-- Auth protection with Authenticated wrapper
-- Generated TanStack Router route types for dynamic route
-
-**Files changed:**
-- apps/web/src/routes/products/$productId.tsx (created, 168 lines)
-- apps/web/src/routeTree.gen.ts (auto-generated route types)
-- apps/web/bun.lockb (lockfile updates)
-
-**Learnings for future iterations:**
-- TanStack Router dynamic route syntax: $paramName in filename creates dynamic segment
-- Route.useParams() provides type-safe access to URL parameters
-- Type cast productId to Id<"products"> for Convex queries: `productId as Id<"products">`
-- ProductForm initialData prop: Pass existing product data for edit mode
-- Edit form pattern: Load data → show loading → render form with initialData
-- Null check for product: Handle both loading (undefined) and not found (null) states
-- Delete confirmation flow: State variable controls modal visibility
-- isDeleting state prevents duplicate delete operations during mutation
-- Modal overlay z-index: Use z-50 to ensure it appears above other content
-- Delete button placement: Top-right header position with destructive variant for danger action
-- Cancel button placement: Below form provides alternative to save action
-- ProductForm handles save button internally, parent only needs Cancel button
-- Soft delete pattern: products.deleteProduct sets deleted: true, doesn't remove record
-- Success navigation: Both save and delete navigate back to /products list
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Generated route types successfully
-- Committed as: feat: S14 - Create edit product page (commit f0c491b)
-- Updated PRD: S14 passes: true
-
----
-
-
-## 2026-01-19 14:45 - S15: Add toggle availability to product list
-
-**What was implemented:**
-- S15 was already implemented in S10 (ProductCard) and S11 (ProductTable)
-- ProductCard.tsx includes handleAvailabilityToggle function (line 70)
-- Switch component at bottom of card triggers products.update mutation
-- Toast notification on success: "Product marked as available/unavailable"
-- ProductTable.tsx includes handleAvailabilityToggle function (line 144)
-- Switch component in availability column triggers products.update mutation
-- Both components use same toast notification pattern
-- No confirmation dialog needed (quick action as specified)
-- Visual feedback: Switch state changes immediately (Convex reactive updates)
-- Error handling with toast.error for failed updates
-- Event propagation stopped to prevent row/card click when toggling
-
-**Files changed:**
-- No new files (feature already implemented in S10 and S11)
-
-**Learnings for future iterations:**
-- Availability toggle was implemented proactively during ProductCard and ProductTable creation
-- This demonstrates good component design: Including common actions directly in the component
-- Switch component provides inherent visual feedback through checked state
-- Convex reactive queries provide "optimistic update" feel automatically
-- No need for explicit optimistic updates when using Convex's real-time reactivity
-
-**Verification:**
-- Feature already implemented and verified in S10 and S11
-- Updated PRD: S15 passes: true
-
----
-
-
-## 2026-01-19 14:50 - S16: Add bulk actions to product list
-
-**What was implemented:**
-- Enhanced bulk selection banner in apps/web/src/routes/products/index.tsx
-- Added bulk action toolbar that appears when products are selected
-- Toolbar shows selected count with proper pluralization
-- Implemented handleBulkMarkAvailable function using bulkUpdateAvailability mutation
-- Implemented handleBulkMarkUnavailable function using bulkUpdateAvailability mutation
-- Implemented handleBulkDelete function using bulkDelete mutation
-- Implemented handleBulkChangeCategory function using bulkUpdateCategory mutation
-- Bulk mark available button with CheckCircle icon
-- Bulk mark unavailable button with XCircle icon
-- Bulk delete button with Trash2 icon and destructive variant
-- Bulk change category dropdown with FolderOpen icon
-- Dropdown includes "Uncategorized" option and all categories
-- Clear selection button remains at top-right of toolbar
-- All bulk action buttons disabled during bulk operation (isBulkActionRunning state)
-- Bulk delete confirmation modal with product count
-- Modal shows "Deleting..." text during deletion
-- Success toast notifications showing count of affected products
-- Error handling with toast.error for failed bulk operations
-- Auto-clear selection after successful bulk operations
-- Category dropdown resets value after selection to allow repeated use
-
-**Files changed:**
-- apps/web/src/routes/products/index.tsx (modified, added 95 lines)
-
-**Learnings for future iterations:**
-- Bulk action toolbar pattern: Two-row layout with count/clear on top, actions on bottom
-- Array.from(Set) converts Set to array for mutation arguments
-- Bulk mutations return count of affected products for success message
-- isBulkActionRunning state prevents duplicate operations and shows feedback
-- Category dropdown pattern: value="" with onChange handler for immediate action
-- Reset dropdown value to "" after operation allows selecting same category again
-- Disabled state on all actions during bulk operation provides clear feedback
-- Toast messages with dynamic count: `${count} product${count === 1 ? "" : "s"}`
-- Bulk change category handles "none" value to set categoryId as undefined
-- Category name lookup for toast: find category by ID from categories array
-- Modal confirmation pattern same as single delete: fixed overlay with Card
-- Flex-wrap on actions allows responsive layout on smaller screens
-- Icon prefix pattern: <Icon className="mr-2 h-4 w-4" /> for consistent spacing
-
-**Verification:**
-- `bun run check-types` passed successfully (0 errors)
-- Committed as: feat: S16 - Add bulk actions to product list (commit [hash])
-- Updated PRD: S16 passes: true
 
 ---
 
