@@ -259,3 +259,29 @@ export const setDeliveryInfo = mutation({
     return args.orderId;
   },
 });
+
+export const setPaymentMethod = mutation({
+  args: {
+    orderId: v.id("orders"),
+    paymentMethod: v.union(v.literal("card"), v.literal("cash")),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    const updates: Record<string, unknown> = {
+      paymentMethod: args.paymentMethod,
+      updatedAt: Date.now(),
+    };
+
+    if (args.paymentMethod === "cash") {
+      updates.status = "confirmed";
+    }
+
+    await ctx.db.patch(args.orderId, updates);
+
+    return args.orderId;
+  },
+});

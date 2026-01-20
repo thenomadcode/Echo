@@ -88,7 +88,7 @@
       "id": "S05",
       "title": "Create order delivery mutation",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.setDeliveryInfo mutation in packages/backend/convex/orders.ts",

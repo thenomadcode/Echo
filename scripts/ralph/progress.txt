@@ -15,6 +15,20 @@
 
 ---
 
+## 2026-01-20 15:52 - S05: Create order delivery mutation
+
+**What was implemented:**
+- Created orders.setDeliveryInfo mutation
+- Args: orderId, deliveryType, deliveryAddress (optional), deliveryNotes (optional), contactPhone (optional)
+- Validates delivery address required when deliveryType is 'delivery'
+- Clears deliveryAddress when deliveryType is 'pickup'
+- Updates contactPhone if provided
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added 38 lines)
+
+---
+
 ## 2026-01-20 15:48 - S04: Create order item mutations
 
 **What was implemented:**
