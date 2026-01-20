@@ -665,3 +665,54 @@ export const updatePaymentLinkInternal = internalMutation({
     });
   },
 });
+
+export const updateOrderPaymentStatus = internalMutation({
+  args: {
+    stripeSessionId: v.string(),
+    status: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("confirmed"),
+        v.literal("paid"),
+        v.literal("preparing"),
+        v.literal("ready"),
+        v.literal("delivered"),
+        v.literal("cancelled")
+      )
+    ),
+    paymentStatus: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("paid"),
+        v.literal("failed"),
+        v.literal("refunded")
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_payment_session", (q) =>
+        q.eq("stripeSessionId", args.stripeSessionId)
+      )
+      .first();
+
+    if (!order) {
+      console.log(`No order found for stripeSessionId: ${args.stripeSessionId}`);
+      return;
+    }
+
+    const updates: Record<string, unknown> = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.status) {
+      updates.status = args.status;
+    }
+    if (args.paymentStatus) {
+      updates.paymentStatus = args.paymentStatus;
+    }
+
+    await ctx.db.patch(order._id, updates);
+  },
+});

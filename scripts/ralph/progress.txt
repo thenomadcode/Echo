@@ -15,6 +15,32 @@
 
 ---
 
+## 2026-01-20 16:18 - S11: Create payment link generation action
+
+**What was implemented:**
+- Created orders.generatePaymentLink action
+- Validates order exists, has items, and is in draft status or payment link expired
+- Uses Stripe API to create checkout session with order items as line items
+- Sets currency from order.currency (lowercased for Stripe)
+- Includes orderId in session metadata for webhook reconciliation
+- Sets success_url and cancel_url to /dashboard/orders/{orderId}
+- Stores stripeSessionId, paymentLinkUrl, paymentLinkExpiresAt on order
+- Returns the payment link URL
+- Handles Stripe API errors with descriptive messages
+- Created internal helpers: getOrderForPayment (internalQuery) and updatePaymentLinkInternal (internalMutation)
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added ~145 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Convex actions use ctx.runQuery and ctx.runMutation with internal.module.function for internal functions
+- Stripe API uses form-urlencoded body with nested bracket notation for arrays
+- Need to run `bunx convex codegen` to regenerate internal API types when adding new internal functions
+- OrderItem type helper avoids implicit any in forEach loops
+
+---
+
 ## 2026-01-20 16:05 - S10: Add payment environment variables
 
 **What was implemented:**

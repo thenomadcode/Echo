@@ -189,7 +189,7 @@
       "id": "S11",
       "title": "Create payment link generation action",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create orders.generatePaymentLink action in packages/backend/convex/orders.ts",
