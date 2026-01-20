@@ -219,3 +219,43 @@ export const updateItemQuantity = mutation({
     return args.orderId;
   },
 });
+
+export const setDeliveryInfo = mutation({
+  args: {
+    orderId: v.id("orders"),
+    deliveryType: v.union(v.literal("delivery"), v.literal("pickup")),
+    deliveryAddress: v.optional(v.string()),
+    deliveryNotes: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (args.deliveryType === "delivery" && !args.deliveryAddress) {
+      throw new Error("Delivery address is required for delivery orders");
+    }
+
+    const updates: Record<string, unknown> = {
+      deliveryType: args.deliveryType,
+      deliveryNotes: args.deliveryNotes,
+      updatedAt: Date.now(),
+    };
+
+    if (args.deliveryType === "delivery") {
+      updates.deliveryAddress = args.deliveryAddress;
+    } else {
+      updates.deliveryAddress = undefined;
+    }
+
+    if (args.contactPhone !== undefined) {
+      updates.contactPhone = args.contactPhone;
+    }
+
+    await ctx.db.patch(args.orderId, updates);
+
+    return args.orderId;
+  },
+});

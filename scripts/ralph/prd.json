@@ -64,7 +64,7 @@
       "id": "S04",
       "title": "Create order item mutations",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.addItem mutation in packages/backend/convex/orders.ts",

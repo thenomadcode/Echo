@@ -15,6 +15,27 @@
 
 ---
 
+## 2026-01-20 15:48 - S04: Create order item mutations
+
+**What was implemented:**
+- Created orders.addItem mutation: adds item or increments quantity if exists
+- Created orders.removeItem mutation: removes item from order
+- Created orders.updateItemQuantity mutation: updates quantity, removes if <= 0
+- All mutations validate order exists and is in 'draft' status
+- All mutations validate product exists and belongs to business
+- All mutations recalculate subtotal and total (including deliveryFee)
+- All mutations update updatedAt timestamp
+
+**Files changed:**
+- packages/backend/convex/orders.ts (expanded from 79 to 205 lines)
+
+**Learnings for future iterations:**
+- Use `typeof order.items` for items array type to match existing schema
+- Total calculation includes deliveryFee: `subtotal + (order.deliveryFee ?? 0)`
+- Default quantity parameter: `args.quantity ?? 1`
+
+---
+
 ## 2026-01-20 15:42 - S03: Create orders.create mutation
 
 **What was implemented:**
