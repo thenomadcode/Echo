@@ -238,7 +238,7 @@
       "id": "S12",
       "title": "Create message input component with send functionality",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/conversation/MessageInput.tsx",

@@ -4,13 +4,15 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
-import { ArrowLeft, MessageSquare, ShoppingCart } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Authenticated, AuthLoading, Unauthenticated, useMutation } from "convex/react";
+import { ArrowLeft, MessageSquare, ShoppingCart, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import AppNav from "@/components/app-nav";
 import BusinessSwitcher from "@/components/business-switcher";
 import { MessageBubble } from "@/components/conversation/MessageBubble";
+import { MessageInput } from "@/components/conversation/MessageInput";
 import { StatusBadge } from "@/components/conversation/StatusBadge";
 import SignInForm from "@/components/sign-in-form";
 import UserMenu from "@/components/user-menu";
@@ -120,7 +122,41 @@ function ConversationDetailContent() {
 
   const handleOrderClick = () => {
     if (conversation.order) {
-      navigate({ to: "/orders_/$orderId", params: { orderId: conversation.order._id } });
+      window.location.href = `/orders/${conversation.order._id}`;
+    }
+  };
+
+  const takeOver = useMutation(api.conversations.takeOver);
+  const handBack = useMutation(api.conversations.handBack);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const isAssignedToSomeone = !!conversation.assignedTo;
+  const canSendMessage = isAssignedToSomeone;
+
+  const handleTakeOver = async () => {
+    setIsProcessing(true);
+    try {
+      await takeOver({ conversationId: conversationId as Id<"conversations"> });
+      toast.success("You are now handling this conversation");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to take over");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleHandBack = async () => {
+    if (!window.confirm("AI will resume handling this conversation. Continue?")) {
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await handBack({ conversationId: conversationId as Id<"conversations"> });
+      toast.success("Conversation handed back to AI");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to hand back");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -205,8 +241,31 @@ function ConversationDetailContent() {
           )}
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Messages</CardTitle>
+              <div className="flex gap-2">
+                {!isAssignedToSomeone && conversation.status !== "closed" && (
+                  <Button
+                    size="sm"
+                    onClick={handleTakeOver}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Take Over
+                  </Button>
+                )}
+                {isAssignedToSomeone && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleHandBack}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Hand Back to AI
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="max-h-[500px] overflow-y-auto">
@@ -233,6 +292,12 @@ function ConversationDetailContent() {
                     <div ref={messagesEndRef} />
                   </div>
                 )}
+              </div>
+              <div className="mt-4 border-t pt-4">
+                <MessageInput
+                  conversationId={conversationId as Id<"conversations">}
+                  disabled={!canSendMessage}
+                />
               </div>
             </CardContent>
           </Card>

@@ -17,6 +17,29 @@
 
 ---
 
+## 2026-01-20 22:20 - S12: Create message input component with send functionality
+
+**What was implemented:**
+- Created apps/web/src/components/conversation/MessageInput.tsx
+- Props: conversationId, disabled, onSend callback
+- State: message (string), isSending (boolean)
+- Enter key sends message, Shift+Enter for newline
+- useMutation with api.messages.sendAsHuman
+- Clear input after successful send
+- Disabled state shows "Take over to send messages" placeholder
+- Send button disabled when empty or disabled
+- Error handling with toast.error from sonner
+
+**Files changed:**
+- apps/web/src/components/conversation/MessageInput.tsx (created, ~70 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S12 - Create message input component with send functionality (commit 1e96793)
+
+---
+
 ## 2026-01-20 22:18 - S11: Create conversation detail page
 
 **What was implemented:**
