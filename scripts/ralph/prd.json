@@ -121,7 +121,7 @@
       "id": "S08",
       "title": "Implement escalation detection function",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/ai/escalation.ts",

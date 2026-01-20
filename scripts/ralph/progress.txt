@@ -857,3 +857,39 @@
 
 ---
 
+## 2026-01-20 12:02 - S08: Implement escalation detection function
+
+**What was implemented:**
+- Created packages/backend/convex/ai/escalation.ts with detectEscalation function
+- Accepts: message (string), conversationHistory (Message[]), failureCount (number)
+- Returns EscalationResult: { shouldEscalate: boolean, reason: string }
+- Explicit escalation phrases in en/es/pt: "talk to person", "human help", "hablar con alguien", etc.
+- Urgent keywords: "urgent", "urgente", "emergency", "asap"
+- Frustration keywords in en/es/pt: "angry", "frustrated", "furioso", "irritado", etc.
+- Failure threshold: 3 consecutive AI failures triggers escalation
+- calculateFrustrationScore() analyzes:
+  - Current message frustration keywords (+1 each)
+  - Recent conversation history keywords (+0.5 each)
+  - Multiple exclamation marks (+0.5)
+  - All caps messages (+1)
+- Score >= 2 triggers frustration escalation
+- Reasons included: explicit request, urgent matter, frustrated customer, AI failures
+
+**Files changed:**
+- packages/backend/convex/ai/escalation.ts (created, 133 lines)
+
+**Learnings for future iterations:**
+- Pure function (no Convex action/mutation) for stateless escalation detection
+- Multilingual keyword lists support LATAM market (Spanish, Portuguese)
+- Frustration scoring combines immediate message + conversation history
+- All-caps detection needs length check to avoid false positives on short messages
+- Exclamation count >= 3 indicates urgency/frustration
+
+**Verification:**
+- LSP diagnostics show no errors on escalation.ts
+- bun run check-types passes
+- Committed as: feat: S08 - Implement escalation detection function
+- Updated PRD: S08 passes: true
+
+---
+
