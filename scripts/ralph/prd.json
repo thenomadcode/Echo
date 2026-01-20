@@ -27,7 +27,7 @@
       "id": "S02",
       "title": "Create order number generation utility",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/lib/orderNumber.ts",

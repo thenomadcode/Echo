@@ -11,6 +11,27 @@
 - Mutations use `Record<string, unknown>` for update objects to avoid optional field type conflicts
 - Uniqueness validation: query by index in loop, append suffix if exists
 - Queries return null/empty arrays for unauthorized access; mutations throw errors
+- Lib utilities: create under `convex/lib/` using `GenericDatabaseReader<DataModel>` for db access
+
+---
+
+## 2026-01-20 15:38 - S02: Create order number generation utility
+
+**What was implemented:**
+- Created packages/backend/convex/lib/orderNumber.ts with generateOrderNumber function
+- Function accepts db context and businessId
+- Derives 3-letter prefix from business name (first 3 letters uppercase, falls back to "BIZ" if short)
+- Queries existing orders for the business to find max sequential number
+- Generates format: ORD-{prefix}-{number} (e.g., ORD-BUR-001234)
+- 6-digit zero-padded sequential number
+
+**Files changed:**
+- packages/backend/convex/lib/orderNumber.ts (created, 50 lines)
+
+**Learnings for future iterations:**
+- Use `GenericDatabaseReader<DataModel>` from convex/server for typed db access in utility functions
+- Import types from `../_generated/dataModel` for Id<"tableName"> types
+- Query-then-process pattern for sequential number generation is safe for order numbers (low collision risk)
 
 ---
 
