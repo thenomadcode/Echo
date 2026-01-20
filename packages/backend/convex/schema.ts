@@ -94,6 +94,35 @@ export default defineSchema({
     channelId: v.string(),
     lastCustomerMessageAt: v.number(),
     status: v.optional(v.string()),
+
+    // AI Conversation Engine fields
+    state: v.optional(
+      v.union(
+        v.literal("idle"),
+        v.literal("browsing"),
+        v.literal("ordering"),
+        v.literal("confirming"),
+        v.literal("payment"),
+        v.literal("completed"),
+        v.literal("escalated")
+      )
+    ),
+    detectedLanguage: v.optional(v.string()),
+    pendingOrder: v.optional(
+      v.object({
+        items: v.array(
+          v.object({
+            productQuery: v.string(),
+            quantity: v.number(),
+            productId: v.optional(v.id("products")),
+            price: v.optional(v.number()),
+          })
+        ),
+        total: v.optional(v.number()),
+      })
+    ),
+    escalationReason: v.optional(v.string()),
+
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -116,4 +145,30 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId"])
     .index("by_external_id", ["externalId"]),
+
+  aiLogs: defineTable({
+    conversationId: v.id("conversations"),
+    messageId: v.id("messages"),
+    intent: v.object({
+      type: v.string(),
+      query: v.optional(v.string()),
+      items: v.optional(
+        v.array(
+          v.object({
+            productQuery: v.string(),
+            quantity: v.number(),
+          })
+        )
+      ),
+      action: v.optional(v.string()),
+      item: v.optional(v.string()),
+      topic: v.optional(v.string()),
+    }),
+    prompt: v.string(),
+    response: v.string(),
+    model: v.string(),
+    tokensUsed: v.number(),
+    latencyMs: v.number(),
+    createdAt: v.number(),
+  }).index("by_conversation", ["conversationId"]),
 });
