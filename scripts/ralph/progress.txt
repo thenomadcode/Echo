@@ -17,6 +17,31 @@
 
 ---
 
+## 2026-01-20 22:18 - S11: Create conversation detail page
+
+**What was implemented:**
+- Created apps/web/src/routes/conversations_.$conversationId.tsx (flat route pattern)
+- Header with back button, BusinessSwitcher, AppNav, UserMenu
+- Customer info card with customerId and StatusBadge
+- Escalation banner (yellow) when status="escalated" showing escalationReason
+- Related order card when order exists (shows order number as link, status)
+- Messages container with MessageBubble components
+- Sender mapping: "customer" -> customer, "human" -> human, else -> ai
+- Auto-scroll to bottom using useRef and useEffect with smooth behavior
+- 404 state if conversation not found
+- Real-time updates via Convex reactive queries
+
+**Files changed:**
+- apps/web/src/routes/conversations_.$conversationId.tsx (created, ~200 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S11 - Create conversation detail page (commit 1f2702a)
+
+---
+
 ## 2026-01-20 22:15 - S10: Create conversation list page with filtering
 
 **What was implemented:**
