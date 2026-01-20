@@ -113,14 +113,86 @@ export const get = query({
     conversationId: v.id("conversations"),
   },
   handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) {
       return null;
     }
 
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return null;
+    }
+
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("desc")
+      .first();
+
     return {
       ...conversation,
       windowExpiresAt: getWindowExpiresAt(conversation.lastCustomerMessageAt),
+      order: order ?? null,
+    };
+  },
+});
+
+export const messages = query({
+  args: {
+    conversationId: v.id("conversations"),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return { messages: [], nextCursor: null };
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return { messages: [], nextCursor: null };
+    }
+
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return { messages: [], nextCursor: null };
+    }
+
+    const limit = args.limit ?? 100;
+
+    const allMessages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("asc")
+      .collect();
+
+    const cursorIndex = args.cursor
+      ? allMessages.findIndex((m) => m._id === args.cursor)
+      : -1;
+    const startIndex = cursorIndex >= 0 ? cursorIndex + 1 : 0;
+    const paginatedMessages = allMessages.slice(startIndex, startIndex + limit);
+
+    const hasMore = startIndex + limit < allMessages.length;
+    const nextCursor = hasMore
+      ? paginatedMessages[paginatedMessages.length - 1]?._id ?? null
+      : null;
+
+    return {
+      messages: paginatedMessages.map((msg) => ({
+        _id: msg._id,
+        sender: msg.sender,
+        content: msg.content,
+        createdAt: msg.createdAt,
+        mediaUrl: msg.mediaUrl ?? null,
+        mediaType: msg.mediaType ?? null,
+      })),
+      nextCursor,
     };
   },
 });

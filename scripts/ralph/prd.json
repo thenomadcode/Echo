@@ -42,7 +42,7 @@
       "id": "S03",
       "title": "Create conversation list query with filtering",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create conversations.list query in packages/backend/convex/conversations.ts",

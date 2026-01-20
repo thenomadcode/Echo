@@ -17,6 +17,31 @@
 
 ---
 
+## 2026-01-20 22:01 - S03: Create conversation list query with filtering
+
+**What was implemented:**
+- Created conversations.list query in packages/backend/convex/conversations.ts
+- Args: businessId, status (optional filter), search (optional string), limit (default 50), cursor (optional)
+- Returns conversations sorted by lastCustomerMessageAt (most recent first)
+- Escalated conversations appear at top regardless of activity time
+- Each conversation includes: customerId, lastMessagePreview, lastMessageAt, status, assignedTo, hasUnread
+- Support pagination with cursor-based approach
+- Filter by status when provided (active, escalated, closed)
+- Search by customerId when search term provided
+- Include unread indicator (messages after lastReadAt)
+- Validates caller has access to business (business.ownerId === authUser._id)
+
+**Files changed:**
+- packages/backend/convex/conversations.ts (+95 lines)
+
+**Verification:**
+- Convex dev compiles successfully
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S03 - Create conversation list query with filtering (commit 5e9b0a8)
+
+---
+
 ## 2026-01-20 21:59 - S02: Create notifications table schema
 
 **What was implemented:**
