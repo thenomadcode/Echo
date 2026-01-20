@@ -14,6 +14,7 @@ import BusinessSwitcher from "@/components/business-switcher";
 import { MessageBubble } from "@/components/conversation/MessageBubble";
 import { MessageInput } from "@/components/conversation/MessageInput";
 import { StatusBadge } from "@/components/conversation/StatusBadge";
+import { NotificationBell } from "@/components/NotificationBell";
 import SignInForm from "@/components/sign-in-form";
 import UserMenu from "@/components/user-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +88,10 @@ function ConversationDetailContent() {
               <BusinessSwitcher />
               <AppNav />
             </div>
-            <UserMenu />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <UserMenu />
+            </div>
           </div>
 
           <Button
@@ -195,7 +199,10 @@ function ConversationDetailContent() {
             <BusinessSwitcher />
             <AppNav />
           </div>
-          <UserMenu />
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <UserMenu />
+          </div>
         </div>
 
         <Button

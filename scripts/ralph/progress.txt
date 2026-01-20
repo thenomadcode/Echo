@@ -17,6 +17,30 @@
 
 ---
 
+## 2026-01-20 22:29 - S15: Create escalation notification trigger
+
+**What was implemented:**
+- Modified notifyEscalation in packages/backend/convex/ai/process.ts
+- Now creates notification for business owner when conversation escalates
+- Sets status to "escalated" in addition to state (for dashboard filtering)
+- Inserts notification with type "escalation", userId = business.ownerId
+- Modified takeOver mutation to mark related escalation notifications as read
+- Queries notifications by userId and conversationId, patches read: true
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (+10 lines)
+- packages/backend/convex/conversations.ts (+8 lines)
+
+**Note:** Browser notification permission/push not implemented in this story (requires client-side integration). Backend creates DB notification which can trigger frontend real-time updates.
+
+**Verification:**
+- Convex dev compiles successfully
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S15 - Create escalation notification trigger (commit be944cb)
+
+---
+
 ## 2026-01-20 22:26 - S14: Create close conversation UI
 
 **What was implemented:**

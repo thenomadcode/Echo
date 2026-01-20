@@ -310,7 +310,7 @@
       "id": "S15",
       "title": "Create escalation notification trigger",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "When conversation status changes to 'escalated', create notification",
