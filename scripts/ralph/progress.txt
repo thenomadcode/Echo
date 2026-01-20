@@ -17,6 +17,36 @@
 
 ---
 
+## 2026-01-20 22:13 - S09: Create StatusBadge and MessageBubble components
+
+**What was implemented:**
+- Created apps/web/src/components/ui/badge.tsx with CVA variants (default, secondary, destructive, outline, success, warning)
+- Created apps/web/src/components/conversation/StatusBadge.tsx
+  - Props: status, assignedTo
+  - AI Handling (green/success) when active and no assignedTo
+  - Human Active (blue/default) when assignedTo is set
+  - Escalated (red/destructive) when escalated
+  - Closed (gray/secondary) when closed
+- Created apps/web/src/components/conversation/MessageBubble.tsx
+  - Customer messages: left-aligned, bg-muted
+  - AI messages: right-aligned, bg-primary, labeled 'AI'
+  - Human messages: right-aligned, bg-blue-500, labeled with senderName or 'Agent'
+  - Relative timestamp using date-fns formatDistanceToNow
+  - Image display support when mediaUrl ends with image extension
+- Added date-fns dependency
+
+**Files changed:**
+- apps/web/src/components/ui/badge.tsx (created)
+- apps/web/src/components/conversation/StatusBadge.tsx (created)
+- apps/web/src/components/conversation/MessageBubble.tsx (created)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S09 - Create StatusBadge and MessageBubble components (commit d05e7d1)
+
+---
+
 ## 2026-01-20 22:11 - S08: Create notification mutations and queries
 
 **What was implemented:**

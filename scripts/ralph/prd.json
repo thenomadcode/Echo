@@ -165,7 +165,7 @@
       "id": "S09",
       "title": "Create StatusBadge and MessageBubble components",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/conversation/StatusBadge.tsx",
