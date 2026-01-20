@@ -17,6 +17,27 @@
 
 ---
 
+## 2026-01-20 22:11 - S08: Create notification mutations and queries
+
+**What was implemented:**
+- Created packages/backend/convex/notifications.ts
+- notifications.create internalMutation: creates notification with userId, type, conversationId, read: false
+- notifications.list query: returns user's notifications sorted by createdAt desc, default limit 20
+- notifications.markRead mutation: sets read to true for specific notification
+- notifications.markAllRead mutation: marks all user's unread notifications as read
+- notifications.unreadCount query: returns count of unread notifications
+
+**Files changed:**
+- packages/backend/convex/notifications.ts (created, 96 lines)
+
+**Verification:**
+- Convex dev compiles successfully
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S08 - Create notification mutations and queries (commit f917dc9)
+
+---
+
 ## 2026-01-20 22:10 - S07: Create send message as human mutation
 
 **What was implemented:**
