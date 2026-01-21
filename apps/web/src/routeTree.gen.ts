@@ -20,12 +20,14 @@ import { Route as ConversationsRouteImport } from './routes/conversations'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as SettingsWhatsappRouteImport } from './routes/settings_.whatsapp'
+import { Route as SettingsIntegrationsRouteImport } from './routes/settings_.integrations'
 import { Route as SettingsAiRouteImport } from './routes/settings_.ai'
 import { Route as ProductsNewRouteImport } from './routes/products/new'
 import { Route as ProductsCategoriesRouteImport } from './routes/products/categories'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
 import { Route as ConversationsConversationIdRouteImport } from './routes/conversations_.$conversationId'
+import { Route as SettingsIntegrationsShopifyRouteImport } from './routes/settings_.integrations_.shopify'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TestAiRoute = TestAiRouteImport.update({
@@ -83,6 +85,11 @@ const SettingsWhatsappRoute = SettingsWhatsappRouteImport.update({
   path: '/settings/whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
+  id: '/settings_/integrations',
+  path: '/settings/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsAiRoute = SettingsAiRouteImport.update({
   id: '/settings_/ai',
   path: '/settings/ai',
@@ -114,6 +121,12 @@ const ConversationsConversationIdRoute =
     path: '/conversations/$conversationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const SettingsIntegrationsShopifyRoute =
+  SettingsIntegrationsShopifyRouteImport.update({
+    id: '/settings_/integrations_/shopify',
+    path: '/settings/integrations/shopify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -136,9 +149,11 @@ export interface FileRoutesByFullPath {
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
   '/settings/ai': typeof SettingsAiRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/whatsapp': typeof SettingsWhatsappRoute
   '/products': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/settings/integrations/shopify': typeof SettingsIntegrationsShopifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -156,9 +171,11 @@ export interface FileRoutesByTo {
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
   '/settings/ai': typeof SettingsAiRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/whatsapp': typeof SettingsWhatsappRoute
   '/products': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/settings/integrations/shopify': typeof SettingsIntegrationsShopifyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,9 +194,11 @@ export interface FileRoutesById {
   '/products/categories': typeof ProductsCategoriesRoute
   '/products/new': typeof ProductsNewRoute
   '/settings_/ai': typeof SettingsAiRoute
+  '/settings_/integrations': typeof SettingsIntegrationsRoute
   '/settings_/whatsapp': typeof SettingsWhatsappRoute
   '/products/': typeof ProductsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/settings_/integrations_/shopify': typeof SettingsIntegrationsShopifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -199,9 +218,11 @@ export interface FileRouteTypes {
     | '/products/categories'
     | '/products/new'
     | '/settings/ai'
+    | '/settings/integrations'
     | '/settings/whatsapp'
     | '/products'
     | '/api/auth/$'
+    | '/settings/integrations/shopify'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -219,9 +240,11 @@ export interface FileRouteTypes {
     | '/products/categories'
     | '/products/new'
     | '/settings/ai'
+    | '/settings/integrations'
     | '/settings/whatsapp'
     | '/products'
     | '/api/auth/$'
+    | '/settings/integrations/shopify'
   id:
     | '__root__'
     | '/'
@@ -239,9 +262,11 @@ export interface FileRouteTypes {
     | '/products/categories'
     | '/products/new'
     | '/settings_/ai'
+    | '/settings_/integrations'
     | '/settings_/whatsapp'
     | '/products/'
     | '/api/auth/$'
+    | '/settings_/integrations_/shopify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -260,9 +285,11 @@ export interface RootRouteChildren {
   ProductsCategoriesRoute: typeof ProductsCategoriesRoute
   ProductsNewRoute: typeof ProductsNewRoute
   SettingsAiRoute: typeof SettingsAiRoute
+  SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsWhatsappRoute: typeof SettingsWhatsappRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  SettingsIntegrationsShopifyRoute: typeof SettingsIntegrationsShopifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -344,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/integrations': {
+      id: '/settings_/integrations'
+      path: '/settings/integrations'
+      fullPath: '/settings/integrations'
+      preLoaderRoute: typeof SettingsIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/ai': {
       id: '/settings_/ai'
       path: '/settings/ai'
@@ -386,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConversationsConversationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/integrations_/shopify': {
+      id: '/settings_/integrations_/shopify'
+      path: '/settings/integrations/shopify'
+      fullPath: '/settings/integrations/shopify'
+      preLoaderRoute: typeof SettingsIntegrationsShopifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -412,9 +453,11 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsCategoriesRoute: ProductsCategoriesRoute,
   ProductsNewRoute: ProductsNewRoute,
   SettingsAiRoute: SettingsAiRoute,
+  SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsWhatsappRoute: SettingsWhatsappRoute,
   ProductsIndexRoute: ProductsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  SettingsIntegrationsShopifyRoute: SettingsIntegrationsShopifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
