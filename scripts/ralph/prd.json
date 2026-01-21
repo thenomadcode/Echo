@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Update CSS variables with Warm Signal color palette",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Update apps/web/src/index.css with Warm Signal color palette",

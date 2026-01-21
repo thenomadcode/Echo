@@ -1853,3 +1853,28 @@
 - Updated PRD: S01 passes: true
 
 ---
+
+## 2026-01-21 14:25 - S01: Update CSS variables with Warm Signal color palette
+
+**What was implemented:**
+- Updated apps/web/src/index.css with complete Warm Signal color palette
+- Light mode (:root) CSS variables:
+  - --background: oklch(0.985 0.002 90) - warm off-white
+  - --foreground: oklch(0.145 0.015 60) - warm dark gray
+  - --primary: oklch(0.58 0.2 35) - terracotta
+  - --secondary: oklch(0.92 0.04 55) - peach
+  - --destructive: oklch(0.55 0.2 25) - red-orange
+  - --success: oklch(0.6 0.19 145) - green
+- Dark mode (.dark) CSS variables with adjusted tones
+- Added spacing scale --space-1 through --space-16 (0.25rem to 4rem)
+- Added border radius variables: --radius-sm (6px), --radius-md (10px), --radius-lg (16px), --radius-full (9999px)
+- Updated @theme inline block to include new variables for Tailwind CSS v4
+
+**Files changed:**
+- apps/web/src/index.css (100 insertions, 70 deletions)
+
+**Verification:**
+- bun run check-types: passes
+- Committed as: feat: S01 - Update CSS variables with Warm Signal color palette (commit 1a4d4a0)
+
+---
