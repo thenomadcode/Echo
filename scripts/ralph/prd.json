@@ -64,7 +64,7 @@
       "id": "S04",
       "title": "Manual Resync",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "'Sync Now' button in Shopify settings page",

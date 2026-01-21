@@ -2811,3 +2811,36 @@
 - All acceptance criteria confirmed met
 
 ---
+
+## 2026-01-21 23:33 - S04: Manual Resync
+
+**What was implemented:**
+- S04 was already fully implemented in previous commits. All acceptance criteria met:
+
+**Frontend (apps/web/src/routes/_authenticated/settings_.integrations_.shopify.tsx):**
+- 'Sync Now' button in Products card (line 344-359)
+- Loading spinner on button via isSyncing state + Loader2 component
+- Toast summary shows "Sync complete: X updated, Y added, Z removed" (line 125)
+- Button disabled during sync or import operations
+
+**Backend (packages/backend/convex/shopify.ts):**
+- `syncProducts` action (line 988) fetches all products from Shopify GraphQL API
+- Uses `upsertProductWithStats` (line 1160) that returns `{ isNew: boolean }` to track added vs updated
+- `markMissingProductsUnavailable` (line 1223) handles removed products
+- Matches products by `shopifyProductId + shopifyVariantId` to prevent duplicates
+- Updates `lastSyncAt` and `lastSyncStatus` on connection via `updateSyncStatus`
+
+**Connection Status Display:**
+- SyncStatus component shows last sync timestamp with relative time
+- Status badge shows success/partial/failed
+
+**Files verified (no changes needed):**
+- apps/web/src/routes/_authenticated/settings_.integrations_.shopify.tsx
+- packages/backend/convex/shopify.ts
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+- All acceptance criteria confirmed met
+
+---
