@@ -248,12 +248,12 @@ function ProductsPage({ businessId }: ProductsPageProps) {
 
               <div className="space-y-2 md:w-48">
                 <Label htmlFor="category">Category</Label>
-                <select
-                  id="category"
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                >
+<select
+                                  id="category"
+                                  value={categoryFilter}
+                                  onChange={(e) => setCategoryFilter(e.target.value)}
+                                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                   <option value="all">All Categories</option>
                   <option value="uncategorized">Uncategorized</option>
                   {categories?.map((cat) => (
@@ -266,12 +266,12 @@ function ProductsPage({ businessId }: ProductsPageProps) {
 
               <div className="space-y-2 md:w-48">
                 <Label htmlFor="availability">Availability</Label>
-                <select
-                  id="availability"
-                  value={availabilityFilter}
-                  onChange={(e) => setAvailabilityFilter(e.target.value as AvailabilityFilter)}
-                  className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                >
+<select
+                                  id="availability"
+                                  value={availabilityFilter}
+                                  onChange={(e) => setAvailabilityFilter(e.target.value as AvailabilityFilter)}
+                                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                   <option value="all">All Products</option>
                   <option value="available">Available Only</option>
                   <option value="unavailable">Unavailable Only</option>
@@ -341,12 +341,12 @@ function ProductsPage({ businessId }: ProductsPageProps) {
                   </Button>
                   <div className="flex items-center gap-2">
                     <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                    <select
-                      value=""
-                      onChange={(e) => handleBulkChangeCategory(e.target.value)}
-                      disabled={isBulkActionRunning}
-                      className="flex h-8 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    >
+<select
+                                      value=""
+                                      onChange={(e) => handleBulkChangeCategory(e.target.value)}
+                                      disabled={isBulkActionRunning}
+                                      className="flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
                       <option value="" disabled>
                         Change Category
                       </option>
@@ -382,7 +382,7 @@ function ProductsPage({ businessId }: ProductsPageProps) {
               )}
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product._id}

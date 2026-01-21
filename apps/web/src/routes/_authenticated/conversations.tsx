@@ -121,7 +121,7 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                       id="status"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value as ConversationStatus | "all")}
-                      className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1.5 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="all">All</option>
                       <option value="active">Active</option>
@@ -139,7 +139,7 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                         placeholder="Search by phone..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-8 pl-7 text-xs"
+                        className="h-9 pl-7 text-sm"
                       />
                     </div>
                   </div>
@@ -187,7 +187,7 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                             {formatTime(conversation.lastMessageAt)}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground truncate">
+                        <p className="mt-1 text-sm text-muted-foreground truncate">
                           {truncateMessage(conversation.lastMessagePreview, 60)}
                         </p>
                         <div className="mt-2">

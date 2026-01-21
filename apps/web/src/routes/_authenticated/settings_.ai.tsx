@@ -87,7 +87,7 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8">
+    <div className="container mx-auto max-w-5xl px-6 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">AI Settings</h1>
         <p className="text-muted-foreground">Configure your AI assistant behavior</p>

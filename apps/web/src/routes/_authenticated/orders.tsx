@@ -103,7 +103,7 @@ function OrdersContent({ businessId }: OrdersContentProps) {
                   id="status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "all")}
-                  className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option value="all">All</option>
                   <option value="draft">Draft</option>

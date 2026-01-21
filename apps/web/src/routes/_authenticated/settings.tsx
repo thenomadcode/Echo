@@ -158,7 +158,7 @@ function SettingsForm({
   });
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-6">
+    <div className="container mx-auto max-w-5xl py-8 px-6">
       <h1 className="text-2xl font-bold font-heading mb-6">Business Settings</h1>
 
       <form

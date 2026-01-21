@@ -33,7 +33,7 @@ function DashboardPage() {
             <CardTitle>Business Information</CardTitle>
             <CardDescription>Overview of your business profile</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-4">
             <div>
               <p className="text-sm font-medium">Business Name</p>
               <p className="text-sm text-muted-foreground">{activeBusiness.name}</p>
