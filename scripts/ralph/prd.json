@@ -220,7 +220,7 @@
       "id": "S12",
       "title": "Create Shopify webhook HTTP route",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Add POST route /webhook/shopify to packages/backend/convex/http.ts",
@@ -239,7 +239,7 @@
       "id": "S13",
       "title": "Implement product webhook handlers",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create shopify.handleWebhook action in packages/backend/convex/shopify.ts",
@@ -259,7 +259,7 @@
       "id": "S14",
       "title": "Register Shopify webhook subscriptions",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create shopify.registerWebhooks internal function",

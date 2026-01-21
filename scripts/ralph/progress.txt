@@ -1,6 +1,68 @@
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
 - Environment variables: use z.string().optional() for optional vars, z.string().default() for vars with defaults
+- Shopify webhook product IDs: REST webhooks use numeric IDs, convert to GID format: `gid://shopify/Product/${id}`
+- Shopify webhook variant IDs: Same pattern: `gid://shopify/ProductVariant/${id}`
+- Webhook handlers use internalAction with try/catch for graceful error handling
+- Shopify webhook registration: list existing webhooks first for idempotency, then register missing topics
+
+---
+
+## 2026-01-21 10:55 - S14: Register Shopify webhook subscriptions
+
+**What was implemented:**
+- Created registerWebhooks internalAction in packages/backend/convex/shopify.ts
+- Lists existing webhooks via GET /admin/api/2024-01/webhooks.json for idempotency
+- Registers webhooks via POST /admin/api/2024-01/webhooks.json for topics: products/create, products/update, products/delete
+- Webhook address set to {CONVEX_SITE_URL}/webhook/shopify
+- Created getConnectionForWebhooks internalQuery to fetch shop and accessToken
+- Created updateWebhookIds internalMutation to store webhook IDs in shopifyConnections
+- Modified handleCallback action to call registerWebhooks after successful OAuth connection
+- Handles already-registered webhooks by checking existing topic-address pairs
+- Logs registration success/failure for debugging
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (+210 lines)
+
+**Learnings for future iterations:**
+- Shopify returns numeric webhook IDs, store as strings for flexibility
+- List existing webhooks before registering to avoid duplicates (idempotent pattern)
+- CONVEX_SITE_URL or SITE_URL env var needed for webhook address construction
+- Webhook registration can partially succeed - store whatever IDs were registered
+
+**Verification:**
+- bunx convex typecheck: passes
+- Committed as: feat: S14 - Register Shopify webhook subscriptions (commit c77da5a)
+
+---
+
+## 2026-01-21 10:51 - S13: Implement product webhook handlers
+
+**What was implemented:**
+- Defined Shopify REST webhook payload types (ShopifyWebhookProduct, ShopifyWebhookVariant, ShopifyWebhookImage)
+- Created markProductsUnavailable internalMutation to mark products unavailable by shopifyProductId
+- Created getBusinessLanguage internalQuery to fetch business default language for currency mapping
+- Updated handleWebhook internalAction to fully process product webhooks:
+  - products/create: Creates Echo products for all active variants
+  - products/update: Updates existing products or creates new variants, marks archived/draft products unavailable
+  - products/delete: Marks all products with matching shopifyProductId as unavailable (soft delete)
+- Maps webhook data to product fields same as importProducts action
+- Updates lastShopifySyncAt on all affected products
+- Handles variant changes within products/update
+- Full error handling with try/catch and detailed logging
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (+163 lines, -8 lines)
+
+**Learnings for future iterations:**
+- Shopify REST webhook payloads use numeric IDs, not GraphQL GID format - need conversion
+- Product webhooks include full product data with nested variants array (unlike GraphQL edges/node pattern)
+- products/update for archived/draft products should mark existing Echo products unavailable
+- Use internalQuery to fetch related data (business language) within internalAction
+
+**Verification:**
+- bunx convex typecheck: passes
+- Committed as: feat: S13 - Implement product webhook handlers (commit 3d83698)
 
 ---
 
@@ -2181,3 +2243,32 @@
 - LSP diagnostics: no errors
 - apps/web tsc --noEmit: passes
 - Committed as: feat: S11 - Create product import UI with progress (commit 7bfef28)
+
+---
+
+## 2026-01-21 10:45 - S12: Create Shopify webhook HTTP route
+
+**What was implemented:**
+- Added POST /webhook/shopify route in packages/backend/convex/http.ts
+- Extracts X-Shopify-Shop-Domain, X-Shopify-Topic, X-Shopify-Hmac-SHA256 headers
+- Implemented verifyShopifySignature() using pure JavaScript HMAC-SHA256 with base64 output
+- Returns 401 Unauthorized for invalid signatures
+- Parses JSON body and routes to internal shopify.handleWebhook action
+- Returns 200 OK immediately, processes webhook asynchronously to avoid timeout
+- Created handleWebhook internalAction stub in shopify.ts (full implementation in S13)
+- Created getConnectionByShop internalQuery to look up connection by shop domain
+
+**Files changed:**
+- packages/backend/convex/http.ts (+54 lines for route, +51 lines for HMAC verification)
+- packages/backend/convex/shopify.ts (+45 lines for handleWebhook and getConnectionByShop)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Shopify webhook HMAC is base64-encoded, unlike Stripe which uses hex
+- Use internalAction (not action) when calling from httpAction via internal.module.function
+- Must run `bunx convex codegen` after adding internal functions to regenerate API types
+
+**Verification:**
+- bunx convex codegen: passes
+- bunx tsc --noEmit in apps/web: passes
+- Committed as: feat: S12 - Create Shopify webhook HTTP route (commit c2cb714)
