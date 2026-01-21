@@ -24,6 +24,40 @@
 
 ---
 
+## 2026-01-21 15:58 - S35: Dark mode CSS variables and theme toggle
+
+**What was implemented:**
+- Created theme provider and context in apps/web/src/lib/theme.tsx:
+  - ThemeProvider component manages theme state
+  - useTheme hook for consuming theme
+  - Three options: Light, Dark, System
+  - Stores preference in localStorage (key: echo-theme)
+  - Respects system preference when set to System
+  - Listens to system preference changes in real-time
+- Created ThemeToggle component in apps/web/src/components/ThemeToggle.tsx:
+  - Dropdown menu with Light, Dark, System options
+  - Shows Sun icon in light mode, Moon icon in dark mode
+  - Indicates current selection with accent background
+- Added blocking script in __root.tsx to prevent white flash:
+  - Script runs before page renders
+  - Reads localStorage and applies theme class immediately
+  - Falls back to system preference if no stored value
+- Removed hardcoded className="dark" from html element
+- Added ThemeToggle to AppHeader between NotificationBell and UserMenu
+- Added suppressHydrationWarning to html element for hydration safety
+
+**Files changed:**
+- apps/web/src/lib/theme.tsx (created)
+- apps/web/src/components/ThemeToggle.tsx (created)
+- apps/web/src/routes/__root.tsx (theme script, ThemeProvider, removed dark class)
+- apps/web/src/components/layout/AppHeader.tsx (added ThemeToggle)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:50 - S32, S33, S34: Settings section forms (already implemented in S31)
 
 **What was verified:**

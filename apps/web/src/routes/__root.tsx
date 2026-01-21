@@ -15,6 +15,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { Toaster } from "@/components/ui/sonner";
 import { authClient } from "@/lib/auth-client";
 import { getToken } from "@/lib/auth-server";
+import { ThemeProvider, themeScript } from "@/lib/theme";
 
 import Header from "../components/header";
 import { OfflineIndicator } from "../components/OfflineIndicator";
@@ -87,17 +88,20 @@ function RootDocument() {
       authClient={authClient}
       initialToken={context.token}
     >
-      <html lang="en" className="dark">
+      <html lang="en" suppressHydrationWarning>
         <head>
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
           <HeadContent />
         </head>
         <body>
-          <div className="grid h-svh grid-rows-[auto_1fr]">
-            <Header />
-            <Outlet />
-          </div>
-          <Toaster richColors />
-          <OfflineIndicator />
+          <ThemeProvider>
+            <div className="grid h-svh grid-rows-[auto_1fr]">
+              <Header />
+              <Outlet />
+            </div>
+            <Toaster richColors />
+            <OfflineIndicator />
+          </ThemeProvider>
           <TanStackRouterDevtools position="bottom-left" />
           <Scripts />
         </body>

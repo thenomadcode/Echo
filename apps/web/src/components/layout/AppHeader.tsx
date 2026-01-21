@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 
 import BusinessSwitcher from "@/components/business-switcher";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import UserMenu from "@/components/user-menu";
 
 export function AppHeader() {
@@ -25,6 +26,7 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <NotificationBell />
         <UserMenu />
       </div>
