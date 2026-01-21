@@ -39,6 +39,7 @@ import type * as notifications from "../notifications.js";
 import type * as orders from "../orders.js";
 import type * as privateData from "../privateData.js";
 import type * as products from "../products.js";
+import type * as shopify from "../shopify.js";
 
 import type {
   ApiFromModules,
@@ -78,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   orders: typeof orders;
   privateData: typeof privateData;
   products: typeof products;
+  shopify: typeof shopify;
 }>;
 
 /**
