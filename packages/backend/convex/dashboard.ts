@@ -17,7 +17,6 @@ export const getMetrics = query({
       return null;
     }
 
-    const now = Date.now();
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayStartMs = todayStart.getTime();
