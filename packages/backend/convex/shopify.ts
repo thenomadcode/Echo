@@ -255,6 +255,30 @@ type ImportResult = {
   errors: string[];
 };
 
+// Shopify REST webhook payload types (different from GraphQL response format)
+type ShopifyWebhookVariant = {
+  id: number;
+  title: string | null;
+  price: string;
+  sku: string | null;
+  inventory_quantity: number;
+};
+
+type ShopifyWebhookImage = {
+  id: number;
+  src: string;
+  position: number;
+};
+
+type ShopifyWebhookProduct = {
+  id: number;
+  title: string;
+  body_html: string | null;
+  status: "active" | "archived" | "draft";
+  images: ShopifyWebhookImage[];
+  variants: ShopifyWebhookVariant[];
+};
+
 const SHOPIFY_PRODUCTS_QUERY = `
   query GetProducts($first: Int!, $after: String) {
     products(first: $first, after: $after) {
@@ -528,6 +552,35 @@ export const updateSyncStatus = internalMutation({
   },
 });
 
+export const markProductsUnavailable = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    shopifyProductId: v.string(),
+  },
+  handler: async (ctx, args): Promise<number> => {
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_shopify_id", (q) =>
+        q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId)
+      )
+      .collect();
+
+    const now = Date.now();
+    let count = 0;
+
+    for (const product of products) {
+      await ctx.db.patch(product._id, {
+        available: false,
+        lastShopifySyncAt: now,
+        updatedAt: now,
+      });
+      count++;
+    }
+
+    return count;
+  },
+});
+
 export const handleWebhook = internalAction({
   args: {
     topic: v.string(),
@@ -546,14 +599,101 @@ export const handleWebhook = internalAction({
       return;
     }
 
-    switch (args.topic) {
-      case "products/create":
-      case "products/update":
-      case "products/delete":
-        console.log(`Product webhook ${args.topic} received, handler to be implemented in S13`);
-        break;
-      default:
-        console.log(`Unhandled Shopify webhook topic: ${args.topic}`);
+    const { businessId } = connection;
+
+    try {
+      switch (args.topic) {
+        case "products/create":
+        case "products/update": {
+          const product = args.data as ShopifyWebhookProduct | null;
+          if (!product || !product.id || !product.variants) {
+            console.error(`Invalid product data for ${args.topic}:`, args.data);
+            return;
+          }
+
+          if (product.status !== "active") {
+            console.log(`Skipping ${args.topic} for non-active product ${product.id} (status: ${product.status})`);
+            if (args.topic === "products/update") {
+              const count = await ctx.runMutation(internal.shopify.markProductsUnavailable, {
+                businessId,
+                shopifyProductId: `gid://shopify/Product/${product.id}`,
+              });
+              console.log(`Marked ${count} products as unavailable for archived/draft product ${product.id}`);
+            }
+            return;
+          }
+
+          const shopifyProductId = `gid://shopify/Product/${product.id}`;
+          const imageUrl = product.images[0]?.src ?? null;
+
+          const business = await ctx.runQuery(internal.shopify.getBusinessLanguage, {
+            businessId,
+          });
+
+          const currency = business?.defaultLanguage === "es" ? "COP" 
+            : business?.defaultLanguage === "pt" ? "BRL" 
+            : "USD";
+
+          let processedCount = 0;
+          for (const variant of product.variants) {
+            const isOnlyVariant = product.variants.length === 1;
+            const variantTitle = isOnlyVariant || variant.title === "Default Title" || !variant.title
+              ? ""
+              : variant.title;
+
+            const name = variantTitle
+              ? `${product.title} - ${variantTitle}`
+              : product.title;
+
+            const priceInCents = Math.round(parseFloat(variant.price) * 100);
+            const available = variant.inventory_quantity > 0;
+
+            try {
+              await ctx.runMutation(internal.shopify.upsertProduct, {
+                businessId,
+                shopifyProductId,
+                shopifyVariantId: `gid://shopify/ProductVariant/${variant.id}`,
+                name,
+                description: product.body_html ?? undefined,
+                price: priceInCents,
+                currency,
+                imageUrl: imageUrl ?? undefined,
+                available,
+              });
+              processedCount++;
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Unknown error";
+              console.error(`Failed to upsert variant ${variant.id} for product ${product.id}: ${msg}`);
+            }
+          }
+
+          console.log(`Processed ${processedCount} variants for ${args.topic} product ${product.id}`);
+          break;
+        }
+
+        case "products/delete": {
+          const deleteData = args.data as { id?: number } | null;
+          if (!deleteData || !deleteData.id) {
+            console.error("Invalid delete data:", args.data);
+            return;
+          }
+
+          const shopifyProductId = `gid://shopify/Product/${deleteData.id}`;
+          const count = await ctx.runMutation(internal.shopify.markProductsUnavailable, {
+            businessId,
+            shopifyProductId,
+          });
+
+          console.log(`Marked ${count} products as unavailable for deleted Shopify product ${deleteData.id}`);
+          break;
+        }
+
+        default:
+          console.log(`Unhandled Shopify webhook topic: ${args.topic}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(`Error processing Shopify webhook ${args.topic}: ${message}`);
     }
   },
 });
@@ -575,6 +715,21 @@ export const getConnectionByShop = internalQuery({
     return {
       businessId: connection.businessId,
       accessToken: connection.accessToken,
+    };
+  },
+});
+
+export const getBusinessLanguage = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const business = await ctx.db.get(args.businessId);
+    if (!business) {
+      return null;
+    }
+    return {
+      defaultLanguage: business.defaultLanguage,
     };
   },
 });
