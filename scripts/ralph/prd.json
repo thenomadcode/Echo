@@ -429,7 +429,7 @@
       "id": "S23",
       "title": "Products page bulk action bar",
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Move bulk action bar to fixed position at bottom of screen",

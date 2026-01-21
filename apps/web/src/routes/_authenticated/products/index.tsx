@@ -2,7 +2,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { CheckCircle, FolderOpen, Grid, List, Loader2, Plus, Settings, Trash2, XCircle } from "lucide-react";
+import { CheckCircle, FolderOpen, Grid, List, Loader2, Plus, Settings, Trash2, XCircle, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -296,71 +296,7 @@ function ProductsPage({ businessId }: ProductsPageProps) {
               </div>
             </div>
 
-            {selectedProducts.size > 0 && (
-              <div className="rounded-md border border-primary bg-primary/5 p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {selectedProducts.size} product{selectedProducts.size === 1 ? "" : "s"} selected
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearSelection}
-                    disabled={isBulkActionRunning}
-                  >
-                    Clear Selection
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkMarkAvailable}
-                    disabled={isBulkActionRunning}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Mark Available
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkMarkUnavailable}
-                    disabled={isBulkActionRunning}
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Mark Unavailable
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setShowBulkDeleteConfirm(true)}
-                    disabled={isBulkActionRunning}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
-<select
-                                      value=""
-                                      onChange={(e) => handleBulkChangeCategory(e.target.value)}
-                                      disabled={isBulkActionRunning}
-                                      className="flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                      <option value="" disabled>
-                        Change Category
-                      </option>
-                      <option value="none">Uncategorized</option>
-                      {categories?.map((cat) => (
-                        <option key={cat._id} value={cat._id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {filteredProducts.length === 0 ? (
@@ -410,6 +346,79 @@ function ProductsPage({ businessId }: ProductsPageProps) {
           )}
         </CardContent>
       </Card>
+
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg transform transition-transform duration-300 ease-out ${
+          selectedProducts.size > 0 ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="container mx-auto max-w-7xl px-6 py-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClearSelection}
+                disabled={isBulkActionRunning}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <span className="font-medium">
+                {selectedProducts.size} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkMarkAvailable}
+                disabled={isBulkActionRunning}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Mark Available
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkMarkUnavailable}
+                disabled={isBulkActionRunning}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Mark Unavailable
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={isBulkActionRunning}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                <select
+                  value=""
+                  onChange={(e) => handleBulkChangeCategory(e.target.value)}
+                  disabled={isBulkActionRunning}
+                  className="flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>
+                    Move to...
+                  </option>
+                  <option value="none">Uncategorized</option>
+                  {categories?.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
         <AlertDialogContent>

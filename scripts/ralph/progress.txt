@@ -24,6 +24,28 @@
 
 ---
 
+## 2026-01-21 16:18 - S23: Products page bulk action bar
+
+**What was implemented:**
+- Moved bulk action bar from inline to fixed position at bottom of screen
+- Bar appears only when 1+ products selected using CSS transform animation
+- Slide up animation: transform transition-transform duration-300 ease-out
+- translate-y-full when hidden, translate-y-0 when visible
+- Bar has solid background (bg-background) with border-t and shadow-lg
+- Bar shows: "{count} selected" text, all bulk actions
+- Clear selection button (X icon) on the left side
+- Actions: Mark Available, Mark Unavailable, Delete, Move to category dropdown
+- Uses z-50 for proper layering above page content
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/products/index.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 16:10 - S22: Products page card design improvements
 
 **What was implemented:**
