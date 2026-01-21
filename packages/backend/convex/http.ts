@@ -199,6 +199,55 @@ function extractToPhoneNumber(payload: unknown): string | null {
 }
 
 http.route({
+  path: "/webhook/shopify",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const shopifySecret = process.env.SHOPIFY_API_SECRET;
+    if (!shopifySecret) {
+      console.error("SHOPIFY_API_SECRET not configured");
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+
+    const shop = request.headers.get("X-Shopify-Shop-Domain");
+    const topic = request.headers.get("X-Shopify-Topic");
+    const hmacHeader = request.headers.get("X-Shopify-Hmac-SHA256");
+
+    if (!shop || !topic || !hmacHeader) {
+      console.error("Missing required Shopify headers", { shop, topic, hmacHeader: !!hmacHeader });
+      return new Response("Missing required headers", { status: 400 });
+    }
+
+    const body = await request.text();
+
+    const isValid = verifyShopifySignature(body, hmacHeader, shopifySecret);
+    if (!isValid) {
+      console.error("Invalid Shopify webhook signature");
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(body);
+    } catch {
+      console.error("Failed to parse Shopify webhook body");
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    console.log(`Shopify webhook received: ${topic} from ${shop}`);
+
+    ctx.runAction(internal.shopify.handleWebhook, {
+      topic,
+      shop,
+      data: payload as Record<string, unknown>,
+    }).catch((error) => {
+      console.error(`Error processing Shopify webhook ${topic}:`, error);
+    });
+
+    return new Response("OK", { status: 200 });
+  }),
+});
+
+http.route({
   path: "/webhook/stripe",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
@@ -350,6 +399,61 @@ function computeHmacSha256Sync(
     .join("");
 
   return computedHex === expectedHex;
+}
+
+function verifyShopifySignature(
+  payload: string,
+  expectedBase64: string,
+  secret: string
+): boolean {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(payload);
+
+  const computedHmac = computeHmacSha256Raw(keyData, messageData);
+  const computedBase64 = uint8ArrayToBase64(computedHmac);
+
+  return computedBase64 === expectedBase64;
+}
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function computeHmacSha256Raw(
+  keyData: Uint8Array,
+  messageData: Uint8Array
+): Uint8Array {
+  const blockSize = 64;
+
+  let key = keyData;
+  if (keyData.length > blockSize) {
+    key = sha256(keyData);
+  }
+  const paddedKey = new Uint8Array(blockSize);
+  paddedKey.set(key);
+
+  const ipad = new Uint8Array(blockSize);
+  const opad = new Uint8Array(blockSize);
+  for (let i = 0; i < blockSize; i++) {
+    ipad[i] = paddedKey[i] ^ 0x36;
+    opad[i] = paddedKey[i] ^ 0x5c;
+  }
+
+  const innerData = new Uint8Array(blockSize + messageData.length);
+  innerData.set(ipad);
+  innerData.set(messageData, blockSize);
+  const innerHash = sha256(innerData);
+
+  const outerData = new Uint8Array(blockSize + 32);
+  outerData.set(opad);
+  outerData.set(innerHash, blockSize);
+
+  return sha256(outerData);
 }
 
 function sha256(data: Uint8Array): Uint8Array {

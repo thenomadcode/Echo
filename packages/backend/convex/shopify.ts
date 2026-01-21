@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authComponent } from "./auth";
 import type { Id } from "./_generated/dataModel";
@@ -525,6 +525,57 @@ export const updateSyncStatus = internalMutation({
         lastSyncStatus: args.status,
       });
     }
+  },
+});
+
+export const handleWebhook = internalAction({
+  args: {
+    topic: v.string(),
+    shop: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, args): Promise<void> => {
+    console.log(`Processing Shopify webhook: ${args.topic} from ${args.shop}`);
+
+    const connection = await ctx.runQuery(internal.shopify.getConnectionByShop, {
+      shop: args.shop,
+    });
+
+    if (!connection) {
+      console.error(`No Shopify connection found for shop: ${args.shop}`);
+      return;
+    }
+
+    switch (args.topic) {
+      case "products/create":
+      case "products/update":
+      case "products/delete":
+        console.log(`Product webhook ${args.topic} received, handler to be implemented in S13`);
+        break;
+      default:
+        console.log(`Unhandled Shopify webhook topic: ${args.topic}`);
+    }
+  },
+});
+
+export const getConnectionByShop = internalQuery({
+  args: {
+    shop: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_shop", (q) => q.eq("shop", args.shop))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    return {
+      businessId: connection.businessId,
+      accessToken: connection.accessToken,
+    };
   },
 });
 

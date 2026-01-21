@@ -61,7 +61,7 @@
       "id": "S04",
       "title": "Implement Shopify OAuth URL generation mutation",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/shopify.ts file",
@@ -79,7 +79,7 @@
       "id": "S05",
       "title": "Implement Shopify OAuth callback handler",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create shopify.handleCallback mutation in packages/backend/convex/shopify.ts",
@@ -97,7 +97,7 @@
       "id": "S06",
       "title": "Create Shopify OAuth HTTP route",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update packages/backend/convex/http.ts to add Shopify callback route",
@@ -113,7 +113,7 @@
       "id": "S07",
       "title": "Create integrations settings page",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/settings/integrations/index.tsx",
@@ -134,7 +134,7 @@
       "id": "S08",
       "title": "Create Shopify settings page with Connect button",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/settings/integrations/shopify.tsx",
@@ -155,7 +155,7 @@
       "id": "S09",
       "title": "Display Shopify connection status and options",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update Shopify settings page to show connected state",
@@ -176,7 +176,7 @@
       "id": "S10",
       "title": "Implement initial product import mutation",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create shopify.importProducts action in packages/backend/convex/shopify.ts",
@@ -200,7 +200,7 @@
       "id": "S11",
       "title": "Create product import UI with progress",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add 'Import Products' button to Shopify settings page (visible after connection)",

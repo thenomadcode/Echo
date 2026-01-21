@@ -1927,3 +1927,257 @@
 - Updated PRD: S02 passes: true
 
 ---
+
+---
+
+## 2026-01-21 10:26 - S04: Implement Shopify OAuth URL generation mutation
+
+**What was implemented:**
+- Created packages/backend/convex/shopify.ts with getAuthUrl mutation and getConnectionStatus query
+- getAuthUrl mutation:
+  - Validates authentication and business ownership
+  - Normalizes shop URL (accepts "mystore" or "mystore.myshopify.com")
+  - Validates shop URL format with regex
+  - Checks for existing Shopify connection to prevent duplicates
+  - Generates cryptographically secure state parameter using Web Crypto API
+  - Builds OAuth URL with client_id, scope, redirect_uri, state
+  - State format includes businessId for callback verification (CSRF protection)
+  - Returns authUrl and normalized shop
+- getConnectionStatus query:
+  - Returns connection status for a business
+  - Includes shop, lastSyncAt, lastSyncStatus, scopes if connected
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (created, 120 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Learnings for future iterations:**
+- Convex runtime has Web Crypto API available (crypto.getRandomValues)
+- State parameter can encode additional data (businessId) separated by pipe for callback verification
+- Shop URL normalization accepts both short form (mystore) and full form (mystore.myshopify.com)
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S04 - Implement Shopify OAuth URL generation mutation (commit ab786e8)
+
+---
+
+## 2026-01-21 10:28 - S05: Implement Shopify OAuth callback handler
+
+**What was implemented:**
+- Created shopify.handleCallback action for exchanging OAuth code for access token
+- Parses state parameter to extract businessId (CSRF verification)
+- Exchanges authorization code for access token via POST to Shopify API
+- Uses internal mutation saveConnection to store credentials
+- Returns success/error status with appropriate error messages
+- Created shopify.saveConnection internalMutation:
+  - Stores/updates shopifyConnections record
+  - Handles both new connections and reconnections (updates existing)
+  - Stores shop, accessToken, scopes, createdAt
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (+116 lines: handleCallback action, saveConnection internalMutation, type definitions)
+
+**Learnings for future iterations:**
+- Convex actions can make HTTP requests (fetch is available)
+- Use internal mutations to persist data from actions
+- Shopify OAuth token response contains scope as comma-separated string
+- Always handle both success and error responses with typed interfaces
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S05 - Implement Shopify OAuth callback handler (commit 7723850)
+
+---
+
+## 2026-01-21 10:30 - S06: Create Shopify OAuth HTTP route
+
+**What was implemented:**
+- Added GET /shopify/callback route to packages/backend/convex/http.ts
+- Extracts query params: code, shop, state from OAuth redirect
+- Validates all params present before proceeding
+- Calls shopify.handleCallback action with extracted params
+- On success: redirects to /settings/integrations/shopify?connected=true
+- On failure: redirects to /settings/integrations/shopify?error={message}
+- Handles missing params with error=missing_params redirect
+- Uses try/catch for graceful error handling
+
+**Files changed:**
+- packages/backend/convex/http.ts (+36 lines)
+
+**Learnings for future iterations:**
+- Convex httpAction can call actions via ctx.runAction(api.module.function, args)
+- Response.redirect() is available for HTTP redirects (302 status)
+- Use encodeURIComponent for error messages in query params
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S06 - Create Shopify OAuth HTTP route (commit 567eb0b)
+
+---
+
+## 2026-01-21 10:35 - S07: Create integrations settings page
+
+**What was implemented:**
+- Created apps/web/src/routes/settings_.integrations.tsx for /settings/integrations
+- Protected route using Authenticated/Unauthenticated/AuthLoading pattern
+- Page displays list of available integrations (Shopify for now)
+- Shopify card shows:
+  - Shopify green logo (ShoppingBag icon on #96bf48 background)
+  - Name and description
+  - Connection status badge (Connected/Not connected)
+- Click navigates to /settings/integrations/shopify
+- Uses existing patterns: BusinessSwitcher, AppNav, UserMenu in header
+- Created placeholder settings_.integrations_.shopify.tsx for S08
+
+**Files changed:**
+- apps/web/src/routes/settings_.integrations.tsx (created, 136 lines)
+- apps/web/src/routes/settings_.integrations_.shopify.tsx (created, placeholder)
+- apps/web/src/routeTree.gen.ts (auto-generated)
+
+**Learnings for future iterations:**
+- TanStack Router flat file convention: settings_.integrations.tsx = /settings/integrations
+- Nested routes: settings_.integrations_.shopify.tsx = /settings/integrations/shopify
+- Must run bunx @tanstack/router-cli generate after creating new route files
+- Badge variant="success" for green connected status
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S07 - Create integrations settings page (commit a6d5a13)
+
+---
+
+## 2026-01-21 10:40 - S08: Create Shopify settings page with Connect button
+
+**What was implemented:**
+- Full implementation of apps/web/src/routes/settings_.integrations_.shopify.tsx
+- Protected route using Authenticated/Unauthenticated/AuthLoading pattern
+- Page displays Shopify branding header with green logo
+- When not connected:
+  - Shop URL input field with ".myshopify.com" suffix hint
+  - Accepts store name only or full URL
+  - Connect button calls shopify.getAuthUrl mutation
+  - Shows loading state with spinner during redirect
+  - Redirects to OAuth URL on success
+- When connected:
+  - Shows connected status with store URL
+- Handles URL query params:
+  - connected=true shows success toast
+  - error={message} shows error toast
+- Uses validateSearch for type-safe query params
+- Updated integrations page link to include search params
+
+**Files changed:**
+- apps/web/src/routes/settings_.integrations_.shopify.tsx (rewritten, 217 lines)
+- apps/web/src/routes/settings_.integrations.tsx (updated Link with search prop)
+- apps/web/src/routeTree.gen.ts (auto-generated)
+
+**Learnings for future iterations:**
+- TanStack Router validateSearch makes search params typed
+- When route has validateSearch, Links to it require search prop
+- window.location.href for external redirects (OAuth)
+- useMutation returns promise, can await and catch errors
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S08 - Create Shopify settings page with Connect button (commit 7cb730e)
+
+---
+
+## 2026-01-21 10:45 - S09: Display Shopify connection status and options
+
+**What was implemented:**
+- Enhanced connected state UI on Shopify settings page
+- Connection Status card showing:
+  - Green checkmark Badge with "Connected"
+  - Store URL display
+  - Last sync timestamp with relative time (e.g., "2 hours ago")
+  - Sync status badge: success (green), partial (yellow), failed (red)
+- Sync Options card with checkboxes (UI only, no backend persistence):
+  - "Auto-sync products when changed in Shopify" (default checked)
+  - "Create orders in Shopify" (default checked)
+  - "Sync order status back to Shopify" (default unchecked)
+- Created SyncStatusBadge component for status visualization
+- Created SyncOption component for checkbox with label and description
+
+**Files changed:**
+- apps/web/src/routes/settings_.integrations_.shopify.tsx (+109 lines)
+- apps/web/src/routeTree.gen.ts (auto-generated)
+
+**Learnings for future iterations:**
+- date-fns formatDistanceToNow with { addSuffix: true } gives nice "2 hours ago" format
+- Badge variant="warning" for yellow/amber status
+- Checkbox component uses onCheckedChange with value check (value === true)
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S09 - Display Shopify connection status and options (commit 3994c4f)
+
+---
+
+## 2026-01-21 10:55 - S10: Implement initial product import mutation
+
+**What was implemented:**
+- Created shopify.importProducts action in packages/backend/convex/shopify.ts
+- Uses Shopify Admin GraphQL API to fetch products with pagination (50 per page)
+- GraphQL query fetches: id, title, descriptionHtml, status, images, variants (id, title, price, sku, inventoryQuantity)
+- Skips products with status != "ACTIVE"
+- Each variant imported as separate Echo product:
+  - Name: "Product Title" or "Product Title - Variant Title" (skips "Default Title")
+  - Price: converted from dollars string to cents integer
+  - Available: based on inventoryQuantity > 0
+- Created getConnectionInternal internalQuery for secure access token fetch
+- Created upsertProduct internalMutation:
+  - Checks existing by shopifyProductId + shopifyVariantId
+  - Updates existing or creates new with source='shopify'
+  - Sets lastShopifySyncAt on all synced products
+- Created updateSyncStatus internalMutation to update connection lastSyncAt/lastSyncStatus
+- Returns { imported, skipped, errors } summary
+- Handles pagination with cursor-based approach
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (+318 lines)
+
+**Learnings for future iterations:**
+- Shopify GraphQL API uses cursor-based pagination with pageInfo.hasNextPage and endCursor
+- Shopify product status is uppercase: "ACTIVE", "DRAFT", "ARCHIVED"
+- Shopify price is a string representing dollars (e.g., "19.99"), needs conversion to cents
+- Use internalQuery for reading sensitive data like access tokens in actions
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S10 - Implement initial product import mutation (commit 31a6b7a)
+
+---
+
+## 2026-01-21 11:00 - S11: Create product import UI with progress
+
+**What was implemented:**
+- Added Products card to Shopify settings page (visible when connected)
+- Import Products button triggers shopify.importProducts action
+- Button shows loading state with spinner during import
+- Disabled while import in progress to prevent double-clicks
+- Toast notifications:
+  - Success: "Imported X products successfully!"
+  - Partial: "Imported X products with Y errors. Skipped Z products."
+  - Error: Shows first error message
+- View Products link navigates to /products page
+
+**Files changed:**
+- apps/web/src/routes/settings_.integrations_.shopify.tsx (+76 lines)
+
+**Learnings for future iterations:**
+- useAction for Convex actions (vs useMutation for mutations)
+- toast.warning for partial success states
+
+**Verification:**
+- LSP diagnostics: no errors
+- apps/web tsc --noEmit: passes
+- Committed as: feat: S11 - Create product import UI with progress (commit 7bfef28)
