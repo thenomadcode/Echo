@@ -2,8 +2,9 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Check, Loader2, ShoppingBag, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
 
 import SignInForm from "@/components/sign-in-form";
 import BusinessSwitcher from "@/components/business-switcher";
@@ -13,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/settings_/integrations_/shopify")({
   component: ShopifySettingsPage,
@@ -210,21 +213,127 @@ function ShopifySettingsContent() {
         )}
 
         {isConnected && connectionStatus && (
-          <Card className="max-w-md">
-            <CardHeader>
-              <CardTitle>Connected</CardTitle>
-              <CardDescription>
-                Your Shopify store is connected
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">
-                Store: <span className="font-medium">{connectionStatus.shop}</span>
-              </p>
-            </CardContent>
-          </Card>
+          <div className="space-y-6 max-w-2xl">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Connection Status</CardTitle>
+                  <Badge variant="success" className="flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Connected
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Store</span>
+                  <span className="text-sm font-medium">{connectionStatus.shop}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Last Sync</span>
+                  <span className="text-sm">
+                    {connectionStatus.lastSyncAt
+                      ? formatDistanceToNow(new Date(connectionStatus.lastSyncAt), { addSuffix: true })
+                      : "Never synced"}
+                  </span>
+                </div>
+                {connectionStatus.lastSyncStatus && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Sync Status</span>
+                    <SyncStatusBadge status={connectionStatus.lastSyncStatus} />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sync Options</CardTitle>
+                <CardDescription>
+                  Configure how data syncs between Echo and Shopify
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <SyncOption
+                  id="auto-sync-products"
+                  label="Auto-sync products when changed in Shopify"
+                  description="Products will be automatically updated when you make changes in Shopify"
+                  defaultChecked={true}
+                />
+                <SyncOption
+                  id="create-orders"
+                  label="Create orders in Shopify"
+                  description="Orders placed through Echo will be created in your Shopify store"
+                  defaultChecked={true}
+                />
+                <SyncOption
+                  id="sync-order-status"
+                  label="Sync order status back to Shopify"
+                  description="Order status updates in Echo will be reflected in Shopify"
+                  defaultChecked={false}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function SyncStatusBadge({ status }: { status: "success" | "partial" | "failed" }) {
+  switch (status) {
+    case "success":
+      return (
+        <Badge variant="success" className="flex items-center gap-1">
+          <Check className="h-3 w-3" />
+          Success
+        </Badge>
+      );
+    case "partial":
+      return (
+        <Badge variant="warning" className="flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          Partial
+        </Badge>
+      );
+    case "failed":
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <X className="h-3 w-3" />
+          Failed
+        </Badge>
+      );
+  }
+}
+
+function SyncOption({
+  id,
+  label,
+  description,
+  defaultChecked,
+}: {
+  id: string;
+  label: string;
+  description: string;
+  defaultChecked: boolean;
+}) {
+  const [checked, setChecked] = useState(defaultChecked);
+
+  return (
+    <div className="flex items-start space-x-3">
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(value) => setChecked(value === true)}
+        className="mt-1"
+      />
+      <div className="space-y-1">
+        <Label htmlFor={id} className="font-medium cursor-pointer">
+          {label}
+        </Label>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
     </div>
   );
 }
