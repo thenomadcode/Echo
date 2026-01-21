@@ -1,6 +1,8 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { action, internalMutation, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { authComponent } from "./auth";
+import type { Id } from "./_generated/dataModel";
 
 function normalizeShopUrl(shop: string): string | null {
   const trimmed = shop.trim().toLowerCase();
@@ -93,6 +95,119 @@ export const getAuthUrl = mutation({
       authUrl: authUrl.toString(),
       shop: normalizedShop,
     };
+  },
+});
+
+type ShopifyTokenResponse = {
+  access_token: string;
+  scope: string;
+};
+
+type ShopifyErrorResponse = {
+  error?: string;
+  error_description?: string;
+};
+
+export const handleCallback = action({
+  args: {
+    code: v.string(),
+    shop: v.string(),
+    state: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string; businessId?: string }> => {
+    // State format: {randomState}|{businessId}
+    const stateParts = args.state.split("|");
+    if (stateParts.length !== 2) {
+      return { success: false, error: "Invalid state parameter" };
+    }
+
+    const [, businessIdStr] = stateParts;
+    const businessId = businessIdStr as Id<"businesses">;
+
+    const normalizedShop = normalizeShopUrl(args.shop);
+    if (!normalizedShop) {
+      return { success: false, error: "Invalid shop URL" };
+    }
+
+    const clientId = process.env.SHOPIFY_API_KEY;
+    const clientSecret = process.env.SHOPIFY_API_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return { success: false, error: "Shopify credentials not configured" };
+    }
+
+    try {
+      const tokenResponse = await fetch(
+        `https://${normalizedShop}/admin/oauth/access_token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            client_id: clientId,
+            client_secret: clientSecret,
+            code: args.code,
+          }),
+        }
+      );
+
+      if (!tokenResponse.ok) {
+        const errorData = (await tokenResponse.json()) as ShopifyErrorResponse;
+        const errorMessage =
+          errorData.error_description || errorData.error || "Token exchange failed";
+        return { success: false, error: errorMessage };
+      }
+
+      const tokenData = (await tokenResponse.json()) as ShopifyTokenResponse;
+      const scopes = tokenData.scope.split(",").map((s) => s.trim());
+
+      await ctx.runMutation(internal.shopify.saveConnection, {
+        businessId,
+        shop: normalizedShop,
+        accessToken: tokenData.access_token,
+        scopes,
+      });
+
+      return { success: true, businessId };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return { success: false, error: message };
+    }
+  },
+});
+
+export const saveConnection = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    shop: v.string(),
+    accessToken: v.string(),
+    scopes: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existingConnection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (existingConnection) {
+      await ctx.db.patch(existingConnection._id, {
+        shop: args.shop,
+        accessToken: args.accessToken,
+        scopes: args.scopes,
+      });
+      return existingConnection._id;
+    }
+
+    const connectionId = await ctx.db.insert("shopifyConnections", {
+      businessId: args.businessId,
+      shop: args.shop,
+      accessToken: args.accessToken,
+      scopes: args.scopes,
+      createdAt: Date.now(),
+    });
+
+    return connectionId;
   },
 });
 
