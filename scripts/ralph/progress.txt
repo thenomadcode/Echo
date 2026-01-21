@@ -24,6 +24,34 @@
 
 ---
 
+## 2026-01-21 15:45 - S31: Settings page sidebar navigation structure
+
+**What was implemented:**
+- Restructured settings page with internal sidebar navigation
+- Sidebar sections:
+  - General: Business Info, Localization, Business Hours
+  - AI & Automation: AI Personality, Escalation Rules
+  - Integrations: WhatsApp, Shopify
+- URL-based section navigation with ?section= search param for deep linking
+- Each section has its own component (GeneralSettings, AISettings, IntegrationsSettings)
+- Clicking sidebar items updates URL and shows corresponding section
+- Added sticky save button at bottom of content area with backdrop blur
+- Icons for each sidebar item (Building2, Globe, Clock, Bot, AlertTriangle, MessageCircle, ShoppingBag)
+- Active section highlighted with primary/10 background
+- Forms split by section:
+  - General: business info, localization, business hours
+  - AI: greeting message, personality instructions, escalation keywords
+  - Integrations: WhatsApp connection status, Shopify (coming soon)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/settings.tsx (complete rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:38 - S30: Onboarding wizard step 3 - Ready
 
 **What was implemented:**

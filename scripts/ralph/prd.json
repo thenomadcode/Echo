@@ -584,7 +584,7 @@
       "id": "S31",
       "title": "Settings page sidebar navigation structure",
       "priority": 31,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Restructure apps/web/src/routes/settings/ routes",
