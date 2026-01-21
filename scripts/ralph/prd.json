@@ -543,7 +543,7 @@
       "id": "S29",
       "title": "Onboarding wizard step 2 - Branding",
       "priority": 29,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Step 2 of onboarding wizard",

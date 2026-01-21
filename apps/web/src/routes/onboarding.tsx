@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useMutation } from "convex/react";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ImageIcon, Loader2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -252,6 +252,18 @@ interface Step2Props extends StepProps {
 }
 
 function Step2Branding({ data, updateData, onNext, onBack }: Step2Props) {
+  const [logoError, setLogoError] = useState(false);
+
+  const handleLogoUrlChange = (url: string) => {
+    updateData({ logoUrl: url });
+    setLogoError(false);
+  };
+
+  const clearLogo = () => {
+    updateData({ logoUrl: "" });
+    setLogoError(false);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -262,29 +274,56 @@ function Step2Branding({ data, updateData, onNext, onBack }: Step2Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="logoUrl">Logo URL</Label>
+          <Label>Business Logo</Label>
+          <div
+            className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
+              data.logoUrl && !logoError
+                ? "border-primary/50 bg-primary/5"
+                : "border-muted-foreground/30 hover:border-primary/50"
+            }`}
+          >
+            {data.logoUrl && !logoError ? (
+              <div className="relative">
+                <img
+                  src={data.logoUrl}
+                  alt="Logo preview"
+                  className="h-32 w-32 rounded-lg object-contain"
+                  onError={() => setLogoError(true)}
+                />
+                <button
+                  type="button"
+                  onClick={clearLogo}
+                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Add your logo</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter a URL below
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
           <Input
             id="logoUrl"
             type="url"
             value={data.logoUrl}
-            onChange={(e) => updateData({ logoUrl: e.target.value })}
+            onChange={(e) => handleLogoUrlChange(e.target.value)}
             placeholder="https://example.com/logo.png"
             className="h-11"
           />
-          <p className="text-sm text-muted-foreground">
-            Enter a URL to your business logo (optional)
-          </p>
-          {data.logoUrl && (
-            <div className="mt-4 flex justify-center">
-              <img
-                src={data.logoUrl}
-                alt="Logo preview"
-                className="h-24 w-24 rounded-lg object-contain border"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            </div>
+          {logoError && (
+            <p className="text-sm text-destructive">
+              Could not load image from this URL
+            </p>
           )}
         </div>
 

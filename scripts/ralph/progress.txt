@@ -24,6 +24,31 @@
 
 ---
 
+## 2026-01-21 15:35 - S29: Onboarding wizard step 2 - Branding
+
+**What was implemented:**
+- Enhanced Step 2 Branding with improved logo input UX:
+  - Visual drag-drop style zone with ImageIcon placeholder
+  - Shows preview when valid URL is entered
+  - X button to clear logo
+  - Error state when URL fails to load
+  - Border changes to primary color when logo is set
+- Progress indicator shows step 2 as active
+- Back button preserves data and returns to step 1
+- Next button proceeds to step 3
+- Address field remains optional with helper text
+
+**Files changed:**
+- apps/web/src/routes/onboarding.tsx
+
+**Note:** Used URL input with visual drag-drop zone style (not actual file upload) to maintain compatibility with existing business schema which expects logoUrl string.
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:30 - S28: Onboarding wizard step 1 - Business Info
 
 **What was implemented:**
