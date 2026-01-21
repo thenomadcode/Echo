@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authComponent } from "./auth";
 import type { Id } from "./_generated/dataModel";
@@ -208,6 +208,323 @@ export const saveConnection = internalMutation({
     });
 
     return connectionId;
+  },
+});
+
+type ShopifyGraphQLResponse = {
+  data?: {
+    products: {
+      edges: Array<{
+        node: {
+          id: string;
+          title: string;
+          descriptionHtml: string;
+          status: string;
+          images: {
+            edges: Array<{
+              node: {
+                url: string;
+              };
+            }>;
+          };
+          variants: {
+            edges: Array<{
+              node: {
+                id: string;
+                title: string;
+                price: string;
+                sku: string;
+                inventoryQuantity: number;
+              };
+            }>;
+          };
+        };
+      }>;
+      pageInfo: {
+        hasNextPage: boolean;
+        endCursor: string | null;
+      };
+    };
+  };
+  errors?: Array<{ message: string }>;
+};
+
+type ImportResult = {
+  imported: number;
+  skipped: number;
+  errors: string[];
+};
+
+const SHOPIFY_PRODUCTS_QUERY = `
+  query GetProducts($first: Int!, $after: String) {
+    products(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          title
+          descriptionHtml
+          status
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 100) {
+            edges {
+              node {
+                id
+                title
+                price
+                sku
+                inventoryQuantity
+              }
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+export const importProducts = action({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<ImportResult> => {
+    const connection = await ctx.runQuery(internal.shopify.getConnectionInternal, {
+      businessId: args.businessId,
+    });
+
+    if (!connection) {
+      return { imported: 0, skipped: 0, errors: ["No Shopify connection found"] };
+    }
+
+    const { shop, accessToken, business } = connection;
+    let imported = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+    let hasNextPage = true;
+    let cursor: string | null = null;
+
+    try {
+      while (hasNextPage) {
+        const response = await fetch(
+          `https://${shop}/admin/api/2024-01/graphql.json`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Shopify-Access-Token": accessToken,
+            },
+            body: JSON.stringify({
+              query: SHOPIFY_PRODUCTS_QUERY,
+              variables: { first: 50, after: cursor },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          errors.push(`API error: ${response.status} ${response.statusText}`);
+          break;
+        }
+
+        const result = (await response.json()) as ShopifyGraphQLResponse;
+
+        if (result.errors) {
+          errors.push(...result.errors.map((e) => e.message));
+          break;
+        }
+
+        if (!result.data) {
+          errors.push("No data returned from Shopify");
+          break;
+        }
+
+        const products = result.data.products;
+
+        for (const edge of products.edges) {
+          const product = edge.node;
+
+          if (product.status !== "ACTIVE") {
+            skipped++;
+            continue;
+          }
+
+          const shopifyProductId = product.id;
+          const imageUrl = product.images.edges[0]?.node.url ?? null;
+
+          for (const variantEdge of product.variants.edges) {
+            const variant = variantEdge.node;
+            const isOnlyVariant = product.variants.edges.length === 1;
+            const variantTitle = isOnlyVariant || variant.title === "Default Title"
+              ? ""
+              : variant.title;
+
+            const name = variantTitle
+              ? `${product.title} - ${variantTitle}`
+              : product.title;
+
+            // Convert price from dollars string to cents integer
+            const priceInCents = Math.round(parseFloat(variant.price) * 100);
+            const available = variant.inventoryQuantity > 0;
+
+            try {
+              await ctx.runMutation(internal.shopify.upsertProduct, {
+                businessId: args.businessId,
+                shopifyProductId,
+                shopifyVariantId: variant.id,
+                name,
+                description: product.descriptionHtml || undefined,
+                price: priceInCents,
+                currency: business.defaultLanguage === "es" ? "COP" : business.defaultLanguage === "pt" ? "BRL" : "USD",
+                imageUrl: imageUrl ?? undefined,
+                available,
+              });
+              imported++;
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Unknown error";
+              errors.push(`Failed to import "${name}": ${msg}`);
+            }
+          }
+        }
+
+        hasNextPage = products.pageInfo.hasNextPage;
+        cursor = products.pageInfo.endCursor;
+      }
+
+      const status = errors.length === 0 ? "success" : imported > 0 ? "partial" : "failed";
+      await ctx.runMutation(internal.shopify.updateSyncStatus, {
+        businessId: args.businessId,
+        status,
+      });
+
+      return { imported, skipped, errors };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      await ctx.runMutation(internal.shopify.updateSyncStatus, {
+        businessId: args.businessId,
+        status: "failed",
+      });
+      return { imported, skipped, errors: [...errors, message] };
+    }
+  },
+});
+
+export const getConnectionInternal = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    const business = await ctx.db.get(args.businessId);
+    if (!business) {
+      return null;
+    }
+
+    return {
+      shop: connection.shop,
+      accessToken: connection.accessToken,
+      business: {
+        defaultLanguage: business.defaultLanguage,
+      },
+    };
+  },
+});
+
+export const upsertProduct = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    shopifyProductId: v.string(),
+    shopifyVariantId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    price: v.number(),
+    currency: v.string(),
+    imageUrl: v.optional(v.string()),
+    available: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("products")
+      .withIndex("by_shopify_id", (q) =>
+        q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId)
+      )
+      .filter((q) => q.eq(q.field("shopifyVariantId"), args.shopifyVariantId))
+      .first();
+
+    const now = Date.now();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        name: args.name,
+        description: args.description,
+        price: args.price,
+        available: args.available,
+        lastShopifySyncAt: now,
+        updatedAt: now,
+      });
+      return existing._id;
+    }
+
+    const existingProducts = await ctx.db
+      .query("products")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .collect();
+
+    const maxOrder = existingProducts.reduce((max, p) => Math.max(max, p.order), -1);
+
+    const productId = await ctx.db.insert("products", {
+      businessId: args.businessId,
+      name: args.name,
+      description: args.description,
+      price: args.price,
+      currency: args.currency,
+      available: args.available,
+      deleted: false,
+      order: maxOrder + 1,
+      source: "shopify",
+      shopifyProductId: args.shopifyProductId,
+      shopifyVariantId: args.shopifyVariantId,
+      lastShopifySyncAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return productId;
+  },
+});
+
+export const updateSyncStatus = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    status: v.union(v.literal("success"), v.literal("partial"), v.literal("failed")),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (connection) {
+      await ctx.db.patch(connection._id, {
+        lastSyncAt: Date.now(),
+        lastSyncStatus: args.status,
+      });
+    }
   },
 });
 
