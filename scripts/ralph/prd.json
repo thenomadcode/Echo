@@ -27,7 +27,7 @@
       "id": "S02",
       "title": "Extend products and orders tables with Shopify fields",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Update products table in packages/backend/convex/schema.ts",

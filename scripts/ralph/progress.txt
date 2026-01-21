@@ -1879,3 +1879,27 @@
 - Updated PRD: S01 passes: true
 
 ---
+
+## 2026-01-21 09:51 - S02: Extend products and orders tables with Shopify fields
+
+**What was implemented:**
+- Updated products table in packages/backend/convex/schema.ts:
+  - Added source (v.optional(v.union("manual", "shopify"))) - defaults to 'manual'
+  - Added shopifyProductId (v.optional(v.string())) - Shopify product ID
+  - Added shopifyVariantId (v.optional(v.string())) - Shopify variant ID if variant
+  - Added lastShopifySyncAt (v.optional(v.number())) - when last synced from Shopify
+  - Added by_shopify_id index on [businessId, shopifyProductId] for sync lookup
+- Updated orders table in packages/backend/convex/schema.ts:
+  - Added shopifyOrderId (v.optional(v.string())) - created Shopify order ID
+  - Added shopifyOrderNumber (v.optional(v.string())) - Shopify order number (#1001)
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+13 lines, -1 line)
+
+**Verification:**
+- Convex dev compiles successfully (schema validates)
+- LSP diagnostics: no errors
+- Committed as: feat: S02 - Extend products and orders tables with Shopify fields (commit 1a6a130)
+- Updated PRD: S02 passes: true
+
+---
