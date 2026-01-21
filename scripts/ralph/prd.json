@@ -373,7 +373,7 @@
       "id": "S20",
       "title": "Orders page pagination and empty state",
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add pagination controls to orders list",

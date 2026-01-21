@@ -6,9 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery as useConvexQuery } from "convex/react";
 import { useEffect, useMemo, useState } from "react";
-import { ShoppingBag, Search } from "lucide-react";
+import { ShoppingBag, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { StatusBadge } from "@/components/composed/StatusBadge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,10 +57,13 @@ interface OrdersContentProps {
   businessId: Id<"businesses">;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 function OrdersContent({ businessId }: OrdersContentProps) {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const ordersQuery = useQuery(
     convexQuery(api.orders.listByBusiness, {
@@ -71,7 +75,7 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 
   const allOrders = ordersQuery.data?.orders ?? [];
 
-  const orders = useMemo(() => {
+  const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return allOrders;
     const query = searchQuery.toLowerCase();
     return allOrders.filter((order) => {
@@ -80,6 +84,16 @@ function OrdersContent({ businessId }: OrdersContentProps) {
       return orderNumberMatch || phoneMatch;
     });
   }, [allOrders, searchQuery]);
+
+  const totalOrders = filteredOrders.length;
+  const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalOrders);
+  const orders = filteredOrders.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
@@ -158,53 +172,86 @@ function OrdersContent({ businessId }: OrdersContentProps) {
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">Loading orders...</div>
             </div>
-          ) : orders.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 rounded-full bg-muted p-6">
-                <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                <ShoppingBag className="h-10 w-10 text-muted-foreground" />
               </div>
               <h3 className="mb-2 text-lg font-semibold">No orders yet</h3>
-              <p className="text-sm text-muted-foreground">
-                Orders will appear here when customers place them via WhatsApp
+              <p className="text-sm text-muted-foreground max-w-[320px]">
+                Orders will appear here when customers place orders through WhatsApp
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Items</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow
-                    key={order._id}
-                    onClick={() => handleRowClick(order._id)}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
-                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {order.contactPhone || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={order.status} type="order" />
-                    </TableCell>
-                    <TableCell className="text-center">{order.items.length}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(order.total, order.currency)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatSmartDate(order.createdAt)}
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Items</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow
+                      key={order._id}
+                      onClick={() => handleRowClick(order._id)}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {order.contactPhone || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={order.status} type="order" />
+                      </TableCell>
+                      <TableCell className="text-center">{order.items.length}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(order.total, order.currency)}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatSmartDate(order.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t pt-4 mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {startIndex + 1}-{endIndex} of {totalOrders} orders
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

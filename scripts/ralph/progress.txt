@@ -24,6 +24,29 @@
 
 ---
 
+## 2026-01-21 15:50 - S20: Orders page pagination and empty state
+
+**What was implemented:**
+- Added client-side pagination with ITEMS_PER_PAGE = 10
+- Pagination state managed with currentPage useState
+- Reset to page 1 when search or filter changes (useEffect)
+- Added pagination controls showing:
+  - "Showing X-Y of Z orders" text
+  - Previous/Next buttons with ChevronLeft/ChevronRight icons
+  - "Page N of M" indicator
+- Buttons disabled when at first/last page
+- Pagination only shows when totalPages > 1
+- Enhanced empty state with larger icon (h-10 w-10) and improved text
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:42 - S19: Orders page search and table improvements
 
 **What was implemented:**
