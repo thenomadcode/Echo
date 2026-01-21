@@ -235,7 +235,7 @@
       "id": "S13",
       "title": "Create dashboard backend queries",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create packages/backend/convex/dashboard.ts file",
@@ -255,7 +255,7 @@
       "id": "S14",
       "title": "Create Dashboard metric cards UI",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/dashboard.tsx with new design",
@@ -277,7 +277,7 @@
       "id": "S15",
       "title": "Create Dashboard activity feed and quick actions",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/composed/ActivityItem.tsx component",
@@ -299,7 +299,7 @@
       "id": "S16",
       "title": "Conversations page text and styling improvements",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/conversations/index.tsx",

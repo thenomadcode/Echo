@@ -24,6 +24,29 @@
 
 ---
 
+## 2026-01-21 15:21 - S16: Conversations page text and styling improvements
+
+**What was implemented:**
+- Increased min-height of conversation list items from 72px to 80px (min-h-20) for better touch targets
+- Added avatar placeholder with customer initials (first letter of name or first digit of phone number)
+- Added color-coded left border (4px) based on status:
+  - active -> primary color (border-l-primary)
+  - escalated -> yellow warning color (border-l-yellow-500)
+  - closed -> muted color (border-l-muted-foreground/50)
+- Updated timestamp format to short relative time: "Just now", "2m ago", "1h ago", "Yesterday"
+- Made header with filters sticky at top of conversation list
+- Changed empty state text from text-xs to text-sm for readability
+- Restructured CardContent with p-0 and moved padding to sticky header and scrollable content area
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:05 - S12: Typography and spacing audit across all routes
 
 **What was implemented:**
@@ -2146,5 +2169,104 @@
 - LSP diagnostics: no errors on all changed files
 - bunx tsc --noEmit: passes
 - Committed as: feat: S11 - Create unified StatusBadge component (commit face365)
+
+---
+
+---
+
+## 2026-01-21 15:10 - S13: Create dashboard backend queries
+
+**What was implemented:**
+- Created packages/backend/convex/dashboard.ts with two queries
+- `getMetrics` query returns:
+  - activeConversations: count of conversations with status='active'
+  - escalatedCount: count of conversations with status='escalated'
+  - ordersToday: count of orders created today (excluding cancelled)
+  - revenueToday: sum of order totals created today (in cents)
+  - weeklyConversations: count of conversations created this week
+  - weeklyChange: percentage change vs previous week
+- `getActivity` query returns:
+  - Array of recent events with type ('conversation' | 'order'), description, timestamp, link
+  - Limit defaults to 5, configurable via args
+  - Merges and sorts conversations and orders by timestamp
+- Both queries use auth pattern with business ownership validation
+- Uses by_business_status index for efficient conversation filtering
+
+**Files changed:**
+- packages/backend/convex/dashboard.ts (created, 195 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Convex codegen: passes
+- Committed as: feat: S13 - Create dashboard backend queries (commit ae17da9)
+
+## 2026-01-21 15:12 - S14: Create Dashboard metric cards UI
+
+**What was implemented:**
+- Created `apps/web/src/components/composed/MetricCard.tsx` component
+  - Props: title, value, subtitle, icon (LucideIcon), link (optional), variant (default | warning)
+  - Clickable card that links to relevant page when link prop provided
+  - Warning variant for escalated conversations (border-warning, bg-warning)
+  - Hover effect with bg-accent/50
+- Updated `apps/web/src/routes/_authenticated/dashboard.tsx`
+  - Added personalized time-aware greeting: Good morning/afternoon/evening, {userName}!
+  - Added subheading: "Here's what's happening at {businessName}"
+  - Bento grid layout (3 columns on md+) with MetricCard components
+  - Card 1: Conversations - activeConversations count, escalatedCount as warning subtitle
+  - Card 2: Orders Today - ordersToday count, revenueToday formatted as currency
+  - Card 3: Weekly Trend - weeklyConversations with percentage change indicator
+  - Each metric card links to relevant page (/conversations, /orders)
+  - Uses TrendingUp/TrendingDown icons based on weeklyChange
+- Fixed unused variable warning in dashboard.ts backend
+
+**Files changed:**
+- apps/web/src/components/composed/MetricCard.tsx (created, 62 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (rewritten, 145 lines)
+- packages/backend/convex/dashboard.ts (removed unused `now` variable)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S14 - Create Dashboard metric cards UI (commit 524d66c)
+
+---
+
+## 2026-01-21 15:16 - S15: Create Dashboard activity feed and quick actions
+
+**What was implemented:**
+- Created apps/web/src/components/composed/ActivityItem.tsx component
+  - Props: type, description, timestamp, link, isEscalation
+  - Displays icon based on type (conversation, order, or escalation warning)
+  - Escalation items highlighted with warning background
+  - Relative timestamp using date-fns formatDistanceToNow
+  - Clickable link to relevant page
+- Updated apps/web/src/routes/_authenticated/dashboard.tsx
+  - Added Recent Activity section below metric cards (takes 2 columns on large screens)
+  - Activity section shows last 5 events from getActivity query
+  - "See all" link navigates to /conversations
+  - Empty state with MessageSquare icon when no activity
+- Added Quick Actions sidebar section on right
+  - Add Product button
+  - Settings button
+  - Connect WhatsApp button (shown only if not connected)
+- Added onboarding checklist for new businesses
+  - Shows when products or WhatsApp not set up
+  - Three items: Create business (always complete), Add first product, Connect WhatsApp
+  - Each item links to relevant page with completion indicator (CheckCircle2/Circle)
+- Uses existing getActivity query from dashboard.ts
+- Queries whatsappStatus and products to determine checklist state
+
+**Files changed:**
+- apps/web/src/components/composed/ActivityItem.tsx (created, 50 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (updated from 157 to 254 lines)
+
+**Learnings for future iterations:**
+- products.list returns object with { products, hasMore, nextCursor } not just array
+- Use optional chaining for nested property access: products?.products?.length
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S15 - Create Dashboard activity feed and quick actions (commit a5cc231)
 
 ---

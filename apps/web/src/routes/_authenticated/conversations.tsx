@@ -91,7 +91,38 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
   };
 
   const formatTime = (timestamp: number) => {
-    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+
+  const getCustomerInitials = (customerId: string) => {
+    const isPhoneNumber = /^\+?\d+$/.test(customerId.replace(/\s/g, ""));
+    if (isPhoneNumber) {
+      return customerId.replace(/\D/g, "").charAt(0) || "?";
+    }
+    return customerId.charAt(0).toUpperCase();
+  };
+
+  const getStatusBorderColor = (status: string | null | undefined) => {
+    switch (status) {
+      case "escalated":
+        return "border-l-yellow-500";
+      case "closed":
+        return "border-l-muted-foreground/50";
+      case "active":
+      default:
+        return "border-l-primary";
+    }
   };
 
   const handleConversationClick = useCallback((id: string) => {
@@ -112,8 +143,8 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
             <CardHeader className="flex-shrink-0">
               <CardTitle>All Conversations</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 lg:overflow-hidden lg:flex lg:flex-col">
-              <div className="mb-4 flex-shrink-0">
+            <CardContent className="flex-1 lg:overflow-hidden lg:flex lg:flex-col p-0">
+              <div className="sticky top-0 z-10 bg-card px-6 pt-6 pb-4 border-b">
                 <div className="flex flex-col gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="status" className="text-xs">Status</Label>
@@ -147,21 +178,21 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
               </div>
 
               {conversationsQuery.isLoading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-8 px-6">
                   <div className="text-sm text-muted-foreground">Loading...</div>
                 </div>
               ) : conversations.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex flex-col items-center justify-center py-8 px-6 text-center">
                   <div className="mb-3 rounded-full bg-muted p-4">
                     <MessageSquare className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <h3 className="mb-1 text-sm font-semibold">No conversations</h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Conversations appear when customers message via WhatsApp
                   </p>
                 </div>
               ) : (
-                <div className="flex-1 lg:overflow-y-auto lg:-mx-6 lg:px-6">
+                <div className="flex-1 lg:overflow-y-auto px-6 py-4">
                   <div className="space-y-1">
                     {conversations.map((conversation) => (
                       <button
@@ -169,33 +200,43 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                         type="button"
                         onClick={() => handleConversationClick(conversation._id)}
                         className={cn(
-                          "w-full text-left rounded-lg p-3 min-h-[72px] transition-colors hover:bg-muted/50",
-                          selectedConversationId === conversation._id && "bg-muted",
-                          conversation.status === "escalated" && "border-l-2 border-l-red-500"
+                          "w-full text-left rounded-lg p-3 min-h-20 transition-colors hover:bg-muted/50",
+                          "border-l-4",
+                          getStatusBorderColor(conversation.status),
+                          selectedConversationId === conversation._id && "bg-muted"
                         )}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {conversation.hasUnread && (
-                              <span className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                            )}
-                            <span className="font-medium text-sm truncate">
-                              {conversation.customerId}
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {getCustomerInitials(conversation.customerId)}
                             </span>
                           </div>
-                          <span className="text-xs text-muted-foreground flex-shrink-0">
-                            {formatTime(conversation.lastMessageAt)}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-sm text-muted-foreground truncate">
-                          {truncateMessage(conversation.lastMessagePreview, 60)}
-                        </p>
-                        <div className="mt-2">
-                          <StatusBadge
-                            status={conversation.status ?? "active"}
-                            type="conversation"
-                            assignedTo={conversation.assignedTo ?? undefined}
-                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {conversation.hasUnread && (
+                                  <span className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                                )}
+                                <span className="font-medium text-sm truncate">
+                                  {conversation.customerId}
+                                </span>
+                              </div>
+                              <span className="text-sm text-muted-foreground flex-shrink-0">
+                                {formatTime(conversation.lastMessageAt)}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm text-muted-foreground truncate">
+                              {truncateMessage(conversation.lastMessagePreview, 60)}
+                            </p>
+                            <div className="mt-2">
+                              <StatusBadge
+                                status={conversation.status ?? "active"}
+                                type="conversation"
+                                assignedTo={conversation.assignedTo ?? undefined}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </button>
                     ))}
