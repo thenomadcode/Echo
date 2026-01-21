@@ -338,7 +338,7 @@
       "id": "S18",
       "title": "Conversations empty state",
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create empty state component for conversations list",

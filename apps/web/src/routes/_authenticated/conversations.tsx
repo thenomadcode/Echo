@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery as useConvexQuery, useMutation } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Search, ShoppingCart, Loader2 } from "lucide-react";
+import { MessageSquare, Search, ShoppingCart, Loader2, MessageCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -80,6 +80,10 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
       search: searchQuery || undefined,
       limit: 50,
     })
+  );
+
+  const whatsappStatus = useQuery(
+    convexQuery(api.integrations.whatsapp.settings.getConnectionStatus, { businessId })
   );
 
   const conversations = conversationsQuery.data?.conversations ?? [];
@@ -182,14 +186,22 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                   <div className="text-sm text-muted-foreground">Loading...</div>
                 </div>
               ) : conversations.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 px-6 text-center">
-                  <div className="mb-3 rounded-full bg-muted p-4">
-                    <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center flex-1">
+                  <div className="mb-4 rounded-full bg-muted p-6">
+                    <MessageCircle className="h-10 w-10 text-muted-foreground" />
                   </div>
-                  <h3 className="mb-1 text-sm font-semibold">No conversations</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Conversations appear when customers message via WhatsApp
+                  <h3 className="mb-2 text-lg font-semibold">No conversations yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-[280px]">
+                    Conversations will appear here when customers message you on WhatsApp
                   </p>
+                  {whatsappStatus.data && !whatsappStatus.data.connected && (
+                    <Button
+                      className="mt-6"
+                      onClick={() => navigate({ to: "/settings/whatsapp" })}
+                    >
+                      Connect WhatsApp
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="flex-1 lg:overflow-y-auto px-6 py-4">

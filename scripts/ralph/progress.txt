@@ -24,6 +24,27 @@
 
 ---
 
+## 2026-01-21 15:35 - S18: Conversations empty state
+
+**What was implemented:**
+- Enhanced empty state for conversations list with larger, more prominent design
+- Added MessageCircle icon (h-10 w-10) in a larger rounded container (p-6)
+- Updated heading to "No conversations yet" with text-lg font-semibold
+- Updated subtext to "Conversations will appear here when customers message you on WhatsApp"
+- Added WhatsApp connection status check using getConnectionStatus query
+- Added "Connect WhatsApp" CTA button that appears when WhatsApp is not connected
+- Button navigates to /settings/whatsapp
+- Empty state is centered vertically with flex-1 and py-12 spacing
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.tsx (added whatsappStatus query, enhanced empty state)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:28 - S17: Conversations message bubbles and actions UI
 
 **What was implemented:**
