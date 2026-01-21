@@ -197,7 +197,7 @@
       "id": "S11",
       "title": "Create unified StatusBadge component",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/composed/StatusBadge.tsx",
@@ -215,7 +215,7 @@
       "id": "S12",
       "title": "Typography and spacing audit across all routes",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Search all route files for text-xs class usage",

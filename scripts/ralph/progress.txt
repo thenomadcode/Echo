@@ -24,6 +24,37 @@
 
 ---
 
+## 2026-01-21 15:05 - S12: Typography and spacing audit across all routes
+
+**What was implemented:**
+- Updated select elements in conversations, orders, and products pages from text-xs to text-sm for readability
+- Increased input heights from h-8 to h-9 for better touch targets
+- Updated message preview text in conversations list from text-xs to text-sm
+- Standardized settings pages max-width to max-w-5xl (settings.tsx, settings_.ai.tsx, settings_.whatsapp.tsx)
+- Updated dashboard CardContent spacing from space-y-2 to space-y-4
+- Increased product grid gap from gap-4 to gap-6 for better visual breathing room
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.tsx (select text-sm, input h-9, message preview text-sm)
+- apps/web/src/routes/_authenticated/orders.tsx (select text-sm, h-9)
+- apps/web/src/routes/_authenticated/products/index.tsx (selects text-sm h-9, grid gap-6)
+- apps/web/src/routes/_authenticated/settings.tsx (max-w-5xl)
+- apps/web/src/routes/_authenticated/settings_.ai.tsx (max-w-5xl, px-6)
+- apps/web/src/routes/_authenticated/settings_.whatsapp.tsx (max-w-5xl, px-6)
+- apps/web/src/routes/_authenticated/dashboard.tsx (space-y-4)
+
+**Learnings for future iterations:**
+- Labels (text-xs) are acceptable but body text should be text-sm minimum
+- Form inputs benefit from h-9 (36px) for better accessibility
+- List pages use max-w-7xl, detail pages use max-w-4xl, settings pages use max-w-5xl
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S12 - Typography and spacing audit across all routes (commit 9305408)
+
+---
+
 ## 2026-01-21 14:54 - S08, S09, S10: Replace window.confirm and inline modals with AlertDialog
 
 **What was implemented:**
@@ -2082,5 +2113,38 @@
 **Verification:**
 - bun run check-types: passes
 - Committed as: feat: S01 - Update CSS variables with Warm Signal color palette (commit 1a4d4a0)
+
+---
+
+## 2026-01-21 14:56 - S11: Create unified StatusBadge component
+
+**What was implemented:**
+- Created `apps/web/src/components/composed/StatusBadge.tsx` - unified component for all status badges
+- Added `info` variant to badge.tsx for "preparing" status
+- Order status mapping: draft->secondary, pending->secondary, confirmed->default, preparing->info, ready->warning, delivered->success, cancelled->destructive
+- Conversation status mapping: active->default (AI Handling), escalated->warning, closed->success
+- Special handling for active + assignedTo showing "Human Active"
+- Replaced inline StatusBadge in orders.tsx and orders.$orderId.tsx
+- Updated conversations.tsx and conversations.$conversationId.tsx to use unified component
+- Removed old inline STATUS_CONFIG objects from order pages
+
+**Files changed:**
+- apps/web/src/components/composed/StatusBadge.tsx (created, 62 lines)
+- apps/web/src/components/ui/badge.tsx (added info variant)
+- apps/web/src/routes/_authenticated/orders.tsx (replaced inline StatusBadge)
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (replaced inline StatusBadge)
+- apps/web/src/routes/_authenticated/conversations.tsx (updated import)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (updated import)
+
+**Learnings for future iterations:**
+- Unified components in `components/composed/` folder for app-specific composed components
+- Badge component uses CVA with info variant: bg-blue-500/10 text-blue-600 dark:text-blue-400
+- When status is optional in schema, provide default value: `status ?? "active"`
+- Type prop required to distinguish order vs conversation status mapping
+
+**Verification:**
+- LSP diagnostics: no errors on all changed files
+- bunx tsc --noEmit: passes
+- Committed as: feat: S11 - Create unified StatusBadge component (commit face365)
 
 ---
