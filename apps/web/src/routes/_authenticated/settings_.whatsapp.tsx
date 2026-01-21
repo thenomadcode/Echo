@@ -1,60 +1,29 @@
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
 import { api } from "@echo/backend/convex/_generated/api";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery, useAction } from "convex/react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, Copy, ExternalLink, Loader2, XCircle } from "lucide-react";
 
-import SignInForm from "@/components/sign-in-form";
-import BusinessSwitcher from "@/components/business-switcher";
-import AppNav from "@/components/app-nav";
-import UserMenu from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const Route = createFileRoute("/settings_/whatsapp")({
-  component: WhatsAppSettingsPage,
+export const Route = createFileRoute("/_authenticated/settings_/whatsapp")({
+  component: WhatsAppSettingsContent,
 });
 
-function WhatsAppSettingsPage() {
-  return (
-    <>
-      <Authenticated>
-        <WhatsAppSettingsContent />
-      </Authenticated>
-      <Unauthenticated>
-        <div className="mx-auto mt-10 max-w-md p-6">
-          <SignInForm />
-        </div>
-      </Unauthenticated>
-      <AuthLoading>
-        <div className="flex items-center justify-center min-h-screen">
-          <div>Loading...</div>
-        </div>
-      </AuthLoading>
-    </>
-  );
-}
-
 function WhatsAppSettingsContent() {
-  const navigate = useNavigate();
   const businesses = useQuery(api.businesses.list);
-
-  useEffect(() => {
-    if (businesses !== undefined && businesses.length === 0) {
-      navigate({ to: "/onboarding" });
-    }
-  }, [businesses, navigate]);
 
   if (businesses === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -75,7 +44,6 @@ function WhatsAppSettingsForm({ businessId }: { businessId: Id<"businesses"> }) 
   const [isTesting, setIsTesting] = useState(false);
   const [webhookCopied, setWebhookCopied] = useState(false);
 
-  // Webhook URL should point to Convex HTTP endpoint, not the web app
   const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL;
   const webhookUrl = convexSiteUrl 
     ? `${convexSiteUrl}/webhook/whatsapp`
@@ -143,30 +111,22 @@ function WhatsAppSettingsForm({ businessId }: { businessId: Id<"businesses"> }) 
 
   if (connectionStatus === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   if (connectionStatus === null) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Unable to load connection status</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-muted-foreground">Unable to load connection status</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <BusinessSwitcher />
-          <AppNav />
-        </div>
-        <UserMenu />
-      </div>
-
       <h1 className="text-3xl font-bold mb-6">WhatsApp Settings</h1>
 
       <Card className="mb-6">

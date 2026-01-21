@@ -1,16 +1,12 @@
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
 import { api } from "@echo/backend/convex/_generated/api";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery } from "convex/react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "convex/react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
-import SignInForm from "@/components/sign-in-form";
-import BusinessSwitcher from "@/components/business-switcher";
-import AppNav from "@/components/app-nav";
-import UserMenu from "@/components/user-menu";
 import UsageStats from "@/components/ai/usage-stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,44 +14,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const Route = createFileRoute("/settings_/ai")({
-  component: AISettingsPage,
+export const Route = createFileRoute("/_authenticated/settings_/ai")({
+  component: AISettingsContent,
 });
 
-function AISettingsPage() {
-  return (
-    <>
-      <Authenticated>
-        <AISettingsContent />
-      </Authenticated>
-      <Unauthenticated>
-        <div className="mx-auto mt-10 max-w-md p-6">
-          <SignInForm />
-        </div>
-      </Unauthenticated>
-      <AuthLoading>
-        <div className="flex items-center justify-center min-h-screen">
-          <div>Loading...</div>
-        </div>
-      </AuthLoading>
-    </>
-  );
-}
-
 function AISettingsContent() {
-  const navigate = useNavigate();
   const businesses = useQuery(api.businesses.list);
-
-  useEffect(() => {
-    if (businesses !== undefined && businesses.length === 0) {
-      navigate({ to: "/onboarding" });
-    }
-  }, [businesses, navigate]);
 
   if (businesses === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -111,22 +80,14 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
 
   if (settings === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading settings...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-muted-foreground">Loading settings...</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <BusinessSwitcher />
-          <AppNav />
-        </div>
-        <UserMenu />
-      </div>
-
       <div className="mb-6">
         <h1 className="text-2xl font-bold">AI Settings</h1>
         <p className="text-muted-foreground">Configure your AI assistant behavior</p>
