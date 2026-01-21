@@ -101,7 +101,7 @@ function IntegrationsContent() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Link to="/settings/integrations/shopify">
+          <Link to="/settings/integrations/shopify" search={{ connected: false, error: undefined }}>
             <Card className="cursor-pointer transition-colors hover:bg-muted/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-3">
