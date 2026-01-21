@@ -44,6 +44,21 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
     links: [
+      // Preconnect to Google Fonts for faster loading
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      // Google Fonts: Plus Jakarta Sans (headings), DM Sans (body), JetBrains Mono (mono)
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400&family=Plus+Jakarta+Sans:wght@600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
