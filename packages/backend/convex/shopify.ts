@@ -1463,3 +1463,144 @@ export const updateOrderWithShopifyInfo = internalMutation({
     });
   },
 });
+
+export const createOrderInternal = internalAction({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args): Promise<CreateOrderResult> => {
+    const orderData = await ctx.runQuery(internal.shopify.getOrderForShopify, {
+      orderId: args.orderId,
+    });
+
+    if (!orderData) {
+      return { success: false, shopifyOrderId: null, shopifyOrderNumber: null, error: "Order not found" };
+    }
+
+    const { order, products, shopifyConnection } = orderData;
+
+    if (!shopifyConnection) {
+      return { success: false, shopifyOrderId: null, shopifyOrderNumber: null, error: "No Shopify connection found for this business" };
+    }
+
+    const lineItems: Array<{ variant_id: string; quantity: number }> = [];
+    const skippedItems: string[] = [];
+
+    for (const item of order.items) {
+      const product = products.find((p) => p._id === item.productId);
+      if (!product) {
+        skippedItems.push(`${item.name} (product not found)`);
+        continue;
+      }
+
+      if (!product.shopifyVariantId) {
+        skippedItems.push(`${item.name} (manual product, no Shopify variant)`);
+        continue;
+      }
+
+      const variantIdMatch = product.shopifyVariantId.match(/\/ProductVariant\/(\d+)$/);
+      if (!variantIdMatch) {
+        skippedItems.push(`${item.name} (invalid Shopify variant ID format)`);
+        continue;
+      }
+
+      lineItems.push({
+        variant_id: variantIdMatch[1],
+        quantity: item.quantity,
+      });
+    }
+
+    if (lineItems.length === 0) {
+      return {
+        success: false,
+        shopifyOrderId: null,
+        shopifyOrderNumber: null,
+        error: `No Shopify products to order. Skipped: ${skippedItems.join(", ")}`,
+      };
+    }
+
+    const orderPayload: Record<string, unknown> = {
+      order: {
+        line_items: lineItems,
+        financial_status: order.paymentStatus === "paid" ? "paid" : "pending",
+        note: order.notes ?? `Echo Order: ${order.orderNumber}`,
+        tags: `echo,${order.orderNumber}`,
+        phone: order.contactPhone,
+      },
+    };
+
+    if (order.contactName || order.contactPhone) {
+      (orderPayload.order as Record<string, unknown>).customer = {
+        first_name: order.contactName ?? "Customer",
+        phone: order.contactPhone,
+      };
+    }
+
+    if (order.deliveryType === "delivery" && order.deliveryAddress) {
+      (orderPayload.order as Record<string, unknown>).shipping_address = {
+        address1: order.deliveryAddress,
+        phone: order.contactPhone,
+      };
+    }
+
+    try {
+      const response = await fetch(
+        `https://${shopifyConnection.shop}/admin/api/2024-01/orders.json`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": shopifyConnection.accessToken,
+          },
+          body: JSON.stringify(orderPayload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as ShopifyOrderErrorResponse;
+        const errorMessage = typeof errorData.errors === "string"
+          ? errorData.errors
+          : JSON.stringify(errorData.errors);
+        console.error(`Shopify order creation failed: ${response.status} - ${errorMessage}`);
+        return {
+          success: false,
+          shopifyOrderId: null,
+          shopifyOrderNumber: null,
+          error: `Shopify API error: ${errorMessage}`,
+        };
+      }
+
+      const data = (await response.json()) as ShopifyOrderResponse;
+      const shopifyOrderId = String(data.order.id);
+      const shopifyOrderNumber = data.order.name;
+
+      await ctx.runMutation(internal.shopify.updateOrderWithShopifyInfo, {
+        orderId: args.orderId,
+        shopifyOrderId,
+        shopifyOrderNumber,
+      });
+
+      console.log(`Created Shopify order ${shopifyOrderNumber} (ID: ${shopifyOrderId}) for Echo order ${order.orderNumber}`);
+
+      if (skippedItems.length > 0) {
+        console.warn(`Skipped items for Echo order ${order.orderNumber}: ${skippedItems.join(", ")}`);
+      }
+
+      return {
+        success: true,
+        shopifyOrderId,
+        shopifyOrderNumber,
+        error: skippedItems.length > 0 ? `Skipped items: ${skippedItems.join(", ")}` : null,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(`Shopify order creation failed for Echo order ${order.orderNumber}: ${message}`);
+      return {
+        success: false,
+        shopifyOrderId: null,
+        shopifyOrderNumber: null,
+        error: message,
+      };
+    }
+  },
+});

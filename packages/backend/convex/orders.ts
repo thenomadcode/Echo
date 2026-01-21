@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import {
   action,
+  internalAction,
   internalMutation,
   internalQuery,
   mutation,
@@ -297,6 +298,19 @@ export const setPaymentMethod = mutation({
     }
 
     await ctx.db.patch(args.orderId, updates);
+
+    if (args.paymentMethod === "cash") {
+      const shopifyConnection = await ctx.db
+        .query("shopifyConnections")
+        .withIndex("by_business", (q) => q.eq("businessId", order.businessId))
+        .first();
+
+      if (shopifyConnection) {
+        ctx.scheduler.runAfter(0, internal.orders.triggerShopifyOrderCreation, {
+          orderId: args.orderId,
+        });
+      }
+    }
 
     return args.orderId;
   },
@@ -666,6 +680,28 @@ export const updatePaymentLinkInternal = internalMutation({
   },
 });
 
+export const triggerShopifyOrderCreation = internalAction({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const result = await ctx.runAction(internal.shopify.createOrderInternal, {
+        orderId: args.orderId,
+      });
+
+      if (result.success) {
+        console.log(`Shopify order created: ${result.shopifyOrderNumber} for Echo order ${args.orderId}`);
+      } else {
+        console.error(`Failed to create Shopify order for ${args.orderId}: ${result.error}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(`Shopify order creation failed for ${args.orderId}: ${message}`);
+    }
+  },
+});
+
 export const updateOrderPaymentStatus = internalMutation({
   args: {
     stripeSessionId: v.string(),
@@ -714,5 +750,18 @@ export const updateOrderPaymentStatus = internalMutation({
     }
 
     await ctx.db.patch(order._id, updates);
+
+    if (args.status === "paid" && !order.shopifyOrderId) {
+      const shopifyConnection = await ctx.db
+        .query("shopifyConnections")
+        .withIndex("by_business", (q) => q.eq("businessId", order.businessId))
+        .first();
+
+      if (shopifyConnection) {
+        ctx.scheduler.runAfter(0, internal.orders.triggerShopifyOrderCreation, {
+          orderId: order._id,
+        });
+      }
+    }
   },
 });
