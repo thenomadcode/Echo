@@ -1,8 +1,8 @@
 import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery } from "convex/react";
+import { Authenticated, AuthLoading, Unauthenticated, useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Loader2, ShoppingBag, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, Check, Loader2, ShoppingBag, AlertTriangle, X, Download, Package } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -54,6 +54,8 @@ function ShopifySettingsContent() {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const getAuthUrl = useMutation(api.shopify.getAuthUrl);
+  const importProducts = useAction(api.shopify.importProducts);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -89,6 +91,36 @@ function ShopifySettingsContent() {
     api.shopify.getConnectionStatus,
     activeBusinessId ? { businessId: activeBusinessId as never } : "skip"
   );
+
+  const handleImport = async () => {
+    if (!activeBusinessId) {
+      toast.error("No active business selected");
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const result = await importProducts({
+        businessId: activeBusinessId as never,
+      });
+
+      if (result.errors.length === 0) {
+        toast.success(`Imported ${result.imported} products successfully!`);
+      } else if (result.imported > 0) {
+        toast.warning(
+          `Imported ${result.imported} products with ${result.errors.length} errors. Skipped ${result.skipped} products.`
+        );
+      } else {
+        toast.error(`Import failed: ${result.errors[0]}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Import failed";
+      toast.error(message);
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleConnect = async () => {
     if (!activeBusinessId) {
@@ -243,6 +275,50 @@ function ShopifySettingsContent() {
                     <SyncStatusBadge status={connectionStatus.lastSyncStatus} />
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Products</CardTitle>
+                <CardDescription>
+                  Import and sync products from your Shopify store
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm">Import products from Shopify</span>
+                  </div>
+                  <Button
+                    onClick={handleImport}
+                    disabled={isImporting}
+                    variant="outline"
+                  >
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Import Products
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between border-t pt-4">
+                  <span className="text-sm text-muted-foreground">
+                    View all imported products
+                  </span>
+                  <Link to="/products">
+                    <Button variant="link" className="px-0">
+                      View Products
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
 
