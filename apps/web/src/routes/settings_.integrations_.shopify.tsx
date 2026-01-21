@@ -2,7 +2,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Loader2, ShoppingBag, Download, Package } from "lucide-react";
+import { ArrowLeft, Check, Loader2, ShoppingBag, Download, Package, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import SignInForm from "@/components/sign-in-form";
@@ -55,7 +55,9 @@ function ShopifySettingsContent() {
 
   const getAuthUrl = useMutation(api.shopify.getAuthUrl);
   const importProducts = useAction(api.shopify.importProducts);
+  const syncProducts = useAction(api.shopify.syncProducts);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -119,6 +121,38 @@ function ShopifySettingsContent() {
       toast.error(message);
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!activeBusinessId) {
+      toast.error("No active business selected");
+      return;
+    }
+
+    setIsSyncing(true);
+
+    try {
+      const result = await syncProducts({
+        businessId: activeBusinessId as never,
+      });
+
+      if (result.errors.length === 0) {
+        toast.success(
+          `Sync complete: ${result.updated} updated, ${result.added} added, ${result.removed} removed`
+        );
+      } else if (result.updated + result.added + result.removed > 0) {
+        toast.warning(
+          `Sync completed with errors: ${result.updated} updated, ${result.added} added, ${result.removed} removed. ${result.errors.length} errors occurred.`
+        );
+      } else {
+        toast.error(`Sync failed: ${result.errors[0]}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sync failed";
+      toast.error(message);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -286,7 +320,7 @@ function ShopifySettingsContent() {
                   </div>
                   <Button
                     onClick={handleImport}
-                    disabled={isImporting}
+                    disabled={isImporting || isSyncing}
                     variant="outline"
                   >
                     {isImporting ? (
@@ -298,6 +332,29 @@ function ShopifySettingsContent() {
                       <>
                         <Download className="mr-2 h-4 w-4" />
                         Import Products
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between border-t pt-4">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm">Sync products with Shopify</span>
+                  </div>
+                  <Button
+                    onClick={handleSync}
+                    disabled={isSyncing || isImporting}
+                    variant="outline"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Sync Now
                       </>
                     )}
                   </Button>
