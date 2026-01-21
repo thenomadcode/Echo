@@ -2703,3 +2703,39 @@
 - Committed as: feat: S15 - Create Dashboard activity feed and quick actions (commit a5cc231)
 
 ---
+
+## 2026-01-21 23:08 - S01: Connect Shopify Store - OAuth Flow
+
+**What was implemented:**
+- Backend was already complete:
+  - shopifyConnections table schema with indexes by_business and by_shop
+  - shopify.getAuthUrl mutation for OAuth flow initiation
+  - shopify.handleCallback action for OAuth callback processing
+  - shopify.getConnectionStatus query for checking connection status
+  - shopify.disconnect action for disconnecting and revoking tokens
+  - HTTP route /shopify/callback for OAuth redirect handling
+- Frontend settings page already had dedicated Shopify page at /settings/integrations/shopify:
+  - Connect Shopify button with store URL input
+  - Connection status display with shop name
+  - Import Products and Sync Now buttons
+  - Disconnect functionality with AlertDialog confirmation
+- Updated main settings.tsx IntegrationsSettings:
+  - Added ShopifyIntegrationCard component showing connection status
+  - Link to /settings/integrations/shopify instead of disabled "Coming Soon" button
+  - Dynamic display: "Not Connected" with Connect button or "Connected" with shop name and Configure button
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/settings.tsx (added ShopifyIntegrationCard, imports)
+
+**Learnings for future iterations:**
+- Shopify OAuth scopes defined via env var SHOPIFY_SCOPES (default: read_products,write_orders,read_orders)
+- TanStack Router routes with validateSearch require search params when linking
+- Use localStorage for active business ID persistence across page loads
+- Shopify connection state includes: shop, lastSyncAt, lastSyncStatus, scopes
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S01 - Connect Shopify Store - OAuth Flow (commit a2bce0f)
+
+---

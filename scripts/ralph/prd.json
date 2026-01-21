@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Connect Shopify Store - OAuth Flow",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Settings page shows 'Connect Shopify' button at /settings/integrations/shopify",
