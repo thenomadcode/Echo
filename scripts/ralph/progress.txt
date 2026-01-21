@@ -1853,3 +1853,29 @@
 - Updated PRD: S01 passes: true
 
 ---
+
+## 2026-01-21 09:48 - S01: Create shopifyConnections schema table
+
+**What was implemented:**
+- Created shopifyConnections table in packages/backend/convex/schema.ts
+- Added businessId (v.id("businesses")) - parent business reference
+- Added shop (v.string()) - Shopify store domain (mystore.myshopify.com)
+- Added accessToken (v.string()) - OAuth access token
+- Added scopes (v.array(v.string())) - granted OAuth scopes
+- Added webhookIds (v.optional(v.array(v.string()))) - registered Shopify webhook IDs
+- Added lastSyncAt (v.optional(v.number())) - last successful sync timestamp
+- Added lastSyncStatus (v.optional(v.union("success", "partial", "failed")))
+- Added createdAt (v.number()) - timestamp
+- Added by_business index on [businessId] for efficient business lookup
+- Added by_shop index on [shop] for webhook lookup
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+20 lines)
+
+**Verification:**
+- Convex dev compiles successfully (schema validates)
+- bun run check-types passes
+- Committed as: feat: S01 - Create shopifyConnections schema table (commit d6f87be)
+- Updated PRD: S01 passes: true
+
+---
