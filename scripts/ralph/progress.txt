@@ -24,6 +24,30 @@
 
 ---
 
+## 2026-01-21 16:05 - S36: Dark mode verification across all pages
+
+**What was verified and fixed:**
+- Scanned for hardcoded colors (bg-white, bg-gray, text-gray, etc.)
+- Fixed PriceInput.tsx: changed text-gray-500 to text-muted-foreground
+- Fixed settings.tsx: added dark mode variant for WhatsApp connected status (dark:bg-green-900/30 dark:text-green-400)
+- Verified existing components already have dark mode variants:
+  - conversations.tsx escalation banner: already has dark:border-yellow-900 dark:bg-yellow-950/30
+  - conversations.$conversationId.tsx: same escalation banner styling
+- Verified intentional uses are correct:
+  - bg-white/20, text-white on gradient backgrounds (landing, login, signup) - correct on colored backgrounds
+  - bg-black/50, bg-black/10 for overlays/backdrops - correct for modals
+  - bg-red-500, bg-yellow-500 for semantic status indicators - correct usage
+
+**Files changed:**
+- apps/web/src/components/ui/PriceInput.tsx (text-gray-500 -> text-muted-foreground)
+- apps/web/src/routes/_authenticated/settings.tsx (added dark mode WhatsApp status color)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:58 - S35: Dark mode CSS variables and theme toggle
 
 **What was implemented:**

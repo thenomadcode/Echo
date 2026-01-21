@@ -607,7 +607,7 @@ function IntegrationsSettings() {
               <div
                 className={cn(
                   "p-2 rounded-full",
-                  whatsappStatus?.connected ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"
+                  whatsappStatus?.connected ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"
                 )}
               >
                 <MessageCircle className="h-5 w-5" />

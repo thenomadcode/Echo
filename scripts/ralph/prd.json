@@ -681,7 +681,7 @@
       "id": "S36",
       "title": "Dark mode verification across all pages",
       "priority": 36,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Verify status badges readable in dark mode",
