@@ -57,7 +57,7 @@
       "id": "S04",
       "title": "Create collapsible Sidebar component",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/layout/Sidebar.tsx",
@@ -77,7 +77,7 @@
       "id": "S05",
       "title": "Create AppHeader component",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/layout/AppHeader.tsx",
@@ -96,7 +96,7 @@
       "id": "S06",
       "title": "Create mobile BottomNav component",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/layout/BottomNav.tsx",
@@ -117,7 +117,7 @@
       "id": "S07",
       "title": "Remove duplicated navigation from all page components",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Identify all routes that duplicate Header/AppNav/UserMenu/BusinessSwitcher",

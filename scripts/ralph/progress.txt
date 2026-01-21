@@ -18,6 +18,113 @@
 - Human assignment: assignedTo field with v.string() (user ID from better-auth), null/undefined means AI handling
 - TanStack Router layout routes: `_authenticated.tsx` creates pathless layout, child routes go in `_authenticated/` folder
 - Base UI AlertDialog: does NOT support asChild prop - use controlled open state instead of AlertDialogTrigger
+- Sidebar context pattern: use SidebarContext + SidebarProvider for shared collapsed state between Sidebar and layout
+- Sidebar collapsible animation: use `transition-[width] duration-200` for smooth width changes
+- Content area responds to sidebar state: use `transition-[padding-left]` to animate content offset
+
+---
+
+## 2026-01-21 15:15 - S07: Remove duplicated navigation from all page components
+
+**What was implemented:**
+- Moved product routes from `/products/` to `/_authenticated/products/`:
+  - `index.tsx` - Products list page
+  - `$productId.tsx` - Edit product page
+  - `new.tsx` - Add product page
+  - `categories.tsx` - Category manager page
+- Moved settings routes from root to `/_authenticated/`:
+  - `settings_.ai.tsx` - AI settings page
+  - `settings_.whatsapp.tsx` - WhatsApp integration settings
+- Removed duplicated navigation components from all pages:
+  - Removed `BusinessSwitcher`, `AppNav`, `UserMenu` imports and usage
+  - Removed `Authenticated/Unauthenticated/AuthLoading` wrappers (handled by layout)
+  - Removed duplicate auth checking logic in each page
+- Updated route paths from `/products/...` to `/_authenticated/products/...`
+- Regenerated route tree with TanStack Router CLI
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/products/index.tsx (created, simplified from old)
+- apps/web/src/routes/_authenticated/products/$productId.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/products/new.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/products/categories.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/settings_.ai.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/settings_.whatsapp.tsx (created, simplified)
+- Deleted old route files from root level
+- apps/web/src/routeTree.gen.ts (regenerated)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S07 - Remove duplicated navigation from all page components (commit 6519558)
+
+---
+
+## 2026-01-21 15:02 - S06: Create mobile BottomNav component
+
+**Status:** Already implemented in S03 commit
+
+**Verified implementation:**
+- `apps/web/src/components/layout/BottomNav.tsx` contains all 5 nav items
+- Each item has icon and label below
+- Active item uses `text-primary`, inactive uses `text-muted-foreground`
+- Touch targets minimum 44px (`min-h-[44px] min-w-[44px]`)
+- z-index 50 via `z-50` class
+- Hidden on desktop via `lg:hidden`
+- Content area accounts for bottom nav with `pb-20 lg:pb-0` in main
+
+**No additional changes needed.**
+
+---
+
+## 2026-01-21 14:58 - S05: Create AppHeader component
+
+**What was implemented:**
+- Updated `apps/web/src/components/layout/AppHeader.tsx`
+  - Added NotificationBell between Command Palette trigger and UserMenu
+  - Added Search icon to Command Palette trigger for visual clarity
+  - Changed "Cmd" text to ⌘ symbol for cleaner appearance
+  - Layout: BusinessSwitcher (left), Search/Cmd+K (center), NotificationBell + UserMenu (right)
+  - Sticky header at top of content area with subtle bottom border
+
+**Files changed:**
+- apps/web/src/components/layout/AppHeader.tsx (+6 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S05 - Create AppHeader component (commit ffd1453)
+
+---
+
+## 2026-01-21 14:53 - S04: Create collapsible Sidebar component
+
+**What was implemented:**
+- Created `apps/web/src/components/layout/SidebarContext.tsx`
+  - React context for shared sidebar collapsed/expanded state
+  - localStorage persistence with key "echo:sidebar-collapsed"
+  - SidebarProvider wraps authenticated content, useSidebar hook for consuming
+- Updated `apps/web/src/components/layout/Sidebar.tsx`
+  - Two states: collapsed (64px/w-16) and expanded (240px/w-60)
+  - Expand on hover using local isHovered state
+  - isExpanded = !isCollapsed || isHovered (collapsed but hovered = visually expanded)
+  - Smooth CSS width transition with `transition-[width] duration-200`
+  - Logo text and nav labels fade out with `transition-opacity`
+  - Collapse toggle button at bottom with ChevronLeft/ChevronRight icons
+  - Tooltip (title attr) shows label when collapsed
+- Updated `apps/web/src/routes/_authenticated.tsx`
+  - Added SidebarProvider wrapping AuthenticatedContent
+  - Dynamic content padding: lg:pl-16 (collapsed) or lg:pl-60 (expanded)
+  - Smooth padding transition with `transition-[padding-left] duration-200`
+
+**Files changed:**
+- apps/web/src/components/layout/SidebarContext.tsx (created, 36 lines)
+- apps/web/src/components/layout/Sidebar.tsx (rewritten, 113 lines)
+- apps/web/src/routes/_authenticated.tsx (+27 lines)
+
+**Verification:**
+- LSP diagnostics: no errors on all changed files
+- bunx tsc --noEmit in apps/web: passes
+- Committed as: feat: S04 - Create collapsible Sidebar component (commit cd1f4b7)
 
 ---
 
