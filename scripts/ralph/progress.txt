@@ -24,6 +24,29 @@
 
 ---
 
+## 2026-01-21 15:42 - S19: Orders page search and table improvements
+
+**What was implemented:**
+- Added search input at top of orders list (filters by order # or customer phone)
+- Client-side filtering using useMemo for performance
+- Added Customer (contactPhone) column to orders table
+- Added row hover effect with hover:bg-muted/50 transition-colors
+- Updated date format to smart format using formatSmartDate:
+  - "Today" for today's orders
+  - "Yesterday" for yesterday's orders
+  - "Jan 15" format for older orders
+- Added Search icon from lucide-react to search input
+- Added Input component from shadcn/ui
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:35 - S18: Conversations empty state
 
 **What was implemented:**

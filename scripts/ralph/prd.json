@@ -354,7 +354,7 @@
       "id": "S19",
       "title": "Orders page search and table improvements",
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/orders/index.tsx",

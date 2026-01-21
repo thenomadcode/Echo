@@ -5,11 +5,12 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery as useConvexQuery } from "convex/react";
-import { useEffect, useState } from "react";
-import { ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ShoppingBag, Search } from "lucide-react";
 
 import { StatusBadge } from "@/components/composed/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -58,6 +59,7 @@ interface OrdersContentProps {
 function OrdersContent({ businessId }: OrdersContentProps) {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const ordersQuery = useQuery(
     convexQuery(api.orders.listByBusiness, {
@@ -67,7 +69,17 @@ function OrdersContent({ businessId }: OrdersContentProps) {
     })
   );
 
-  const orders = ordersQuery.data?.orders ?? [];
+  const allOrders = ordersQuery.data?.orders ?? [];
+
+  const orders = useMemo(() => {
+    if (!searchQuery.trim()) return allOrders;
+    const query = searchQuery.toLowerCase();
+    return allOrders.filter((order) => {
+      const orderNumberMatch = order.orderNumber?.toLowerCase().includes(query);
+      const phoneMatch = order.contactPhone?.toLowerCase().includes(query);
+      return orderNumberMatch || phoneMatch;
+    });
+  }, [allOrders, searchQuery]);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
@@ -76,8 +88,18 @@ function OrdersContent({ businessId }: OrdersContentProps) {
     }).format(amount / 100);
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
+  const formatSmartDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const isToday = date.toDateString() === today.toDateString();
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    if (isToday) return "Today";
+    if (isYesterday) return "Yesterday";
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const handleRowClick = (orderId: Id<"orders">) => {
@@ -97,6 +119,20 @@ function OrdersContent({ businessId }: OrdersContentProps) {
         <CardContent>
           <div className="mb-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
+              <div className="space-y-2 flex-1 md:max-w-xs">
+                <Label htmlFor="search">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="search"
+                    type="text"
+                    placeholder="Search by order # or phone..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 pl-8 text-sm"
+                  />
+                </div>
+              </div>
               <div className="space-y-2 md:w-48">
                 <Label htmlFor="status">Status</Label>
                 <select
@@ -137,6 +173,7 @@ function OrdersContent({ businessId }: OrdersContentProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Order #</TableHead>
+                  <TableHead>Customer</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-center">Items</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -148,9 +185,12 @@ function OrdersContent({ businessId }: OrdersContentProps) {
                   <TableRow
                     key={order._id}
                     onClick={() => handleRowClick(order._id)}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
                   >
                     <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {order.contactPhone || "-"}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={order.status} type="order" />
                     </TableCell>
@@ -158,8 +198,8 @@ function OrdersContent({ businessId }: OrdersContentProps) {
                     <TableCell className="text-right">
                       {formatCurrency(order.total, order.currency)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {formatDate(order.createdAt)}
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatSmartDate(order.createdAt)}
                     </TableCell>
                   </TableRow>
                 ))}
