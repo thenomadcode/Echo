@@ -66,11 +66,21 @@ export default defineSchema({
     deleted: v.boolean(),
     order: v.number(),
     description: v.optional(v.string()),
+
+    // Shopify integration fields
+    source: v.optional(
+      v.union(v.literal("manual"), v.literal("shopify"))
+    ), // defaults to 'manual'
+    shopifyProductId: v.optional(v.string()), // Shopify product ID
+    shopifyVariantId: v.optional(v.string()), // Shopify variant ID if variant
+    lastShopifySyncAt: v.optional(v.number()), // when last synced from Shopify
+
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_business", ["businessId", "deleted"])
-    .index("by_category", ["categoryId", "deleted", "available"]),
+    .index("by_category", ["categoryId", "deleted", "available"])
+    .index("by_shopify_id", ["businessId", "shopifyProductId"]),
 
   // WhatsApp Integration tables
   whatsappConnections: defineTable({
@@ -243,6 +253,8 @@ export default defineSchema({
     paymentLinkUrl: v.optional(v.string()),
     paymentLinkExpiresAt: v.optional(v.number()),
     stripeSessionId: v.optional(v.string()),
+    shopifyOrderId: v.optional(v.string()),
+    shopifyOrderNumber: v.optional(v.string()),
     estimatedReadyTime: v.optional(v.number()),
     notes: v.optional(v.string()),
     createdAt: v.number(),
