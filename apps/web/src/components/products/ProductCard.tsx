@@ -88,68 +88,75 @@ export default function ProductCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md",
-        !available && "opacity-60"
+        "cursor-pointer transition-all hover:shadow-md overflow-hidden",
+        selected && "ring-2 ring-primary"
       )}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <Checkbox
-              checked={selected}
-              onCheckedChange={handleCheckboxChange}
-            />
-          </div>
-
-          <div className="flex-1" onClick={handleCardClick}>
-            <div className="mb-3">
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={name}
-                  className="h-40 w-full rounded-md object-cover"
-                />
-              ) : (
-                <div className="flex h-40 w-full items-center justify-center rounded-md bg-muted">
-                  <span className="text-muted-foreground text-sm">No image</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <h3 className={cn("font-medium", !available && "text-muted-foreground")}>
-                {name}
-              </h3>
-              <p className="text-lg font-semibold">{formatPrice(price, currency)}</p>
-              {category && (
-                <p className="text-sm text-muted-foreground">{category.name}</p>
-              )}
-              {!available && (
-                <div className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                  Unavailable
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
+      <div className="relative">
         <div
-          className="mt-3 flex items-center justify-between pt-3 border-t"
-          onClick={(e) => {
-            e.stopPropagation();
+          className="absolute top-3 left-3 z-10"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            onCheckedChange={handleCheckboxChange}
+            className="bg-background"
+          />
+        </div>
+        <div
+          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium"
+          style={{
+            backgroundColor: available ? "rgb(34, 197, 94)" : "rgb(156, 163, 175)",
+            color: "white",
           }}
         >
-          <span className="text-sm text-muted-foreground">Available</span>
+          <span
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: "white" }}
+          />
+          {available ? "Available" : "Unavailable"}
+        </div>
+        <div onClick={handleCardClick}>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={name}
+              className="aspect-square w-full object-cover"
+            />
+          ) : (
+            <div className="flex aspect-square w-full items-center justify-center bg-muted">
+              <span className="text-muted-foreground text-sm">No image</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <CardContent className="p-4" onClick={handleCardClick}>
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold leading-tight line-clamp-2">
+              {name}
+            </h3>
+          </div>
+          <p className="text-lg font-bold text-primary">{formatPrice(price, currency)}</p>
+          {category && (
+            <p className="text-sm text-muted-foreground">{category.name}</p>
+          )}
+        </div>
+      </CardContent>
+
+      <div
+        className="px-4 pb-4 pt-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between pt-3 border-t">
+          <span className="text-sm text-muted-foreground">Toggle availability</span>
           <Switch
             checked={available}
             onCheckedChange={handleAvailabilityToggle}
           />
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

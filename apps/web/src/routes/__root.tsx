@@ -15,8 +15,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { Toaster } from "@/components/ui/sonner";
 import { authClient } from "@/lib/auth-client";
 import { getToken } from "@/lib/auth-server";
+import { ThemeProvider, themeScript } from "@/lib/theme";
 
-import Header from "../components/header";
 import { OfflineIndicator } from "../components/OfflineIndicator";
 import appCss from "../index.css?url";
 
@@ -44,6 +44,21 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
     links: [
+      // Preconnect to Google Fonts for faster loading
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      // Google Fonts: Plus Jakarta Sans (headings), DM Sans (body), JetBrains Mono (mono)
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400&family=Plus+Jakarta+Sans:wght@600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -72,17 +87,17 @@ function RootDocument() {
       authClient={authClient}
       initialToken={context.token}
     >
-      <html lang="en" className="dark">
+      <html lang="en" suppressHydrationWarning>
         <head>
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
           <HeadContent />
         </head>
         <body>
-          <div className="grid h-svh grid-rows-[auto_1fr]">
-            <Header />
+          <ThemeProvider>
             <Outlet />
-          </div>
-          <Toaster richColors />
-          <OfflineIndicator />
+            <Toaster richColors />
+            <OfflineIndicator />
+          </ThemeProvider>
           <TanStackRouterDevtools position="bottom-left" />
           <Scripts />
         </body>

@@ -66,15 +66,11 @@ export default defineSchema({
     deleted: v.boolean(),
     order: v.number(),
     description: v.optional(v.string()),
-
-    // Shopify integration fields
-    source: v.optional(
-      v.union(v.literal("manual"), v.literal("shopify"))
-    ), // defaults to 'manual'
-    shopifyProductId: v.optional(v.string()), // Shopify product ID
-    shopifyVariantId: v.optional(v.string()), // Shopify variant ID if variant
-    lastShopifySyncAt: v.optional(v.number()), // when last synced from Shopify
-
+    // Shopify sync fields
+    source: v.optional(v.union(v.literal("manual"), v.literal("shopify"))),
+    shopifyProductId: v.optional(v.string()),
+    shopifyVariantId: v.optional(v.string()),
+    lastShopifySyncAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

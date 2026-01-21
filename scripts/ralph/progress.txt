@@ -1,121 +1,7 @@
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
-- Environment variables: use z.string().optional() for optional vars, z.string().default() for vars with defaults
-- Shopify webhook product IDs: REST webhooks use numeric IDs, convert to GID format: `gid://shopify/Product/${id}`
-- Shopify webhook variant IDs: Same pattern: `gid://shopify/ProductVariant/${id}`
-- Webhook handlers use internalAction with try/catch for graceful error handling
-- Shopify webhook registration: list existing webhooks first for idempotency, then register missing topics
-- Base UI Tooltip: doesn't have `asChild` prop, use className directly on TooltipTrigger
-
----
-
-## 2026-01-21 10:59 - S15: Create sync status UI component
-
-**What was implemented:**
-- Created apps/web/src/components/shopify/SyncStatus.tsx component
-- Props: lastSyncAt (number | null), status ('success' | 'partial' | 'failed' | null)
-- Displays last sync time in relative format using date-fns formatDistanceToNow (e.g., '5 minutes ago')
-- Displays status icon: green check (success), yellow warning (partial), red X (failed)
-- Tooltip with absolute timestamp on hover using shadcn/ui tooltip component
-- Shows 'Never synced' with Clock icon when lastSyncAt is null
-- Added shadcn/ui tooltip component (apps/web/src/components/ui/tooltip.tsx)
-- Integrated SyncStatus component into Shopify settings page
-- Removed inline SyncStatusBadge function in favor of reusable component
-
-**Files changed:**
-- apps/web/src/components/shopify/SyncStatus.tsx (created, ~75 lines)
-- apps/web/src/components/ui/tooltip.tsx (added via shadcn)
-- apps/web/src/routes/settings_.integrations_.shopify.tsx (updated imports, removed inline SyncStatusBadge)
-
-**Learnings for future iterations:**
-- Base UI Tooltip doesn't support `asChild` prop - use className directly on TooltipTrigger
-- date-fns format() with 'PPpp' gives full date/time like "Jan 21, 2026, 10:59 AM"
-
-**Verification:**
-- LSP diagnostics: no errors
-- bunx tsc --noEmit (apps/web): passes
-- Committed as: feat: S15 - Create sync status UI component (commit ad8dde9)
-
----
-
-## 2026-01-21 10:55 - S14: Register Shopify webhook subscriptions
-
-**What was implemented:**
-- Created registerWebhooks internalAction in packages/backend/convex/shopify.ts
-- Lists existing webhooks via GET /admin/api/2024-01/webhooks.json for idempotency
-- Registers webhooks via POST /admin/api/2024-01/webhooks.json for topics: products/create, products/update, products/delete
-- Webhook address set to {CONVEX_SITE_URL}/webhook/shopify
-- Created getConnectionForWebhooks internalQuery to fetch shop and accessToken
-- Created updateWebhookIds internalMutation to store webhook IDs in shopifyConnections
-- Modified handleCallback action to call registerWebhooks after successful OAuth connection
-- Handles already-registered webhooks by checking existing topic-address pairs
-- Logs registration success/failure for debugging
-
-**Files changed:**
-- packages/backend/convex/shopify.ts (+210 lines)
-
-**Learnings for future iterations:**
-- Shopify returns numeric webhook IDs, store as strings for flexibility
-- List existing webhooks before registering to avoid duplicates (idempotent pattern)
-- CONVEX_SITE_URL or SITE_URL env var needed for webhook address construction
-- Webhook registration can partially succeed - store whatever IDs were registered
-
-**Verification:**
-- bunx convex typecheck: passes
-- Committed as: feat: S14 - Register Shopify webhook subscriptions (commit c77da5a)
-
----
-
-## 2026-01-21 10:51 - S13: Implement product webhook handlers
-
-**What was implemented:**
-- Defined Shopify REST webhook payload types (ShopifyWebhookProduct, ShopifyWebhookVariant, ShopifyWebhookImage)
-- Created markProductsUnavailable internalMutation to mark products unavailable by shopifyProductId
-- Created getBusinessLanguage internalQuery to fetch business default language for currency mapping
-- Updated handleWebhook internalAction to fully process product webhooks:
-  - products/create: Creates Echo products for all active variants
-  - products/update: Updates existing products or creates new variants, marks archived/draft products unavailable
-  - products/delete: Marks all products with matching shopifyProductId as unavailable (soft delete)
-- Maps webhook data to product fields same as importProducts action
-- Updates lastShopifySyncAt on all affected products
-- Handles variant changes within products/update
-- Full error handling with try/catch and detailed logging
-
-**Files changed:**
-- packages/backend/convex/shopify.ts (+163 lines, -8 lines)
-
-**Learnings for future iterations:**
-- Shopify REST webhook payloads use numeric IDs, not GraphQL GID format - need conversion
-- Product webhooks include full product data with nested variants array (unlike GraphQL edges/node pattern)
-- products/update for archived/draft products should mark existing Echo products unavailable
-- Use internalQuery to fetch related data (business language) within internalAction
-
-**Verification:**
-- bunx convex typecheck: passes
-- Committed as: feat: S13 - Implement product webhook handlers (commit 3d83698)
-
----
-
-## 2026-01-21 10:24 - S03: Add Shopify environment variables to env package
-
-**What was implemented:**
-- Added SHOPIFY_API_KEY (z.string().optional()) to packages/env/src/server.ts
-- Added SHOPIFY_API_SECRET (z.string().min(32).optional()) to packages/env/src/server.ts
-- Added SHOPIFY_SCOPES (z.string().default("read_products,write_orders,read_orders")) to packages/env/src/server.ts
-- Updated packages/backend/.env.local.example with placeholder values for all Shopify env vars
-- Documented required scopes in .env.local.example comment
-
-**Files changed:**
-- packages/env/src/server.ts (+4 lines)
-- packages/backend/.env.local.example (+5 lines)
-
-**Verification:**
-- bun run check-types: passes
-- Committed as: feat: S03 - Add Shopify environment variables to env package (commit 1fb37e4)
-
----
-
-## Codebase Patterns (continued)
+- TailwindCSS 4: custom fonts defined in `@theme inline` block with `--font-*` variables
+- Google Fonts: use preconnect hints + `display=swap` for optimal loading
 - Auth pattern: `authComponent.safeGetAuthUser(ctx)` returns authUser with `userId` property - always check `!authUser || !authUser.userId`
 - After auth check, store userId in const: `const userId = authUser.userId;` to avoid TypeScript narrowing issues
 - Owner references use `ownerId: v.string()` (not v.id) since authUser.userId is a string
@@ -130,6 +16,697 @@
 - Lib utilities: create under `convex/lib/` using `GenericDatabaseReader<DataModel>` for db access
 - Dashboard conversation status: active | escalated | closed (separate from AI state machine)
 - Human assignment: assignedTo field with v.string() (user ID from better-auth), null/undefined means AI handling
+- TanStack Router layout routes: `_authenticated.tsx` creates pathless layout, child routes go in `_authenticated/` folder
+- Base UI AlertDialog: does NOT support asChild prop - use controlled open state instead of AlertDialogTrigger
+- Sidebar context pattern: use SidebarContext + SidebarProvider for shared collapsed state between Sidebar and layout
+- Sidebar collapsible animation: use `transition-[width] duration-200` for smooth width changes
+- Content area responds to sidebar state: use `transition-[padding-left]` to animate content offset
+
+---
+
+## 2026-01-21 16:05 - S36: Dark mode verification across all pages
+
+**What was verified and fixed:**
+- Scanned for hardcoded colors (bg-white, bg-gray, text-gray, etc.)
+- Fixed PriceInput.tsx: changed text-gray-500 to text-muted-foreground
+- Fixed settings.tsx: added dark mode variant for WhatsApp connected status (dark:bg-green-900/30 dark:text-green-400)
+- Verified existing components already have dark mode variants:
+  - conversations.tsx escalation banner: already has dark:border-yellow-900 dark:bg-yellow-950/30
+  - conversations.$conversationId.tsx: same escalation banner styling
+- Verified intentional uses are correct:
+  - bg-white/20, text-white on gradient backgrounds (landing, login, signup) - correct on colored backgrounds
+  - bg-black/50, bg-black/10 for overlays/backdrops - correct for modals
+  - bg-red-500, bg-yellow-500 for semantic status indicators - correct usage
+
+**Files changed:**
+- apps/web/src/components/ui/PriceInput.tsx (text-gray-500 -> text-muted-foreground)
+- apps/web/src/routes/_authenticated/settings.tsx (added dark mode WhatsApp status color)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:58 - S35: Dark mode CSS variables and theme toggle
+
+**What was implemented:**
+- Created theme provider and context in apps/web/src/lib/theme.tsx:
+  - ThemeProvider component manages theme state
+  - useTheme hook for consuming theme
+  - Three options: Light, Dark, System
+  - Stores preference in localStorage (key: echo-theme)
+  - Respects system preference when set to System
+  - Listens to system preference changes in real-time
+- Created ThemeToggle component in apps/web/src/components/ThemeToggle.tsx:
+  - Dropdown menu with Light, Dark, System options
+  - Shows Sun icon in light mode, Moon icon in dark mode
+  - Indicates current selection with accent background
+- Added blocking script in __root.tsx to prevent white flash:
+  - Script runs before page renders
+  - Reads localStorage and applies theme class immediately
+  - Falls back to system preference if no stored value
+- Removed hardcoded className="dark" from html element
+- Added ThemeToggle to AppHeader between NotificationBell and UserMenu
+- Added suppressHydrationWarning to html element for hydration safety
+
+**Files changed:**
+- apps/web/src/lib/theme.tsx (created)
+- apps/web/src/components/ThemeToggle.tsx (created)
+- apps/web/src/routes/__root.tsx (theme script, ThemeProvider, removed dark class)
+- apps/web/src/components/layout/AppHeader.tsx (added ThemeToggle)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:50 - S32, S33, S34: Settings section forms (already implemented in S31)
+
+**What was verified:**
+- S32 (General settings forms): Business Info, Localization, Business Hours - all implemented with proper form validation and save functionality
+- S33 (AI settings forms): AI Personality (greeting, instructions) and Escalation Rules (keywords) - all inline in AI section
+- S34 (Integrations section): WhatsApp with connection status and configure/connect buttons, Shopify placeholder
+
+**Note:** Collapsible subsections mentioned in PRD not implemented - using card-based layout instead which provides clear visual separation without additional complexity.
+
+**Files changed:**
+- No additional changes needed (implemented in S31)
+
+---
+
+## 2026-01-21 15:45 - S31: Settings page sidebar navigation structure
+
+**What was implemented:**
+- Restructured settings page with internal sidebar navigation
+- Sidebar sections:
+  - General: Business Info, Localization, Business Hours
+  - AI & Automation: AI Personality, Escalation Rules
+  - Integrations: WhatsApp, Shopify
+- URL-based section navigation with ?section= search param for deep linking
+- Each section has its own component (GeneralSettings, AISettings, IntegrationsSettings)
+- Clicking sidebar items updates URL and shows corresponding section
+- Added sticky save button at bottom of content area with backdrop blur
+- Icons for each sidebar item (Building2, Globe, Clock, Bot, AlertTriangle, MessageCircle, ShoppingBag)
+- Active section highlighted with primary/10 background
+- Forms split by section:
+  - General: business info, localization, business hours
+  - AI: greeting message, personality instructions, escalation keywords
+  - Integrations: WhatsApp connection status, Shopify (coming soon)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/settings.tsx (complete rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:38 - S30: Onboarding wizard step 3 - Ready
+
+**What was implemented:**
+- Step 3 Ready page already implemented in S28:
+  - Progress indicator shows step 3 as active (all steps complete)
+  - Celebration visual: large checkmark icon in primary/10 rounded circle
+  - Business summary card showing: logo preview, name, type, description, address
+  - Logo fallback shows first letter of business name
+  - Two CTAs: "Create Business & Go to Dashboard" (primary), "Create & Connect WhatsApp" (outline)
+  - Submits all wizard data to businesses.create mutation
+  - Error handling with toast.error
+  - Loading state with Loader2 spinner during submission
+  - Back button to return to step 2
+
+**Files changed:**
+- No additional changes needed (implemented in S28)
+
+**Verification:**
+- S30 criteria already met by S28 implementation
+
+---
+
+## 2026-01-21 15:35 - S29: Onboarding wizard step 2 - Branding
+
+**What was implemented:**
+- Enhanced Step 2 Branding with improved logo input UX:
+  - Visual drag-drop style zone with ImageIcon placeholder
+  - Shows preview when valid URL is entered
+  - X button to clear logo
+  - Error state when URL fails to load
+  - Border changes to primary color when logo is set
+- Progress indicator shows step 2 as active
+- Back button preserves data and returns to step 1
+- Next button proceeds to step 3
+- Address field remains optional with helper text
+
+**Files changed:**
+- apps/web/src/routes/onboarding.tsx
+
+**Note:** Used URL input with visual drag-drop zone style (not actual file upload) to maintain compatibility with existing business schema which expects logoUrl string.
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:30 - S28: Onboarding wizard step 1 - Business Info
+
+**What was implemented:**
+- Converted onboarding.tsx from single-form to 3-step wizard
+- Added ProgressIndicator component with 3 circles connected by lines:
+  - Shows completed steps with checkmark icon
+  - Active step highlighted with primary color
+  - Inactive steps grayed out
+- Step 1 (Business Info):
+  - Business Name (required, min 2 chars)
+  - Business Type dropdown (Restaurant, Pharmacy, Retail, Other)
+  - Description textarea (optional)
+  - Next button disabled until name is valid
+- Step state managed in React useState with WizardData interface
+- Data preserved between steps (back/next navigation)
+
+**Files changed:**
+- apps/web/src/routes/onboarding.tsx (complete rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:21 - S27: Auth pages split layout redesign
+
+**What was implemented:**
+- Updated login.tsx and signup.tsx routes with split layout design:
+  - Left panel (50% on desktop): brand gradient background with testimonial quote and Echo branding
+  - Right panel (50% on desktop): auth form with improved styling
+  - Mobile: hide left panel, show only form with logo above
+- Updated sign-in-form.tsx and sign-up-form.tsx with improved styling:
+  - Increased form field spacing to space-y-6
+  - Taller inputs with h-11 for better touch targets
+  - Error states use text-destructive color scheme
+  - Loading state on submit button with Loader2 spinner
+  - Improved link styling with text-primary and hover:underline
+
+**Files changed:**
+- apps/web/src/routes/login.tsx
+- apps/web/src/routes/signup.tsx
+- apps/web/src/components/sign-in-form.tsx
+- apps/web/src/components/sign-up-form.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 16:34 - S26: Landing page features and social proof
+
+**What was implemented:**
+- Added 3 feature cards below hero in bento-style grid (md:grid-cols-3)
+- Feature 1: "24/7 Support" with Clock icon - AI handles messages any time
+- Feature 2: "Smart AI" with Brain icon - Understands context and intent
+- Feature 3: "Easy Setup" with Zap icon - Connect in minutes
+- Each card has: icon in primary/10 background, semibold title, muted description
+- Cards have rounded-2xl, border, shadow-sm for depth
+- Added social proof text: "Trusted by 500+ LATAM businesses"
+- Mobile: cards stack vertically (grid default)
+- CTAs remain above fold on mobile (in hero section)
+
+**Files changed:**
+- apps/web/src/routes/index.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 16:28 - S25: Landing page hero section redesign
+
+**What was implemented:**
+- Complete redesign of landing page with new hero section
+- Removed ASCII art, added Echo logo with MessageSquare icon
+- Hero tagline: "AI-Powered Customer Service for Your WhatsApp Business"
+- Subheading explaining value proposition for LATAM businesses
+- Warm gradient background using brand colors (terracotta oklch(0.58 0.2 35) to peach oklch(0.92 0.04 55))
+- Two CTAs: "Get Started Free" (white primary button) and "Sign In" (outline button)
+- Removed API health check display
+- Added auth-aware routing:
+  - Authenticated users redirected to /dashboard (or /onboarding if no businesses)
+  - Unauthenticated users see landing page
+- Added gradient fade at bottom of hero for smooth transition
+
+**Files changed:**
+- apps/web/src/routes/index.tsx (complete rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 16:22 - S24: Products page empty state
+
+**What was implemented:**
+- Created dedicated empty state for when no products exist at all
+- Large ShoppingBag icon (h-12 w-12) in rounded container (p-8)
+- Heading: "Add your first product" with text-xl font-semibold
+- Subtext: "Products you add will be available for customers to order through WhatsApp"
+- Prominent "Add Product" CTA button with size="lg"
+- Increased vertical padding (py-16) for better visual centering
+- Separated empty state logic: no products vs filtered results empty
+- Filter results empty state kept simpler with just "No products found" message
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/products/index.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 16:18 - S23: Products page bulk action bar
+
+**What was implemented:**
+- Moved bulk action bar from inline to fixed position at bottom of screen
+- Bar appears only when 1+ products selected using CSS transform animation
+- Slide up animation: transform transition-transform duration-300 ease-out
+- translate-y-full when hidden, translate-y-0 when visible
+- Bar has solid background (bg-background) with border-t and shadow-lg
+- Bar shows: "{count} selected" text, all bulk actions
+- Clear selection button (X icon) on the left side
+- Actions: Mark Available, Mark Unavailable, Delete, Move to category dropdown
+- Uses z-50 for proper layering above page content
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/products/index.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 16:10 - S22: Products page card design improvements
+
+**What was implemented:**
+- Redesigned ProductCard component with improved visual design:
+  - Larger images using aspect-square ratio (fills card width)
+  - Product name now uses font-semibold for better prominence
+  - Price displayed with font-bold text-primary for clear visibility
+  - Added line-clamp-2 to product name to handle long names
+- Added availability indicator badge overlay on image:
+  - Green badge with dot for available products
+  - Gray badge with dot for unavailable products
+  - Badge positioned top-right on the image
+- Checkbox positioned top-left on image for selection
+- Selected cards now have ring-2 ring-primary visual indicator
+- Removed opacity dimming for unavailable products (badge provides status)
+- Grid gap already gap-6 (was implemented in previous story)
+- Category dropdown already in header filters (already existed)
+
+**Files changed:**
+- apps/web/src/components/products/ProductCard.tsx (complete redesign)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 16:02 - S21: Orders detail page layout redesign
+
+**What was implemented:**
+- Redesigned order detail page with 2-column layout:
+  - Left column (2/3): Order items table with totals, related conversation link, action buttons
+  - Right column (1/3): Customer info, Delivery info, Payment info, Timeline
+- Status badge prominent in page header next to order number
+- Order items displayed in clean table format with inline totals section
+- Added "Related Conversation" link card (navigates to conversation detail)
+- Action buttons moved to card at bottom of left column
+- Actions appropriate to current order status (Mark Preparing, Mark Ready, Mark Delivered, Cancel)
+- Improved max-width to max-w-6xl for better two-column display
+- Added MessageSquare icon for conversation link
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (complete layout rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:50 - S20: Orders page pagination and empty state
+
+**What was implemented:**
+- Added client-side pagination with ITEMS_PER_PAGE = 10
+- Pagination state managed with currentPage useState
+- Reset to page 1 when search or filter changes (useEffect)
+- Added pagination controls showing:
+  - "Showing X-Y of Z orders" text
+  - Previous/Next buttons with ChevronLeft/ChevronRight icons
+  - "Page N of M" indicator
+- Buttons disabled when at first/last page
+- Pagination only shows when totalPages > 1
+- Enhanced empty state with larger icon (h-10 w-10) and improved text
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:42 - S19: Orders page search and table improvements
+
+**What was implemented:**
+- Added search input at top of orders list (filters by order # or customer phone)
+- Client-side filtering using useMemo for performance
+- Added Customer (contactPhone) column to orders table
+- Added row hover effect with hover:bg-muted/50 transition-colors
+- Updated date format to smart format using formatSmartDate:
+  - "Today" for today's orders
+  - "Yesterday" for yesterday's orders
+  - "Jan 15" format for older orders
+- Added Search icon from lucide-react to search input
+- Added Input component from shadcn/ui
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:35 - S18: Conversations empty state
+
+**What was implemented:**
+- Enhanced empty state for conversations list with larger, more prominent design
+- Added MessageCircle icon (h-10 w-10) in a larger rounded container (p-6)
+- Updated heading to "No conversations yet" with text-lg font-semibold
+- Updated subtext to "Conversations will appear here when customers message you on WhatsApp"
+- Added WhatsApp connection status check using getConnectionStatus query
+- Added "Connect WhatsApp" CTA button that appears when WhatsApp is not connected
+- Button navigates to /settings/whatsapp
+- Empty state is centered vertically with flex-1 and py-12 spacing
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.tsx (added whatsappStatus query, enhanced empty state)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:28 - S17: Conversations message bubbles and actions UI
+
+**What was implemented:**
+- Updated MessageBubble component with improved styling:
+  - Changed from rounded-lg to rounded-2xl for softer bubble appearance
+  - Increased padding from px-3 py-2 to px-4 py-3
+  - Added max-w-[80%] to prevent bubbles from being too wide
+- Visual distinction between message types:
+  - Customer messages: bg-secondary (left-aligned)
+  - AI messages: bg-muted with Bot icon indicator (right-aligned)
+  - Human agent messages: bg-primary (right-aligned) with User icon indicator
+- Added icon indicators (Bot/User from lucide-react) next to sender labels
+- Added proper spacing between message groups:
+  - Same sender as previous: mt-1 (small gap)
+  - Different sender: mt-4 (larger gap for visual separation)
+- Replaced date-fns formatDistanceToNow with custom relative time formatter
+- Added leading-relaxed for better text readability
+
+**Files changed:**
+- apps/web/src/components/conversation/MessageBubble.tsx (rewrote styling)
+- apps/web/src/routes/_authenticated/conversations.tsx (message group spacing)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (message group spacing)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:21 - S16: Conversations page text and styling improvements
+
+**What was implemented:**
+- Increased min-height of conversation list items from 72px to 80px (min-h-20) for better touch targets
+- Added avatar placeholder with customer initials (first letter of name or first digit of phone number)
+- Added color-coded left border (4px) based on status:
+  - active -> primary color (border-l-primary)
+  - escalated -> yellow warning color (border-l-yellow-500)
+  - closed -> muted color (border-l-muted-foreground/50)
+- Updated timestamp format to short relative time: "Just now", "2m ago", "1h ago", "Yesterday"
+- Made header with filters sticky at top of conversation list
+- Changed empty state text from text-xs to text-sm for readability
+- Restructured CardContent with p-0 and moved padding to sticky header and scrollable content area
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-21 15:05 - S12: Typography and spacing audit across all routes
+
+**What was implemented:**
+- Updated select elements in conversations, orders, and products pages from text-xs to text-sm for readability
+- Increased input heights from h-8 to h-9 for better touch targets
+- Updated message preview text in conversations list from text-xs to text-sm
+- Standardized settings pages max-width to max-w-5xl (settings.tsx, settings_.ai.tsx, settings_.whatsapp.tsx)
+- Updated dashboard CardContent spacing from space-y-2 to space-y-4
+- Increased product grid gap from gap-4 to gap-6 for better visual breathing room
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.tsx (select text-sm, input h-9, message preview text-sm)
+- apps/web/src/routes/_authenticated/orders.tsx (select text-sm, h-9)
+- apps/web/src/routes/_authenticated/products/index.tsx (selects text-sm h-9, grid gap-6)
+- apps/web/src/routes/_authenticated/settings.tsx (max-w-5xl)
+- apps/web/src/routes/_authenticated/settings_.ai.tsx (max-w-5xl, px-6)
+- apps/web/src/routes/_authenticated/settings_.whatsapp.tsx (max-w-5xl, px-6)
+- apps/web/src/routes/_authenticated/dashboard.tsx (space-y-4)
+
+**Learnings for future iterations:**
+- Labels (text-xs) are acceptable but body text should be text-sm minimum
+- Form inputs benefit from h-9 (36px) for better accessibility
+- List pages use max-w-7xl, detail pages use max-w-4xl, settings pages use max-w-5xl
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S12 - Typography and spacing audit across all routes (commit 9305408)
+
+---
+
+## 2026-01-21 14:54 - S08, S09, S10: Replace window.confirm and inline modals with AlertDialog
+
+**What was implemented:**
+- S08: Already implemented - orders.$orderId.tsx already had AlertDialog for Cancel Order
+- S09: Updated conversations.$conversationId.tsx Hand Back dialog text to match spec:
+  - Title: "Hand Back to AI"
+  - Description: "Are you sure you want to hand this conversation back to the AI assistant?"
+  - Cancel button: "Keep Control"
+  - Confirm button: "Hand Back"
+- S10: Replaced custom inline modals with AlertDialog in products:
+  - products/$productId.tsx: Single product delete dialog
+  - products/index.tsx: Bulk delete dialog
+  - Both have consistent styling with destructive confirm button
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (dialog text update)
+- apps/web/src/routes/_authenticated/products/$productId.tsx (replaced custom modal)
+- apps/web/src/routes/_authenticated/products/index.tsx (replaced custom modal)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+
+---
+
+## 2026-01-21 15:15 - S07: Remove duplicated navigation from all page components
+
+**What was implemented:**
+- Moved product routes from `/products/` to `/_authenticated/products/`:
+  - `index.tsx` - Products list page
+  - `$productId.tsx` - Edit product page
+  - `new.tsx` - Add product page
+  - `categories.tsx` - Category manager page
+- Moved settings routes from root to `/_authenticated/`:
+  - `settings_.ai.tsx` - AI settings page
+  - `settings_.whatsapp.tsx` - WhatsApp integration settings
+- Removed duplicated navigation components from all pages:
+  - Removed `BusinessSwitcher`, `AppNav`, `UserMenu` imports and usage
+  - Removed `Authenticated/Unauthenticated/AuthLoading` wrappers (handled by layout)
+  - Removed duplicate auth checking logic in each page
+- Updated route paths from `/products/...` to `/_authenticated/products/...`
+- Regenerated route tree with TanStack Router CLI
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/products/index.tsx (created, simplified from old)
+- apps/web/src/routes/_authenticated/products/$productId.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/products/new.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/products/categories.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/settings_.ai.tsx (created, simplified)
+- apps/web/src/routes/_authenticated/settings_.whatsapp.tsx (created, simplified)
+- Deleted old route files from root level
+- apps/web/src/routeTree.gen.ts (regenerated)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S07 - Remove duplicated navigation from all page components (commit 6519558)
+
+---
+
+## 2026-01-21 15:02 - S06: Create mobile BottomNav component
+
+**Status:** Already implemented in S03 commit
+
+**Verified implementation:**
+- `apps/web/src/components/layout/BottomNav.tsx` contains all 5 nav items
+- Each item has icon and label below
+- Active item uses `text-primary`, inactive uses `text-muted-foreground`
+- Touch targets minimum 44px (`min-h-[44px] min-w-[44px]`)
+- z-index 50 via `z-50` class
+- Hidden on desktop via `lg:hidden`
+- Content area accounts for bottom nav with `pb-20 lg:pb-0` in main
+
+**No additional changes needed.**
+
+---
+
+## 2026-01-21 14:58 - S05: Create AppHeader component
+
+**What was implemented:**
+- Updated `apps/web/src/components/layout/AppHeader.tsx`
+  - Added NotificationBell between Command Palette trigger and UserMenu
+  - Added Search icon to Command Palette trigger for visual clarity
+  - Changed "Cmd" text to ⌘ symbol for cleaner appearance
+  - Layout: BusinessSwitcher (left), Search/Cmd+K (center), NotificationBell + UserMenu (right)
+  - Sticky header at top of content area with subtle bottom border
+
+**Files changed:**
+- apps/web/src/components/layout/AppHeader.tsx (+6 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+- Committed as: feat: S05 - Create AppHeader component (commit ffd1453)
+
+---
+
+## 2026-01-21 14:53 - S04: Create collapsible Sidebar component
+
+**What was implemented:**
+- Created `apps/web/src/components/layout/SidebarContext.tsx`
+  - React context for shared sidebar collapsed/expanded state
+  - localStorage persistence with key "echo:sidebar-collapsed"
+  - SidebarProvider wraps authenticated content, useSidebar hook for consuming
+- Updated `apps/web/src/components/layout/Sidebar.tsx`
+  - Two states: collapsed (64px/w-16) and expanded (240px/w-60)
+  - Expand on hover using local isHovered state
+  - isExpanded = !isCollapsed || isHovered (collapsed but hovered = visually expanded)
+  - Smooth CSS width transition with `transition-[width] duration-200`
+  - Logo text and nav labels fade out with `transition-opacity`
+  - Collapse toggle button at bottom with ChevronLeft/ChevronRight icons
+  - Tooltip (title attr) shows label when collapsed
+- Updated `apps/web/src/routes/_authenticated.tsx`
+  - Added SidebarProvider wrapping AuthenticatedContent
+  - Dynamic content padding: lg:pl-16 (collapsed) or lg:pl-60 (expanded)
+  - Smooth padding transition with `transition-[padding-left] duration-200`
+
+**Files changed:**
+- apps/web/src/components/layout/SidebarContext.tsx (created, 36 lines)
+- apps/web/src/components/layout/Sidebar.tsx (rewritten, 113 lines)
+- apps/web/src/routes/_authenticated.tsx (+27 lines)
+
+**Verification:**
+- LSP diagnostics: no errors on all changed files
+- bunx tsc --noEmit in apps/web: passes
+- Committed as: feat: S04 - Create collapsible Sidebar component (commit cd1f4b7)
+
+---
+
+## 2026-01-21 14:45 - S03: Create authenticated layout route structure
+
+**What was implemented:**
+- Created `apps/web/src/routes/_authenticated.tsx` as pathless layout route
+  - Uses `createFileRoute("/_authenticated")` with beforeLoad auth check
+  - Redirects to /login if not authenticated
+  - Wraps content with Authenticated/Unauthenticated/AuthLoading from convex/react
+  - Handles business loading and redirects to /onboarding if no businesses
+  - Shell structure: Sidebar (left), AppHeader (top), Outlet (content), BottomNav (bottom mobile)
+- Created `apps/web/src/components/layout/Sidebar.tsx`
+  - Desktop navigation (hidden on mobile via `lg:flex`)
+  - Fixed positioning with 64px width
+  - Echo logo at top, navigation items, version at bottom
+  - Active route highlighting with primary color
+- Created `apps/web/src/components/layout/AppHeader.tsx`
+  - Sticky header with BusinessSwitcher and UserMenu
+  - Command palette trigger placeholder (Cmd+K hint)
+- Created `apps/web/src/components/layout/BottomNav.tsx`
+  - Mobile bottom navigation (hidden on desktop via `lg:hidden`)
+  - Touch-friendly 44px minimum targets
+  - Fixed at bottom with z-50
+- Moved authenticated routes to `_authenticated/` folder:
+  - dashboard.tsx, settings.tsx, conversations.tsx, conversations.$conversationId.tsx
+  - orders.tsx, orders.$orderId.tsx
+- Simplified child routes (auth handled by layout)
+- Replaced window.confirm with AlertDialog for order cancellation (S08 partial)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated.tsx (created, ~75 lines)
+- apps/web/src/components/layout/Sidebar.tsx (created, ~55 lines)
+- apps/web/src/components/layout/AppHeader.tsx (created, ~30 lines)
+- apps/web/src/components/layout/BottomNav.tsx (created, ~40 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/settings.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/conversations.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/orders.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (moved and simplified, AlertDialog added)
+- apps/web/src/routeTree.gen.ts (regenerated)
+
+**Verification:**
+- bun run check-types: passes
+- Route generation: successful
+- Committed as: feat: S03 - Create authenticated layout route structure (commit e5016e5)
+
+---
+
+## 2026-01-21 14:27 - S02: Add Google Fonts for typography
+
+**What was implemented:**
+- Added Google Fonts link tags to apps/web/src/routes/__root.tsx head() function
+  - Preconnect hints for fonts.googleapis.com and fonts.gstatic.com for faster loading
+  - Font stylesheet with Plus Jakarta Sans (600, 700), DM Sans (400, 500), JetBrains Mono (400)
+  - `display=swap` parameter to prevent FOUT (flash of unstyled text)
+- Updated apps/web/src/index.css @theme inline block:
+  - `--font-sans`: "DM Sans" for body text (replaces Inter Variable)
+  - `--font-heading`: "Plus Jakarta Sans" for headings
+  - `--font-mono`: "JetBrains Mono" for monospace/code
+
+**Files changed:**
+- apps/web/src/routes/__root.tsx (+15 lines: preconnect + font stylesheet links)
+- apps/web/src/index.css (+2 lines: --font-heading, --font-mono; modified --font-sans)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S02 - Add Google Fonts for typography (commit f9ea2ee)
 
 ---
 
@@ -1970,335 +2547,159 @@
 
 ---
 
-## 2026-01-21 09:48 - S01: Create shopifyConnections schema table
+## 2026-01-21 14:25 - S01: Update CSS variables with Warm Signal color palette
 
 **What was implemented:**
-- Created shopifyConnections table in packages/backend/convex/schema.ts
-- Added businessId (v.id("businesses")) - parent business reference
-- Added shop (v.string()) - Shopify store domain (mystore.myshopify.com)
-- Added accessToken (v.string()) - OAuth access token
-- Added scopes (v.array(v.string())) - granted OAuth scopes
-- Added webhookIds (v.optional(v.array(v.string()))) - registered Shopify webhook IDs
-- Added lastSyncAt (v.optional(v.number())) - last successful sync timestamp
-- Added lastSyncStatus (v.optional(v.union("success", "partial", "failed")))
-- Added createdAt (v.number()) - timestamp
-- Added by_business index on [businessId] for efficient business lookup
-- Added by_shop index on [shop] for webhook lookup
+- Updated apps/web/src/index.css with complete Warm Signal color palette
+- Light mode (:root) CSS variables:
+  - --background: oklch(0.985 0.002 90) - warm off-white
+  - --foreground: oklch(0.145 0.015 60) - warm dark gray
+  - --primary: oklch(0.58 0.2 35) - terracotta
+  - --secondary: oklch(0.92 0.04 55) - peach
+  - --destructive: oklch(0.55 0.2 25) - red-orange
+  - --success: oklch(0.6 0.19 145) - green
+- Dark mode (.dark) CSS variables with adjusted tones
+- Added spacing scale --space-1 through --space-16 (0.25rem to 4rem)
+- Added border radius variables: --radius-sm (6px), --radius-md (10px), --radius-lg (16px), --radius-full (9999px)
+- Updated @theme inline block to include new variables for Tailwind CSS v4
 
 **Files changed:**
-- packages/backend/convex/schema.ts (+20 lines)
+- apps/web/src/index.css (100 insertions, 70 deletions)
 
 **Verification:**
-- Convex dev compiles successfully (schema validates)
-- bun run check-types passes
-- Committed as: feat: S01 - Create shopifyConnections schema table (commit d6f87be)
-- Updated PRD: S01 passes: true
+- bun run check-types: passes
+- Committed as: feat: S01 - Update CSS variables with Warm Signal color palette (commit 1a4d4a0)
 
 ---
 
-## 2026-01-21 09:51 - S02: Extend products and orders tables with Shopify fields
+## 2026-01-21 14:56 - S11: Create unified StatusBadge component
 
 **What was implemented:**
-- Updated products table in packages/backend/convex/schema.ts:
-  - Added source (v.optional(v.union("manual", "shopify"))) - defaults to 'manual'
-  - Added shopifyProductId (v.optional(v.string())) - Shopify product ID
-  - Added shopifyVariantId (v.optional(v.string())) - Shopify variant ID if variant
-  - Added lastShopifySyncAt (v.optional(v.number())) - when last synced from Shopify
-  - Added by_shopify_id index on [businessId, shopifyProductId] for sync lookup
-- Updated orders table in packages/backend/convex/schema.ts:
-  - Added shopifyOrderId (v.optional(v.string())) - created Shopify order ID
-  - Added shopifyOrderNumber (v.optional(v.string())) - Shopify order number (#1001)
+- Created `apps/web/src/components/composed/StatusBadge.tsx` - unified component for all status badges
+- Added `info` variant to badge.tsx for "preparing" status
+- Order status mapping: draft->secondary, pending->secondary, confirmed->default, preparing->info, ready->warning, delivered->success, cancelled->destructive
+- Conversation status mapping: active->default (AI Handling), escalated->warning, closed->success
+- Special handling for active + assignedTo showing "Human Active"
+- Replaced inline StatusBadge in orders.tsx and orders.$orderId.tsx
+- Updated conversations.tsx and conversations.$conversationId.tsx to use unified component
+- Removed old inline STATUS_CONFIG objects from order pages
 
 **Files changed:**
-- packages/backend/convex/schema.ts (+13 lines, -1 line)
-
-**Verification:**
-- Convex dev compiles successfully (schema validates)
-- LSP diagnostics: no errors
-- Committed as: feat: S02 - Extend products and orders tables with Shopify fields (commit 1a6a130)
-- Updated PRD: S02 passes: true
-
----
-
----
-
-## 2026-01-21 10:26 - S04: Implement Shopify OAuth URL generation mutation
-
-**What was implemented:**
-- Created packages/backend/convex/shopify.ts with getAuthUrl mutation and getConnectionStatus query
-- getAuthUrl mutation:
-  - Validates authentication and business ownership
-  - Normalizes shop URL (accepts "mystore" or "mystore.myshopify.com")
-  - Validates shop URL format with regex
-  - Checks for existing Shopify connection to prevent duplicates
-  - Generates cryptographically secure state parameter using Web Crypto API
-  - Builds OAuth URL with client_id, scope, redirect_uri, state
-  - State format includes businessId for callback verification (CSRF protection)
-  - Returns authUrl and normalized shop
-- getConnectionStatus query:
-  - Returns connection status for a business
-  - Includes shop, lastSyncAt, lastSyncStatus, scopes if connected
-
-**Files changed:**
-- packages/backend/convex/shopify.ts (created, 120 lines)
-- packages/backend/convex/_generated/api.d.ts (auto-generated)
+- apps/web/src/components/composed/StatusBadge.tsx (created, 62 lines)
+- apps/web/src/components/ui/badge.tsx (added info variant)
+- apps/web/src/routes/_authenticated/orders.tsx (replaced inline StatusBadge)
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (replaced inline StatusBadge)
+- apps/web/src/routes/_authenticated/conversations.tsx (updated import)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (updated import)
 
 **Learnings for future iterations:**
-- Convex runtime has Web Crypto API available (crypto.getRandomValues)
-- State parameter can encode additional data (businessId) separated by pipe for callback verification
-- Shop URL normalization accepts both short form (mystore) and full form (mystore.myshopify.com)
+- Unified components in `components/composed/` folder for app-specific composed components
+- Badge component uses CVA with info variant: bg-blue-500/10 text-blue-600 dark:text-blue-400
+- When status is optional in schema, provide default value: `status ?? "active"`
+- Type prop required to distinguish order vs conversation status mapping
 
 **Verification:**
-- LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S04 - Implement Shopify OAuth URL generation mutation (commit ab786e8)
+- LSP diagnostics: no errors on all changed files
+- bunx tsc --noEmit: passes
+- Committed as: feat: S11 - Create unified StatusBadge component (commit face365)
 
 ---
 
-## 2026-01-21 10:28 - S05: Implement Shopify OAuth callback handler
+---
+
+## 2026-01-21 15:10 - S13: Create dashboard backend queries
 
 **What was implemented:**
-- Created shopify.handleCallback action for exchanging OAuth code for access token
-- Parses state parameter to extract businessId (CSRF verification)
-- Exchanges authorization code for access token via POST to Shopify API
-- Uses internal mutation saveConnection to store credentials
-- Returns success/error status with appropriate error messages
-- Created shopify.saveConnection internalMutation:
-  - Stores/updates shopifyConnections record
-  - Handles both new connections and reconnections (updates existing)
-  - Stores shop, accessToken, scopes, createdAt
+- Created packages/backend/convex/dashboard.ts with two queries
+- `getMetrics` query returns:
+  - activeConversations: count of conversations with status='active'
+  - escalatedCount: count of conversations with status='escalated'
+  - ordersToday: count of orders created today (excluding cancelled)
+  - revenueToday: sum of order totals created today (in cents)
+  - weeklyConversations: count of conversations created this week
+  - weeklyChange: percentage change vs previous week
+- `getActivity` query returns:
+  - Array of recent events with type ('conversation' | 'order'), description, timestamp, link
+  - Limit defaults to 5, configurable via args
+  - Merges and sorts conversations and orders by timestamp
+- Both queries use auth pattern with business ownership validation
+- Uses by_business_status index for efficient conversation filtering
 
 **Files changed:**
-- packages/backend/convex/shopify.ts (+116 lines: handleCallback action, saveConnection internalMutation, type definitions)
-
-**Learnings for future iterations:**
-- Convex actions can make HTTP requests (fetch is available)
-- Use internal mutations to persist data from actions
-- Shopify OAuth token response contains scope as comma-separated string
-- Always handle both success and error responses with typed interfaces
+- packages/backend/convex/dashboard.ts (created, 195 lines)
 
 **Verification:**
 - LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S05 - Implement Shopify OAuth callback handler (commit 7723850)
+- Convex codegen: passes
+- Committed as: feat: S13 - Create dashboard backend queries (commit ae17da9)
 
----
-
-## 2026-01-21 10:30 - S06: Create Shopify OAuth HTTP route
+## 2026-01-21 15:12 - S14: Create Dashboard metric cards UI
 
 **What was implemented:**
-- Added GET /shopify/callback route to packages/backend/convex/http.ts
-- Extracts query params: code, shop, state from OAuth redirect
-- Validates all params present before proceeding
-- Calls shopify.handleCallback action with extracted params
-- On success: redirects to /settings/integrations/shopify?connected=true
-- On failure: redirects to /settings/integrations/shopify?error={message}
-- Handles missing params with error=missing_params redirect
-- Uses try/catch for graceful error handling
+- Created `apps/web/src/components/composed/MetricCard.tsx` component
+  - Props: title, value, subtitle, icon (LucideIcon), link (optional), variant (default | warning)
+  - Clickable card that links to relevant page when link prop provided
+  - Warning variant for escalated conversations (border-warning, bg-warning)
+  - Hover effect with bg-accent/50
+- Updated `apps/web/src/routes/_authenticated/dashboard.tsx`
+  - Added personalized time-aware greeting: Good morning/afternoon/evening, {userName}!
+  - Added subheading: "Here's what's happening at {businessName}"
+  - Bento grid layout (3 columns on md+) with MetricCard components
+  - Card 1: Conversations - activeConversations count, escalatedCount as warning subtitle
+  - Card 2: Orders Today - ordersToday count, revenueToday formatted as currency
+  - Card 3: Weekly Trend - weeklyConversations with percentage change indicator
+  - Each metric card links to relevant page (/conversations, /orders)
+  - Uses TrendingUp/TrendingDown icons based on weeklyChange
+- Fixed unused variable warning in dashboard.ts backend
 
 **Files changed:**
-- packages/backend/convex/http.ts (+36 lines)
-
-**Learnings for future iterations:**
-- Convex httpAction can call actions via ctx.runAction(api.module.function, args)
-- Response.redirect() is available for HTTP redirects (302 status)
-- Use encodeURIComponent for error messages in query params
+- apps/web/src/components/composed/MetricCard.tsx (created, 62 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (rewritten, 145 lines)
+- packages/backend/convex/dashboard.ts (removed unused `now` variable)
 
 **Verification:**
 - LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S06 - Create Shopify OAuth HTTP route (commit 567eb0b)
+- bunx tsc --noEmit: passes
+- Committed as: feat: S14 - Create Dashboard metric cards UI (commit 524d66c)
 
 ---
 
-## 2026-01-21 10:35 - S07: Create integrations settings page
+## 2026-01-21 15:16 - S15: Create Dashboard activity feed and quick actions
 
 **What was implemented:**
-- Created apps/web/src/routes/settings_.integrations.tsx for /settings/integrations
-- Protected route using Authenticated/Unauthenticated/AuthLoading pattern
-- Page displays list of available integrations (Shopify for now)
-- Shopify card shows:
-  - Shopify green logo (ShoppingBag icon on #96bf48 background)
-  - Name and description
-  - Connection status badge (Connected/Not connected)
-- Click navigates to /settings/integrations/shopify
-- Uses existing patterns: BusinessSwitcher, AppNav, UserMenu in header
-- Created placeholder settings_.integrations_.shopify.tsx for S08
+- Created apps/web/src/components/composed/ActivityItem.tsx component
+  - Props: type, description, timestamp, link, isEscalation
+  - Displays icon based on type (conversation, order, or escalation warning)
+  - Escalation items highlighted with warning background
+  - Relative timestamp using date-fns formatDistanceToNow
+  - Clickable link to relevant page
+- Updated apps/web/src/routes/_authenticated/dashboard.tsx
+  - Added Recent Activity section below metric cards (takes 2 columns on large screens)
+  - Activity section shows last 5 events from getActivity query
+  - "See all" link navigates to /conversations
+  - Empty state with MessageSquare icon when no activity
+- Added Quick Actions sidebar section on right
+  - Add Product button
+  - Settings button
+  - Connect WhatsApp button (shown only if not connected)
+- Added onboarding checklist for new businesses
+  - Shows when products or WhatsApp not set up
+  - Three items: Create business (always complete), Add first product, Connect WhatsApp
+  - Each item links to relevant page with completion indicator (CheckCircle2/Circle)
+- Uses existing getActivity query from dashboard.ts
+- Queries whatsappStatus and products to determine checklist state
 
 **Files changed:**
-- apps/web/src/routes/settings_.integrations.tsx (created, 136 lines)
-- apps/web/src/routes/settings_.integrations_.shopify.tsx (created, placeholder)
-- apps/web/src/routeTree.gen.ts (auto-generated)
+- apps/web/src/components/composed/ActivityItem.tsx (created, 50 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (updated from 157 to 254 lines)
 
 **Learnings for future iterations:**
-- TanStack Router flat file convention: settings_.integrations.tsx = /settings/integrations
-- Nested routes: settings_.integrations_.shopify.tsx = /settings/integrations/shopify
-- Must run bunx @tanstack/router-cli generate after creating new route files
-- Badge variant="success" for green connected status
+- products.list returns object with { products, hasMore, nextCursor } not just array
+- Use optional chaining for nested property access: products?.products?.length
 
 **Verification:**
 - LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S07 - Create integrations settings page (commit a6d5a13)
+- bunx tsc --noEmit: passes
+- Committed as: feat: S15 - Create Dashboard activity feed and quick actions (commit a5cc231)
 
 ---
-
-## 2026-01-21 10:40 - S08: Create Shopify settings page with Connect button
-
-**What was implemented:**
-- Full implementation of apps/web/src/routes/settings_.integrations_.shopify.tsx
-- Protected route using Authenticated/Unauthenticated/AuthLoading pattern
-- Page displays Shopify branding header with green logo
-- When not connected:
-  - Shop URL input field with ".myshopify.com" suffix hint
-  - Accepts store name only or full URL
-  - Connect button calls shopify.getAuthUrl mutation
-  - Shows loading state with spinner during redirect
-  - Redirects to OAuth URL on success
-- When connected:
-  - Shows connected status with store URL
-- Handles URL query params:
-  - connected=true shows success toast
-  - error={message} shows error toast
-- Uses validateSearch for type-safe query params
-- Updated integrations page link to include search params
-
-**Files changed:**
-- apps/web/src/routes/settings_.integrations_.shopify.tsx (rewritten, 217 lines)
-- apps/web/src/routes/settings_.integrations.tsx (updated Link with search prop)
-- apps/web/src/routeTree.gen.ts (auto-generated)
-
-**Learnings for future iterations:**
-- TanStack Router validateSearch makes search params typed
-- When route has validateSearch, Links to it require search prop
-- window.location.href for external redirects (OAuth)
-- useMutation returns promise, can await and catch errors
-
-**Verification:**
-- LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S08 - Create Shopify settings page with Connect button (commit 7cb730e)
-
----
-
-## 2026-01-21 10:45 - S09: Display Shopify connection status and options
-
-**What was implemented:**
-- Enhanced connected state UI on Shopify settings page
-- Connection Status card showing:
-  - Green checkmark Badge with "Connected"
-  - Store URL display
-  - Last sync timestamp with relative time (e.g., "2 hours ago")
-  - Sync status badge: success (green), partial (yellow), failed (red)
-- Sync Options card with checkboxes (UI only, no backend persistence):
-  - "Auto-sync products when changed in Shopify" (default checked)
-  - "Create orders in Shopify" (default checked)
-  - "Sync order status back to Shopify" (default unchecked)
-- Created SyncStatusBadge component for status visualization
-- Created SyncOption component for checkbox with label and description
-
-**Files changed:**
-- apps/web/src/routes/settings_.integrations_.shopify.tsx (+109 lines)
-- apps/web/src/routeTree.gen.ts (auto-generated)
-
-**Learnings for future iterations:**
-- date-fns formatDistanceToNow with { addSuffix: true } gives nice "2 hours ago" format
-- Badge variant="warning" for yellow/amber status
-- Checkbox component uses onCheckedChange with value check (value === true)
-
-**Verification:**
-- LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S09 - Display Shopify connection status and options (commit 3994c4f)
-
----
-
-## 2026-01-21 10:55 - S10: Implement initial product import mutation
-
-**What was implemented:**
-- Created shopify.importProducts action in packages/backend/convex/shopify.ts
-- Uses Shopify Admin GraphQL API to fetch products with pagination (50 per page)
-- GraphQL query fetches: id, title, descriptionHtml, status, images, variants (id, title, price, sku, inventoryQuantity)
-- Skips products with status != "ACTIVE"
-- Each variant imported as separate Echo product:
-  - Name: "Product Title" or "Product Title - Variant Title" (skips "Default Title")
-  - Price: converted from dollars string to cents integer
-  - Available: based on inventoryQuantity > 0
-- Created getConnectionInternal internalQuery for secure access token fetch
-- Created upsertProduct internalMutation:
-  - Checks existing by shopifyProductId + shopifyVariantId
-  - Updates existing or creates new with source='shopify'
-  - Sets lastShopifySyncAt on all synced products
-- Created updateSyncStatus internalMutation to update connection lastSyncAt/lastSyncStatus
-- Returns { imported, skipped, errors } summary
-- Handles pagination with cursor-based approach
-
-**Files changed:**
-- packages/backend/convex/shopify.ts (+318 lines)
-
-**Learnings for future iterations:**
-- Shopify GraphQL API uses cursor-based pagination with pageInfo.hasNextPage and endCursor
-- Shopify product status is uppercase: "ACTIVE", "DRAFT", "ARCHIVED"
-- Shopify price is a string representing dollars (e.g., "19.99"), needs conversion to cents
-- Use internalQuery for reading sensitive data like access tokens in actions
-
-**Verification:**
-- LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S10 - Implement initial product import mutation (commit 31a6b7a)
-
----
-
-## 2026-01-21 11:00 - S11: Create product import UI with progress
-
-**What was implemented:**
-- Added Products card to Shopify settings page (visible when connected)
-- Import Products button triggers shopify.importProducts action
-- Button shows loading state with spinner during import
-- Disabled while import in progress to prevent double-clicks
-- Toast notifications:
-  - Success: "Imported X products successfully!"
-  - Partial: "Imported X products with Y errors. Skipped Z products."
-  - Error: Shows first error message
-- View Products link navigates to /products page
-
-**Files changed:**
-- apps/web/src/routes/settings_.integrations_.shopify.tsx (+76 lines)
-
-**Learnings for future iterations:**
-- useAction for Convex actions (vs useMutation for mutations)
-- toast.warning for partial success states
-
-**Verification:**
-- LSP diagnostics: no errors
-- apps/web tsc --noEmit: passes
-- Committed as: feat: S11 - Create product import UI with progress (commit 7bfef28)
-
----
-
-## 2026-01-21 10:45 - S12: Create Shopify webhook HTTP route
-
-**What was implemented:**
-- Added POST /webhook/shopify route in packages/backend/convex/http.ts
-- Extracts X-Shopify-Shop-Domain, X-Shopify-Topic, X-Shopify-Hmac-SHA256 headers
-- Implemented verifyShopifySignature() using pure JavaScript HMAC-SHA256 with base64 output
-- Returns 401 Unauthorized for invalid signatures
-- Parses JSON body and routes to internal shopify.handleWebhook action
-- Returns 200 OK immediately, processes webhook asynchronously to avoid timeout
-- Created handleWebhook internalAction stub in shopify.ts (full implementation in S13)
-- Created getConnectionByShop internalQuery to look up connection by shop domain
-
-**Files changed:**
-- packages/backend/convex/http.ts (+54 lines for route, +51 lines for HMAC verification)
-- packages/backend/convex/shopify.ts (+45 lines for handleWebhook and getConnectionByShop)
-- packages/backend/convex/_generated/api.d.ts (auto-generated)
-
-**Learnings for future iterations:**
-- Shopify webhook HMAC is base64-encoded, unlike Stripe which uses hex
-- Use internalAction (not action) when calling from httpAction via internal.module.function
-- Must run `bunx convex codegen` after adding internal functions to regenerate API types
-
-**Verification:**
-- bunx convex codegen: passes
-- bunx tsc --noEmit in apps/web: passes
-- Committed as: feat: S12 - Create Shopify webhook HTTP route (commit c2cb714)

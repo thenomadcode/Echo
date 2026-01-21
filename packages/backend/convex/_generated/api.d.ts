@@ -24,6 +24,7 @@ import type * as auth from "../auth.js";
 import type * as businesses from "../businesses.js";
 import type * as categories from "../categories.js";
 import type * as conversations from "../conversations.js";
+import type * as dashboard from "../dashboard.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   businesses: typeof businesses;
   categories: typeof categories;
   conversations: typeof conversations;
+  dashboard: typeof dashboard;
   healthCheck: typeof healthCheck;
   http: typeof http;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;

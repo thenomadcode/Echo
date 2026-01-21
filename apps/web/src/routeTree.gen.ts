@@ -11,24 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestAiRouteImport } from './routes/test-ai'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ConversationsRouteImport } from './routes/conversations'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProductsIndexRouteImport } from './routes/products/index'
-import { Route as SettingsWhatsappRouteImport } from './routes/settings_.whatsapp'
-import { Route as SettingsIntegrationsRouteImport } from './routes/settings_.integrations'
-import { Route as SettingsAiRouteImport } from './routes/settings_.ai'
-import { Route as ProductsNewRouteImport } from './routes/products/new'
-import { Route as ProductsCategoriesRouteImport } from './routes/products/categories'
-import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
-import { Route as OrdersOrderIdRouteImport } from './routes/orders_.$orderId'
-import { Route as ConversationsConversationIdRouteImport } from './routes/conversations_.$conversationId'
-import { Route as SettingsIntegrationsShopifyRouteImport } from './routes/settings_.integrations_.shopify'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConversationsRouteImport } from './routes/_authenticated/conversations'
+import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings_.whatsapp'
+import { Route as AuthenticatedSettingsAiRouteImport } from './routes/_authenticated/settings_.ai'
+import { Route as AuthenticatedProductsNewRouteImport } from './routes/_authenticated/products/new'
+import { Route as AuthenticatedProductsCategoriesRouteImport } from './routes/_authenticated/products/categories'
+import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products/$productId'
+import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders.$orderId'
+import { Route as AuthenticatedConversationsConversationIdRouteImport } from './routes/_authenticated/conversations.$conversationId'
 
 const TestAiRoute = TestAiRouteImport.update({
   id: '/test-ai',
@@ -38,16 +37,6 @@ const TestAiRoute = TestAiRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersRoute = OrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -60,14 +49,8 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConversationsRoute = ConversationsRouteImport.update({
-  id: '/conversations',
-  path: '/conversations',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -75,221 +58,214 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProductsIndexRoute = ProductsIndexRouteImport.update({
-  id: '/products/',
-  path: '/products/',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const SettingsWhatsappRoute = SettingsWhatsappRouteImport.update({
-  id: '/settings_/whatsapp',
-  path: '/settings/whatsapp',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
-  id: '/settings_/integrations',
-  path: '/settings/integrations',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const SettingsAiRoute = SettingsAiRouteImport.update({
-  id: '/settings_/ai',
-  path: '/settings/ai',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsNewRoute = ProductsNewRouteImport.update({
-  id: '/products/new',
-  path: '/products/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsCategoriesRoute = ProductsCategoriesRouteImport.update({
-  id: '/products/categories',
-  path: '/products/categories',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
-  id: '/products/$productId',
-  path: '/products/$productId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
-  id: '/orders_/$orderId',
-  path: '/orders/$orderId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConversationsConversationIdRoute =
-  ConversationsConversationIdRouteImport.update({
-    id: '/conversations_/$conversationId',
-    path: '/conversations/$conversationId',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedConversationsRoute =
+  AuthenticatedConversationsRouteImport.update({
+    id: '/conversations',
+    path: '/conversations',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const SettingsIntegrationsShopifyRoute =
-  SettingsIntegrationsShopifyRouteImport.update({
-    id: '/settings_/integrations_/shopify',
-    path: '/settings/integrations/shopify',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedProductsIndexRoute =
+  AuthenticatedProductsIndexRouteImport.update({
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsWhatsappRoute =
+  AuthenticatedSettingsWhatsappRouteImport.update({
+    id: '/settings_/whatsapp',
+    path: '/settings/whatsapp',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsAiRoute = AuthenticatedSettingsAiRouteImport.update({
+  id: '/settings_/ai',
+  path: '/settings/ai',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProductsNewRoute =
+  AuthenticatedProductsNewRouteImport.update({
+    id: '/products/new',
+    path: '/products/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProductsCategoriesRoute =
+  AuthenticatedProductsCategoriesRouteImport.update({
+    id: '/products/categories',
+    path: '/products/categories',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProductsProductIdRoute =
+  AuthenticatedProductsProductIdRouteImport.update({
+    id: '/products/$productId',
+    path: '/products/$productId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedOrdersOrderIdRoute =
+  AuthenticatedOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => AuthenticatedOrdersRoute,
+  } as any)
+const AuthenticatedConversationsConversationIdRoute =
+  AuthenticatedConversationsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => AuthenticatedConversationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/conversations': typeof ConversationsRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/orders': typeof OrdersRoute
-  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
-  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/products/categories': typeof ProductsCategoriesRoute
-  '/products/new': typeof ProductsNewRoute
-  '/settings/ai': typeof SettingsAiRoute
-  '/settings/integrations': typeof SettingsIntegrationsRoute
-  '/settings/whatsapp': typeof SettingsWhatsappRoute
-  '/products': typeof ProductsIndexRoute
+  '/conversations': typeof AuthenticatedConversationsRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/conversations/$conversationId': typeof AuthenticatedConversationsConversationIdRoute
+  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/products/categories': typeof AuthenticatedProductsCategoriesRoute
+  '/products/new': typeof AuthenticatedProductsNewRoute
+  '/settings/ai': typeof AuthenticatedSettingsAiRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/settings/integrations/shopify': typeof SettingsIntegrationsShopifyRoute
+  '/products': typeof AuthenticatedProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/conversations': typeof ConversationsRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/orders': typeof OrdersRoute
-  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
-  '/conversations/$conversationId': typeof ConversationsConversationIdRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/products/categories': typeof ProductsCategoriesRoute
-  '/products/new': typeof ProductsNewRoute
-  '/settings/ai': typeof SettingsAiRoute
-  '/settings/integrations': typeof SettingsIntegrationsRoute
-  '/settings/whatsapp': typeof SettingsWhatsappRoute
-  '/products': typeof ProductsIndexRoute
+  '/conversations': typeof AuthenticatedConversationsRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/conversations/$conversationId': typeof AuthenticatedConversationsConversationIdRoute
+  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/products/categories': typeof AuthenticatedProductsCategoriesRoute
+  '/products/new': typeof AuthenticatedProductsNewRoute
+  '/settings/ai': typeof AuthenticatedSettingsAiRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/settings/integrations/shopify': typeof SettingsIntegrationsShopifyRoute
+  '/products': typeof AuthenticatedProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/conversations': typeof ConversationsRoute
-  '/dashboard': typeof DashboardRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/orders': typeof OrdersRoute
-  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/test-ai': typeof TestAiRoute
-  '/conversations_/$conversationId': typeof ConversationsConversationIdRoute
-  '/orders_/$orderId': typeof OrdersOrderIdRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/products/categories': typeof ProductsCategoriesRoute
-  '/products/new': typeof ProductsNewRoute
-  '/settings_/ai': typeof SettingsAiRoute
-  '/settings_/integrations': typeof SettingsIntegrationsRoute
-  '/settings_/whatsapp': typeof SettingsWhatsappRoute
-  '/products/': typeof ProductsIndexRoute
+  '/_authenticated/conversations': typeof AuthenticatedConversationsRouteWithChildren
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/conversations/$conversationId': typeof AuthenticatedConversationsConversationIdRoute
+  '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/_authenticated/products/categories': typeof AuthenticatedProductsCategoriesRoute
+  '/_authenticated/products/new': typeof AuthenticatedProductsNewRoute
+  '/_authenticated/settings_/ai': typeof AuthenticatedSettingsAiRoute
+  '/_authenticated/settings_/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/settings_/integrations_/shopify': typeof SettingsIntegrationsShopifyRoute
+  '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/conversations'
-    | '/dashboard'
     | '/login'
     | '/onboarding'
-    | '/orders'
-    | '/settings'
     | '/signup'
     | '/test-ai'
+    | '/conversations'
+    | '/dashboard'
+    | '/orders'
+    | '/settings'
     | '/conversations/$conversationId'
     | '/orders/$orderId'
     | '/products/$productId'
     | '/products/categories'
     | '/products/new'
     | '/settings/ai'
-    | '/settings/integrations'
     | '/settings/whatsapp'
-    | '/products'
     | '/api/auth/$'
-    | '/settings/integrations/shopify'
+    | '/products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/conversations'
-    | '/dashboard'
     | '/login'
     | '/onboarding'
-    | '/orders'
-    | '/settings'
     | '/signup'
     | '/test-ai'
+    | '/conversations'
+    | '/dashboard'
+    | '/orders'
+    | '/settings'
     | '/conversations/$conversationId'
     | '/orders/$orderId'
     | '/products/$productId'
     | '/products/categories'
     | '/products/new'
     | '/settings/ai'
-    | '/settings/integrations'
     | '/settings/whatsapp'
-    | '/products'
     | '/api/auth/$'
-    | '/settings/integrations/shopify'
+    | '/products'
   id:
     | '__root__'
     | '/'
-    | '/conversations'
-    | '/dashboard'
+    | '/_authenticated'
     | '/login'
     | '/onboarding'
-    | '/orders'
-    | '/settings'
     | '/signup'
     | '/test-ai'
-    | '/conversations_/$conversationId'
-    | '/orders_/$orderId'
-    | '/products/$productId'
-    | '/products/categories'
-    | '/products/new'
-    | '/settings_/ai'
-    | '/settings_/integrations'
-    | '/settings_/whatsapp'
-    | '/products/'
+    | '/_authenticated/conversations'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/orders'
+    | '/_authenticated/settings'
+    | '/_authenticated/conversations/$conversationId'
+    | '/_authenticated/orders/$orderId'
+    | '/_authenticated/products/$productId'
+    | '/_authenticated/products/categories'
+    | '/_authenticated/products/new'
+    | '/_authenticated/settings_/ai'
+    | '/_authenticated/settings_/whatsapp'
     | '/api/auth/$'
-    | '/settings_/integrations_/shopify'
+    | '/_authenticated/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConversationsRoute: typeof ConversationsRoute
-  DashboardRoute: typeof DashboardRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
-  OrdersRoute: typeof OrdersRoute
-  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   TestAiRoute: typeof TestAiRoute
-  ConversationsConversationIdRoute: typeof ConversationsConversationIdRoute
-  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
-  ProductsProductIdRoute: typeof ProductsProductIdRoute
-  ProductsCategoriesRoute: typeof ProductsCategoriesRoute
-  ProductsNewRoute: typeof ProductsNewRoute
-  SettingsAiRoute: typeof SettingsAiRoute
-  SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
-  SettingsWhatsappRoute: typeof SettingsWhatsappRoute
-  ProductsIndexRoute: typeof ProductsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  SettingsIntegrationsShopifyRoute: typeof SettingsIntegrationsShopifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -308,20 +284,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orders': {
-      id: '/orders'
-      path: '/orders'
-      fullPath: '/orders'
-      preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -336,18 +298,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/conversations': {
-      id: '/conversations'
-      path: '/conversations'
-      fullPath: '/conversations'
-      preLoaderRoute: typeof ConversationsRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -357,75 +312,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/products/': {
-      id: '/products/'
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/orders': {
+      id: '/_authenticated/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AuthenticatedOrdersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/conversations': {
+      id: '/_authenticated/conversations'
+      path: '/conversations'
+      fullPath: '/conversations'
+      preLoaderRoute: typeof AuthenticatedConversationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/products/': {
+      id: '/_authenticated/products/'
       path: '/products'
       fullPath: '/products'
-      preLoaderRoute: typeof ProductsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings_/whatsapp': {
-      id: '/settings_/whatsapp'
-      path: '/settings/whatsapp'
-      fullPath: '/settings/whatsapp'
-      preLoaderRoute: typeof SettingsWhatsappRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings_/integrations': {
-      id: '/settings_/integrations'
-      path: '/settings/integrations'
-      fullPath: '/settings/integrations'
-      preLoaderRoute: typeof SettingsIntegrationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings_/ai': {
-      id: '/settings_/ai'
-      path: '/settings/ai'
-      fullPath: '/settings/ai'
-      preLoaderRoute: typeof SettingsAiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products/new': {
-      id: '/products/new'
-      path: '/products/new'
-      fullPath: '/products/new'
-      preLoaderRoute: typeof ProductsNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products/categories': {
-      id: '/products/categories'
-      path: '/products/categories'
-      fullPath: '/products/categories'
-      preLoaderRoute: typeof ProductsCategoriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products/$productId': {
-      id: '/products/$productId'
-      path: '/products/$productId'
-      fullPath: '/products/$productId'
-      preLoaderRoute: typeof ProductsProductIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orders_/$orderId': {
-      id: '/orders_/$orderId'
-      path: '/orders/$orderId'
-      fullPath: '/orders/$orderId'
-      preLoaderRoute: typeof OrdersOrderIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/conversations_/$conversationId': {
-      id: '/conversations_/$conversationId'
-      path: '/conversations/$conversationId'
-      fullPath: '/conversations/$conversationId'
-      preLoaderRoute: typeof ConversationsConversationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings_/integrations_/shopify': {
-      id: '/settings_/integrations_/shopify'
-      path: '/settings/integrations/shopify'
-      fullPath: '/settings/integrations/shopify'
-      preLoaderRoute: typeof SettingsIntegrationsShopifyRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -434,30 +354,122 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings_/whatsapp': {
+      id: '/_authenticated/settings_/whatsapp'
+      path: '/settings/whatsapp'
+      fullPath: '/settings/whatsapp'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings_/ai': {
+      id: '/_authenticated/settings_/ai'
+      path: '/settings/ai'
+      fullPath: '/settings/ai'
+      preLoaderRoute: typeof AuthenticatedSettingsAiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/products/new': {
+      id: '/_authenticated/products/new'
+      path: '/products/new'
+      fullPath: '/products/new'
+      preLoaderRoute: typeof AuthenticatedProductsNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/products/categories': {
+      id: '/_authenticated/products/categories'
+      path: '/products/categories'
+      fullPath: '/products/categories'
+      preLoaderRoute: typeof AuthenticatedProductsCategoriesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/products/$productId': {
+      id: '/_authenticated/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof AuthenticatedProductsProductIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/orders/$orderId': {
+      id: '/_authenticated/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof AuthenticatedOrdersOrderIdRouteImport
+      parentRoute: typeof AuthenticatedOrdersRoute
+    }
+    '/_authenticated/conversations/$conversationId': {
+      id: '/_authenticated/conversations/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/conversations/$conversationId'
+      preLoaderRoute: typeof AuthenticatedConversationsConversationIdRouteImport
+      parentRoute: typeof AuthenticatedConversationsRoute
+    }
   }
 }
 
+interface AuthenticatedConversationsRouteChildren {
+  AuthenticatedConversationsConversationIdRoute: typeof AuthenticatedConversationsConversationIdRoute
+}
+
+const AuthenticatedConversationsRouteChildren: AuthenticatedConversationsRouteChildren =
+  {
+    AuthenticatedConversationsConversationIdRoute:
+      AuthenticatedConversationsConversationIdRoute,
+  }
+
+const AuthenticatedConversationsRouteWithChildren =
+  AuthenticatedConversationsRoute._addFileChildren(
+    AuthenticatedConversationsRouteChildren,
+  )
+
+interface AuthenticatedOrdersRouteChildren {
+  AuthenticatedOrdersOrderIdRoute: typeof AuthenticatedOrdersOrderIdRoute
+}
+
+const AuthenticatedOrdersRouteChildren: AuthenticatedOrdersRouteChildren = {
+  AuthenticatedOrdersOrderIdRoute: AuthenticatedOrdersOrderIdRoute,
+}
+
+const AuthenticatedOrdersRouteWithChildren =
+  AuthenticatedOrdersRoute._addFileChildren(AuthenticatedOrdersRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRouteWithChildren
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRouteWithChildren
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedProductsProductIdRoute: typeof AuthenticatedProductsProductIdRoute
+  AuthenticatedProductsCategoriesRoute: typeof AuthenticatedProductsCategoriesRoute
+  AuthenticatedProductsNewRoute: typeof AuthenticatedProductsNewRoute
+  AuthenticatedSettingsAiRoute: typeof AuthenticatedSettingsAiRoute
+  AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
+  AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedConversationsRoute: AuthenticatedConversationsRouteWithChildren,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedOrdersRoute: AuthenticatedOrdersRouteWithChildren,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedProductsProductIdRoute: AuthenticatedProductsProductIdRoute,
+  AuthenticatedProductsCategoriesRoute: AuthenticatedProductsCategoriesRoute,
+  AuthenticatedProductsNewRoute: AuthenticatedProductsNewRoute,
+  AuthenticatedSettingsAiRoute: AuthenticatedSettingsAiRoute,
+  AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
+  AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConversationsRoute: ConversationsRoute,
-  DashboardRoute: DashboardRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
-  OrdersRoute: OrdersRoute,
-  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   TestAiRoute: TestAiRoute,
-  ConversationsConversationIdRoute: ConversationsConversationIdRoute,
-  OrdersOrderIdRoute: OrdersOrderIdRoute,
-  ProductsProductIdRoute: ProductsProductIdRoute,
-  ProductsCategoriesRoute: ProductsCategoriesRoute,
-  ProductsNewRoute: ProductsNewRoute,
-  SettingsAiRoute: SettingsAiRoute,
-  SettingsIntegrationsRoute: SettingsIntegrationsRoute,
-  SettingsWhatsappRoute: SettingsWhatsappRoute,
-  ProductsIndexRoute: ProductsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  SettingsIntegrationsShopifyRoute: SettingsIntegrationsShopifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
