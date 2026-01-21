@@ -1,5 +1,29 @@
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
+- Environment variables: use z.string().optional() for optional vars, z.string().default() for vars with defaults
+
+---
+
+## 2026-01-21 10:24 - S03: Add Shopify environment variables to env package
+
+**What was implemented:**
+- Added SHOPIFY_API_KEY (z.string().optional()) to packages/env/src/server.ts
+- Added SHOPIFY_API_SECRET (z.string().min(32).optional()) to packages/env/src/server.ts
+- Added SHOPIFY_SCOPES (z.string().default("read_products,write_orders,read_orders")) to packages/env/src/server.ts
+- Updated packages/backend/.env.local.example with placeholder values for all Shopify env vars
+- Documented required scopes in .env.local.example comment
+
+**Files changed:**
+- packages/env/src/server.ts (+4 lines)
+- packages/backend/.env.local.example (+5 lines)
+
+**Verification:**
+- bun run check-types: passes
+- Committed as: feat: S03 - Add Shopify environment variables to env package (commit 1fb37e4)
+
+---
+
+## Codebase Patterns (continued)
 - Auth pattern: `authComponent.safeGetAuthUser(ctx)` returns authUser with `userId` property - always check `!authUser || !authUser.userId`
 - After auth check, store userId in const: `const userId = authUser.userId;` to avoid TypeScript narrowing issues
 - Owner references use `ownerId: v.string()` (not v.id) since authUser.userId is a string

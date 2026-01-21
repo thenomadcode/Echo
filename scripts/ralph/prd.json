@@ -46,7 +46,7 @@
       "id": "S03",
       "title": "Add Shopify environment variables to env package",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update packages/env/src/server.ts to add Shopify env vars",
