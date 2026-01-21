@@ -2,7 +2,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Loader2, ShoppingBag, Download, Package, RefreshCw } from "lucide-react";
+import { ArrowLeft, Check, Loader2, ShoppingBag, Download, Package, RefreshCw, Unlink } from "lucide-react";
 import { toast } from "sonner";
 
 import SignInForm from "@/components/sign-in-form";
@@ -16,6 +16,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SyncStatus } from "@/components/shopify/SyncStatus";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/settings_/integrations_/shopify")({
   component: ShopifySettingsPage,
@@ -56,8 +67,11 @@ function ShopifySettingsContent() {
   const getAuthUrl = useMutation(api.shopify.getAuthUrl);
   const importProducts = useAction(api.shopify.importProducts);
   const syncProducts = useAction(api.shopify.syncProducts);
+  const disconnectShopify = useAction(api.shopify.disconnect);
   const [isImporting, setIsImporting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -153,6 +167,33 @@ function ShopifySettingsContent() {
       toast.error(message);
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!activeBusinessId) {
+      toast.error("No active business selected");
+      return;
+    }
+
+    setIsDisconnecting(true);
+
+    try {
+      const result = await disconnectShopify({
+        businessId: activeBusinessId as never,
+      });
+
+      if (result.success) {
+        toast.success("Shopify disconnected successfully");
+        setShowDisconnectDialog(false);
+      } else {
+        toast.error(result.error ?? "Failed to disconnect");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Disconnect failed";
+      toast.error(message);
+    } finally {
+      setIsDisconnecting(false);
     }
   };
 
@@ -398,6 +439,69 @@ function ShopifySettingsContent() {
                   description="Order status updates in Echo will be reflected in Shopify"
                   defaultChecked={false}
                 />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Danger Zone</CardTitle>
+                <CardDescription>
+                  Irreversible actions for this integration
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Unlink className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="text-sm font-medium">Disconnect Shopify</p>
+                      <p className="text-xs text-muted-foreground">
+                        Remove the connection to your Shopify store
+                      </p>
+                    </div>
+                  </div>
+                  <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+                    <AlertDialogTrigger
+                      render={
+                        <Button variant="destructive" disabled={isDisconnecting}>
+                          {isDisconnecting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Disconnecting...
+                            </>
+                          ) : (
+                            "Disconnect"
+                          )}
+                        </Button>
+                      }
+                    />
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Disconnect Shopify?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Products will remain in Echo but sync will stop. Webhook subscriptions 
+                          will be removed. You can reconnect anytime.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDisconnect}
+                          disabled={isDisconnecting}
+                        >
+                          {isDisconnecting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Disconnecting...
+                            </>
+                          ) : (
+                            "Disconnect"
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardContent>
             </Card>
           </div>
