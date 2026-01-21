@@ -203,16 +203,16 @@ function ConversationDetailPage() {
                   </Button>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Hand back to AI?</AlertDialogTitle>
+                      <AlertDialogTitle>Hand Back to AI</AlertDialogTitle>
                       <AlertDialogDescription>
-                        AI will resume handling this conversation. The customer will receive automated responses.
+                        Are you sure you want to hand this conversation back to the AI assistant?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>Keep Control</AlertDialogCancel>
                       <AlertDialogAction onClick={handleHandBack} disabled={isProcessing}>
                         {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirm
+                        Hand Back
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

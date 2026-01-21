@@ -139,7 +139,7 @@
       "id": "S08",
       "title": "Replace window.confirm with AlertDialog in orders",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/orders_.$orderId.tsx line ~136",
@@ -158,7 +158,7 @@
       "id": "S09",
       "title": "Replace window.confirm with AlertDialog in conversations",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/conversations_.$conversationId.tsx line ~157",
@@ -176,7 +176,7 @@
       "id": "S10",
       "title": "Replace inline modals with AlertDialog in products",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/products/$productId.tsx for single product delete",

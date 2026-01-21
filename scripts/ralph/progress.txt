@@ -24,6 +24,31 @@
 
 ---
 
+## 2026-01-21 14:54 - S08, S09, S10: Replace window.confirm and inline modals with AlertDialog
+
+**What was implemented:**
+- S08: Already implemented - orders.$orderId.tsx already had AlertDialog for Cancel Order
+- S09: Updated conversations.$conversationId.tsx Hand Back dialog text to match spec:
+  - Title: "Hand Back to AI"
+  - Description: "Are you sure you want to hand this conversation back to the AI assistant?"
+  - Cancel button: "Keep Control"
+  - Confirm button: "Hand Back"
+- S10: Replaced custom inline modals with AlertDialog in products:
+  - products/$productId.tsx: Single product delete dialog
+  - products/index.tsx: Bulk delete dialog
+  - Both have consistent styling with destructive confirm button
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (dialog text update)
+- apps/web/src/routes/_authenticated/products/$productId.tsx (replaced custom modal)
+- apps/web/src/routes/_authenticated/products/index.tsx (replaced custom modal)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+
+---
+
 ## 2026-01-21 15:15 - S07: Remove duplicated navigation from all page components
 
 **What was implemented:**
