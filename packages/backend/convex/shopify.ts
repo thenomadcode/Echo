@@ -1464,6 +1464,125 @@ export const updateOrderWithShopifyInfo = internalMutation({
   },
 });
 
+export const disconnect = action({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    const authResult = await ctx.runQuery(internal.shopify.verifyBusinessOwnership, {
+      businessId: args.businessId,
+    });
+
+    if (!authResult.authorized) {
+      return { success: false, error: authResult.error ?? "Not authorized" };
+    }
+
+    const connection = await ctx.runQuery(internal.shopify.getConnectionForDisconnect, {
+      businessId: args.businessId,
+    });
+
+    if (!connection) {
+      return { success: false, error: "No Shopify connection found" };
+    }
+
+    const { shop, accessToken, webhookIds } = connection;
+
+    if (webhookIds && webhookIds.length > 0) {
+      for (const webhookId of webhookIds) {
+        try {
+          await fetch(
+            `https://${shop}/admin/api/2024-01/webhooks/${webhookId}.json`,
+            {
+              method: "DELETE",
+              headers: {
+                "X-Shopify-Access-Token": accessToken,
+              },
+            }
+          );
+        } catch (err) {
+          console.warn(`Failed to delete webhook ${webhookId}:`, err);
+        }
+      }
+    }
+
+    try {
+      await fetch(
+        `https://${shop}/admin/api/2024-01/access_tokens/current.json`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Shopify-Access-Token": accessToken,
+          },
+        }
+      );
+    } catch (err) {
+      console.warn(`Failed to revoke access token:`, err);
+    }
+
+    await ctx.runMutation(internal.shopify.deleteConnectionAndClearProducts, {
+      businessId: args.businessId,
+    });
+
+    return { success: true };
+  },
+});
+
+export const getConnectionForDisconnect = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    return {
+      shop: connection.shop,
+      accessToken: connection.accessToken,
+      webhookIds: connection.webhookIds,
+    };
+  },
+});
+
+export const deleteConnectionAndClearProducts = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (connection) {
+      await ctx.db.delete(connection._id);
+    }
+
+    const shopifyProducts = await ctx.db
+      .query("products")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .filter((q) => q.eq(q.field("source"), "shopify"))
+      .collect();
+
+    const now = Date.now();
+
+    for (const product of shopifyProducts) {
+      await ctx.db.patch(product._id, {
+        source: "manual",
+        shopifyProductId: undefined,
+        shopifyVariantId: undefined,
+        lastShopifySyncAt: undefined,
+        updatedAt: now,
+      });
+    }
+  },
+});
+
 export const createOrderInternal = internalAction({
   args: {
     orderId: v.id("orders"),
