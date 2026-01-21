@@ -1,0 +1,83 @@
+import { api } from "@echo/backend/convex/_generated/api";
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { Authenticated, AuthLoading, Unauthenticated, useQuery } from "convex/react";
+import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+
+import { AppHeader } from "@/components/layout/AppHeader";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { Sidebar } from "@/components/layout/Sidebar";
+import SignInForm from "@/components/sign-in-form";
+
+export const Route = createFileRoute("/_authenticated")({
+  component: AuthenticatedLayout,
+  beforeLoad: async ({ context }) => {
+    if (!context.isAuthenticated) {
+      throw redirect({ to: "/login" });
+    }
+  },
+});
+
+function AuthenticatedLayout() {
+  return (
+    <>
+      <Authenticated>
+        <AuthenticatedShell />
+      </Authenticated>
+      <Unauthenticated>
+        <div className="flex min-h-screen items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            <SignInForm />
+          </div>
+        </div>
+      </Unauthenticated>
+      <AuthLoading>
+        <LoadingState />
+      </AuthLoading>
+    </>
+  );
+}
+
+function AuthenticatedShell() {
+  const navigate = useNavigate();
+  const businesses = useQuery(api.businesses.list);
+
+  useEffect(() => {
+    if (businesses !== undefined && businesses.length === 0) {
+      navigate({ to: "/onboarding" });
+    }
+  }, [businesses, navigate]);
+
+  if (businesses === undefined) {
+    return <LoadingState message="Loading your businesses..." />;
+  }
+
+  if (businesses.length === 0) {
+    return <LoadingState message="Redirecting to onboarding..." />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+
+      <div className="lg:pl-64">
+        <AppHeader />
+
+        <main className="pb-20 lg:pb-0">
+          <Outlet />
+        </main>
+      </div>
+
+      <BottomNav />
+    </div>
+  );
+}
+
+function LoadingState({ message = "Loading..." }: { message?: string }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  );
+}

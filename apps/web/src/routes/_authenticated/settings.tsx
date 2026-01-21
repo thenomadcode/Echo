@@ -1,23 +1,18 @@
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
 import { api } from "@echo/backend/convex/_generated/api";
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery } from "convex/react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery } from "convex/react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { MessageCircle, ChevronRight } from "lucide-react";
 
-import SignInForm from "@/components/sign-in-form";
-import BusinessSwitcher from "@/components/business-switcher";
-import AppNav from "@/components/app-nav";
-import UserMenu from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
@@ -50,49 +45,18 @@ const DAYS_OF_WEEK = [
 ];
 
 function SettingsPage() {
-  return (
-    <>
-      <Authenticated>
-        <SettingsContent />
-      </Authenticated>
-      <Unauthenticated>
-        <div className="mx-auto mt-10 max-w-md p-6">
-          <SignInForm />
-        </div>
-      </Unauthenticated>
-      <AuthLoading>
-        <div className="flex items-center justify-center min-h-screen">
-          <div>Loading...</div>
-        </div>
-      </AuthLoading>
-    </>
-  );
-}
-
-function SettingsContent() {
-  const navigate = useNavigate();
   const businesses = useQuery(api.businesses.list);
   const updateBusiness = useMutation(api.businesses.update);
 
-  useEffect(() => {
-    if (businesses !== undefined && businesses.length === 0) {
-      navigate({ to: "/onboarding" });
-    }
-  }, [businesses, navigate]);
-
   if (businesses === undefined) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
-  if (businesses.length === 0) {
     return null;
   }
 
   const activeBusiness = businesses[0];
+
+  if (!activeBusiness) {
+    return null;
+  }
 
   return <SettingsForm business={activeBusiness} updateBusiness={updateBusiness} />;
 }
@@ -194,16 +158,8 @@ function SettingsForm({
   });
 
   return (
-    <div className="container mx-auto max-w-3xl py-8 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <BusinessSwitcher />
-          <AppNav />
-        </div>
-        <UserMenu />
-      </div>
-
-      <h1 className="text-3xl font-bold mb-6">Business Settings</h1>
+    <div className="container mx-auto max-w-4xl py-8 px-6">
+      <h1 className="text-2xl font-bold font-heading mb-6">Business Settings</h1>
 
       <form
         onSubmit={(e) => {
@@ -296,8 +252,8 @@ function SettingsForm({
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <option value="en">English</option>
-                      <option value="es">Spanish (Español)</option>
-                      <option value="pt">Portuguese (Português)</option>
+                      <option value="es">Spanish</option>
+                      <option value="pt">Portuguese</option>
                     </select>
                   </div>
                 )}
