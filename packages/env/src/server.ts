@@ -11,6 +11,10 @@ export const env = createEnv({
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    // Shopify integration
+    SHOPIFY_API_KEY: z.string().optional(),
+    SHOPIFY_API_SECRET: z.string().min(32).optional(),
+    SHOPIFY_SCOPES: z.string().default("read_products,write_orders,read_orders"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
