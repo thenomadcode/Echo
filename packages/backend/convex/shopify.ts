@@ -169,6 +169,14 @@ export const handleCallback = action({
         scopes,
       });
 
+      const webhookResult = await ctx.runAction(internal.shopify.registerWebhooks, {
+        businessId,
+      });
+
+      if (!webhookResult.success) {
+        console.warn(`Webhook registration had issues: ${webhookResult.errors.join(", ")}`);
+      }
+
       return { success: true, businessId };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -765,5 +773,207 @@ export const getConnectionStatus = query({
       lastSyncStatus: connection.lastSyncStatus ?? null,
       scopes: connection.scopes,
     };
+  },
+});
+
+type ShopifyWebhookResponse = {
+  webhook: {
+    id: number;
+    address: string;
+    topic: string;
+    created_at: string;
+    updated_at: string;
+    format: string;
+    fields: string[];
+    metafield_namespaces: string[];
+    api_version: string;
+    private_metafield_namespaces: string[];
+  };
+};
+
+type ShopifyWebhooksListResponse = {
+  webhooks: Array<{
+    id: number;
+    address: string;
+    topic: string;
+  }>;
+};
+
+type ShopifyWebhookErrorResponse = {
+  errors?: Record<string, string[]> | string;
+};
+
+const WEBHOOK_TOPICS = [
+  "products/create",
+  "products/update",
+  "products/delete",
+] as const;
+
+export const registerWebhooks = internalAction({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; webhookIds: string[]; errors: string[] }> => {
+    const connection = await ctx.runQuery(internal.shopify.getConnectionForWebhooks, {
+      businessId: args.businessId,
+    });
+
+    if (!connection) {
+      return { success: false, webhookIds: [], errors: ["No Shopify connection found"] };
+    }
+
+    const { shop, accessToken } = connection;
+    const siteUrl = process.env.CONVEX_SITE_URL ?? process.env.SITE_URL;
+
+    if (!siteUrl) {
+      return { success: false, webhookIds: [], errors: ["Site URL not configured"] };
+    }
+
+    const webhookAddress = `${siteUrl}/webhook/shopify`;
+    const webhookIds: string[] = [];
+    const errors: string[] = [];
+
+    try {
+      const existingWebhooks = await listExistingWebhooks(shop, accessToken);
+      const existingTopics = new Map<string, number>();
+      
+      for (const webhook of existingWebhooks) {
+        if (webhook.address === webhookAddress) {
+          existingTopics.set(webhook.topic, webhook.id);
+        }
+      }
+
+      for (const topic of WEBHOOK_TOPICS) {
+        if (existingTopics.has(topic)) {
+          const existingId = existingTopics.get(topic);
+          console.log(`Webhook for ${topic} already exists with ID ${existingId}`);
+          webhookIds.push(String(existingId));
+          continue;
+        }
+
+        try {
+          const webhookId = await registerSingleWebhook(shop, accessToken, topic, webhookAddress);
+          webhookIds.push(String(webhookId));
+          console.log(`Registered webhook for ${topic} with ID ${webhookId}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Unknown error";
+          errors.push(`Failed to register webhook for ${topic}: ${msg}`);
+          console.error(`Failed to register webhook for ${topic}:`, err);
+        }
+      }
+
+      if (webhookIds.length > 0) {
+        await ctx.runMutation(internal.shopify.updateWebhookIds, {
+          businessId: args.businessId,
+          webhookIds,
+        });
+      }
+
+      const success = webhookIds.length === WEBHOOK_TOPICS.length;
+      return { success, webhookIds, errors };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return { success: false, webhookIds, errors: [...errors, message] };
+    }
+  },
+});
+
+async function listExistingWebhooks(
+  shop: string,
+  accessToken: string
+): Promise<Array<{ id: number; topic: string; address: string }>> {
+  const response = await fetch(
+    `https://${shop}/admin/api/2024-01/webhooks.json`,
+    {
+      method: "GET",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    console.error(`Failed to list webhooks: ${response.status} ${response.statusText}`);
+    return [];
+  }
+
+  const data = (await response.json()) as ShopifyWebhooksListResponse;
+  return data.webhooks ?? [];
+}
+
+async function registerSingleWebhook(
+  shop: string,
+  accessToken: string,
+  topic: string,
+  address: string
+): Promise<number> {
+  const response = await fetch(
+    `https://${shop}/admin/api/2024-01/webhooks.json`,
+    {
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        webhook: {
+          topic,
+          address,
+          format: "json",
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = (await response.json()) as ShopifyWebhookErrorResponse;
+    const errorMessage = typeof errorData.errors === "string"
+      ? errorData.errors
+      : JSON.stringify(errorData.errors);
+    throw new Error(`Shopify API error ${response.status}: ${errorMessage}`);
+  }
+
+  const data = (await response.json()) as ShopifyWebhookResponse;
+  return data.webhook.id;
+}
+
+export const getConnectionForWebhooks = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    return {
+      shop: connection.shop,
+      accessToken: connection.accessToken,
+    };
+  },
+});
+
+export const updateWebhookIds = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    webhookIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (connection) {
+      await ctx.db.patch(connection._id, {
+        webhookIds: args.webhookIds,
+      });
+    }
   },
 });
