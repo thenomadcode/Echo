@@ -24,6 +24,35 @@
 
 ---
 
+## 2026-01-21 23:15 - S02: Initial Product Import
+
+**What was implemented:**
+- S02 was already fully implemented in the backend (shopify.importProducts action)
+- Backend implementation includes:
+  - Paginated GraphQL queries via SHOPIFY_PRODUCTS_QUERY (handles 1000+ products)
+  - Skips non-ACTIVE products (draft and archived)
+  - Each Shopify variant becomes a separate Echo product with shopifyVariantId
+  - Products marked with source: "shopify"
+  - upsertProduct mutation handles create/update logic
+  - Returns { imported, skipped, errors } for summary
+- Frontend already had Import Products button with loading spinner
+- Only fix needed: Updated toast message format from "Imported X products successfully!" to "Imported X products, skipped Y" to match PRD acceptance criteria
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/settings_.integrations_.shopify.tsx (toast message format)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+
+**Learnings for future iterations:**
+- Shopify GraphQL API uses cursor-based pagination with pageInfo.hasNextPage and endCursor
+- Shopify product status is uppercase in GraphQL response ("ACTIVE", not "active")
+- Shopify variant IDs in GraphQL are GID format: gid://shopify/ProductVariant/123456
+- Price comes as string in dollars, needs conversion to cents for storage
+
+---
+
 ## 2026-01-21 16:05 - S36: Dark mode verification across all pages
 
 **What was verified and fixed:**

@@ -25,7 +25,7 @@
       "id": "S02",
       "title": "Initial Product Import",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "'Import Products' button appears after Shopify connection",

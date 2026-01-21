@@ -91,7 +91,7 @@ function ShopifySettingsPage() {
       });
 
       if (result.errors.length === 0) {
-        toast.success(`Imported ${result.imported} products successfully!`);
+        toast.success(`Imported ${result.imported} products, skipped ${result.skipped}`);
       } else if (result.imported > 0) {
         toast.warning(
           `Imported ${result.imported} products with ${result.errors.length} errors. Skipped ${result.skipped} products.`
