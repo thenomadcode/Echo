@@ -447,7 +447,7 @@
       "id": "S24",
       "title": "Products page empty state",
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create empty state for products list",

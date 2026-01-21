@@ -2,7 +2,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { CheckCircle, FolderOpen, Grid, List, Loader2, Plus, Settings, Trash2, XCircle, X } from "lucide-react";
+import { CheckCircle, FolderOpen, Grid, List, Loader2, Plus, Settings, Trash2, XCircle, X, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -300,23 +300,31 @@ function ProductsPage({ businessId }: ProductsPageProps) {
           </div>
 
           {filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 rounded-full bg-muted p-6">
-                <Plus className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">No products found</h3>
-              <p className="mb-4 text-sm text-muted-foreground">
-                {products.length === 0
-                  ? "Get started by creating your first product"
-                  : "Try adjusting your filters or search query"}
-              </p>
-              {products.length === 0 && (
-                <Button onClick={() => navigate({ to: "/products/new" })}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Product
+            products.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-6 rounded-full bg-muted p-8">
+                  <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <h3 className="mb-3 text-xl font-semibold">Add your first product</h3>
+                <p className="mb-6 text-sm text-muted-foreground max-w-[360px]">
+                  Products you add will be available for customers to order through WhatsApp
+                </p>
+                <Button size="lg" onClick={() => navigate({ to: "/products/new" })}>
+                  <Plus className="mr-2 h-5 w-5" />
+                  Add Product
                 </Button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 rounded-full bg-muted p-6">
+                  <Plus className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">No products found</h3>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your filters or search query
+                </p>
+              </div>
+            )
           ) : viewMode === "grid" ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredProducts.map((product) => (

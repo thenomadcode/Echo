@@ -24,6 +24,27 @@
 
 ---
 
+## 2026-01-21 16:22 - S24: Products page empty state
+
+**What was implemented:**
+- Created dedicated empty state for when no products exist at all
+- Large ShoppingBag icon (h-12 w-12) in rounded container (p-8)
+- Heading: "Add your first product" with text-xl font-semibold
+- Subtext: "Products you add will be available for customers to order through WhatsApp"
+- Prominent "Add Product" CTA button with size="lg"
+- Increased vertical padding (py-16) for better visual centering
+- Separated empty state logic: no products vs filtered results empty
+- Filter results empty state kept simpler with just "No products found" message
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/products/index.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 16:18 - S23: Products page bulk action bar
 
 **What was implemented:**
