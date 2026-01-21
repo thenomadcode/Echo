@@ -24,6 +24,31 @@
 
 ---
 
+## 2026-01-21 15:30 - S28: Onboarding wizard step 1 - Business Info
+
+**What was implemented:**
+- Converted onboarding.tsx from single-form to 3-step wizard
+- Added ProgressIndicator component with 3 circles connected by lines:
+  - Shows completed steps with checkmark icon
+  - Active step highlighted with primary color
+  - Inactive steps grayed out
+- Step 1 (Business Info):
+  - Business Name (required, min 2 chars)
+  - Business Type dropdown (Restaurant, Pharmacy, Retail, Other)
+  - Description textarea (optional)
+  - Next button disabled until name is valid
+- Step state managed in React useState with WizardData interface
+- Data preserved between steps (back/next navigation)
+
+**Files changed:**
+- apps/web/src/routes/onboarding.tsx (complete rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:21 - S27: Auth pages split layout redesign
 
 **What was implemented:**

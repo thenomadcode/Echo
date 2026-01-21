@@ -524,7 +524,7 @@
       "id": "S28",
       "title": "Onboarding wizard step 1 - Business Info",
       "priority": 28,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/onboarding.tsx to multi-step wizard",
