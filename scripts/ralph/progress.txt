@@ -24,6 +24,35 @@
 
 ---
 
+## 2026-01-21 15:28 - S17: Conversations message bubbles and actions UI
+
+**What was implemented:**
+- Updated MessageBubble component with improved styling:
+  - Changed from rounded-lg to rounded-2xl for softer bubble appearance
+  - Increased padding from px-3 py-2 to px-4 py-3
+  - Added max-w-[80%] to prevent bubbles from being too wide
+- Visual distinction between message types:
+  - Customer messages: bg-secondary (left-aligned)
+  - AI messages: bg-muted with Bot icon indicator (right-aligned)
+  - Human agent messages: bg-primary (right-aligned) with User icon indicator
+- Added icon indicators (Bot/User from lucide-react) next to sender labels
+- Added proper spacing between message groups:
+  - Same sender as previous: mt-1 (small gap)
+  - Different sender: mt-4 (larger gap for visual separation)
+- Replaced date-fns formatDistanceToNow with custom relative time formatter
+- Added leading-relaxed for better text readability
+
+**Files changed:**
+- apps/web/src/components/conversation/MessageBubble.tsx (rewrote styling)
+- apps/web/src/routes/_authenticated/conversations.tsx (message group spacing)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (message group spacing)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 15:21 - S16: Conversations page text and styling improvements
 
 **What was implemented:**

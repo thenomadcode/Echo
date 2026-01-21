@@ -279,16 +279,24 @@ function ConversationDetailPage() {
                 <p className="text-sm text-muted-foreground">No messages yet</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
-                {messages.map((message) => (
-                  <MessageBubble
-                    key={message._id}
-                    sender={mapSender(message.sender)}
-                    content={message.content}
-                    timestamp={message.createdAt}
-                    mediaUrl={message.mediaUrl ?? undefined}
-                  />
-                ))}
+              <div className="flex flex-col">
+                {messages.map((message, index) => {
+                  const prevMessage = messages[index - 1];
+                  const isSameSenderAsPrevious = prevMessage && prevMessage.sender === message.sender;
+                  return (
+                    <div
+                      key={message._id}
+                      className={isSameSenderAsPrevious ? "mt-1" : "mt-4 first:mt-0"}
+                    >
+                      <MessageBubble
+                        sender={mapSender(message.sender)}
+                        content={message.content}
+                        timestamp={message.createdAt}
+                        mediaUrl={message.mediaUrl ?? undefined}
+                      />
+                    </div>
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
             )}
