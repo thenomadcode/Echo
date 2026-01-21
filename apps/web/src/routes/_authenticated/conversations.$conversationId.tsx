@@ -10,9 +10,9 @@ import { ArrowLeft, MessageSquare, ShoppingCart, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { StatusBadge } from "@/components/composed/StatusBadge";
 import { MessageBubble } from "@/components/conversation/MessageBubble";
 import { MessageInput } from "@/components/conversation/MessageInput";
-import { StatusBadge } from "@/components/conversation/StatusBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,8 +29,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export const Route = createFileRoute("/_authenticated/conversations/$conversationId")({
   component: ConversationDetailPage,
 });
-
-type ConversationStatus = "active" | "escalated" | "closed";
 
 function ConversationDetailPage() {
   const navigate = useNavigate();
@@ -179,7 +177,8 @@ function ConversationDetailPage() {
                 {conversation.customerId}
               </CardTitle>
               <StatusBadge
-                status={conversation.status as ConversationStatus}
+                status={conversation.status ?? "active"}
+                type="conversation"
                 assignedTo={conversation.assignedTo ?? undefined}
               />
             </div>

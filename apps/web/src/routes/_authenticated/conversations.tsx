@@ -10,9 +10,9 @@ import { MessageSquare, Search, ShoppingCart, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { StatusBadge } from "@/components/composed/StatusBadge";
 import { MessageBubble } from "@/components/conversation/MessageBubble";
 import { MessageInput } from "@/components/conversation/MessageInput";
-import { StatusBadge } from "@/components/conversation/StatusBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -192,7 +192,8 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                         </p>
                         <div className="mt-2">
                           <StatusBadge
-                            status={conversation.status as ConversationStatus}
+                            status={conversation.status ?? "active"}
+                            type="conversation"
                             assignedTo={conversation.assignedTo ?? undefined}
                           />
                         </div>
@@ -354,7 +355,8 @@ function ConversationDetail({ conversationId }: ConversationDetailProps) {
               {conversation.customerId}
             </CardTitle>
             <StatusBadge
-              status={conversation.status as ConversationStatus}
+              status={conversation.status ?? "active"}
+              type="conversation"
               assignedTo={conversation.assignedTo ?? undefined}
             />
           </div>

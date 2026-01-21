@@ -8,6 +8,7 @@ import { useQuery as useConvexQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 
+import { StatusBadge } from "@/components/composed/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,37 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
 });
 
 type OrderStatus = "draft" | "confirmed" | "paid" | "preparing" | "ready" | "delivered" | "cancelled";
-
-const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> = {
-  draft: { label: "Draft", className: "bg-gray-100 text-gray-700 border-gray-200" },
-  confirmed: { label: "Confirmed", className: "bg-blue-100 text-blue-700 border-blue-200" },
-  paid: { label: "Paid", className: "bg-green-100 text-green-700 border-green-200" },
-  preparing: { label: "Preparing", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  ready: { label: "Ready", className: "bg-orange-100 text-orange-700 border-orange-200" },
-  delivered: { label: "Delivered", className: "bg-teal-100 text-teal-700 border-teal-200" },
-  cancelled: { label: "Cancelled", className: "bg-red-100 text-red-700 border-red-200" },
-};
-
-function StatusBadge({ status }: { status: OrderStatus }) {
-  const config = STATUS_CONFIG[status];
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        config.className
-      )}
-    >
-      {config.label}
-    </span>
-  );
-}
 
 function OrdersPage() {
   const businesses = useConvexQuery(api.businesses.list, {});
@@ -176,7 +152,7 @@ function OrdersContent({ businessId }: OrdersContentProps) {
                   >
                     <TableCell className="font-medium">{order.orderNumber}</TableCell>
                     <TableCell>
-                      <StatusBadge status={order.status as OrderStatus} />
+                      <StatusBadge status={order.status} type="order" />
                     </TableCell>
                     <TableCell className="text-center">{order.items.length}</TableCell>
                     <TableCell className="text-right">
