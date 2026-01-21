@@ -263,4 +263,24 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.number(),
   }).index("by_user", ["userId", "read", "createdAt"]),
+
+  // Shopify Integration tables
+  shopifyConnections: defineTable({
+    businessId: v.id("businesses"),
+    shop: v.string(), // mystore.myshopify.com
+    accessToken: v.string(), // OAuth access token
+    scopes: v.array(v.string()), // granted OAuth scopes
+    webhookIds: v.optional(v.array(v.string())), // registered Shopify webhook IDs
+    lastSyncAt: v.optional(v.number()), // last successful sync timestamp
+    lastSyncStatus: v.optional(
+      v.union(
+        v.literal("success"),
+        v.literal("partial"),
+        v.literal("failed")
+      )
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_shop", ["shop"]),
 });
