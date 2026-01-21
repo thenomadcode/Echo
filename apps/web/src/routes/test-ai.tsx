@@ -10,6 +10,11 @@ import SignInForm from "@/components/sign-in-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/test-ai")({
   component: TestAIPage,
@@ -213,26 +218,38 @@ function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"busi
             </div>
             <div className="flex gap-2 items-center">
               <div className="flex border rounded-md">
-                <Button
-                  variant={processorMode === "agent" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setProcessorMode("agent")}
-                  className="rounded-r-none"
-                  title="Agent mode with tools"
-                >
-                  <Brain className="h-4 w-4 mr-1" />
-                  Agent
-                </Button>
-                <Button
-                  variant={processorMode === "intent" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setProcessorMode("intent")}
-                  className="rounded-l-none"
-                  title="Intent-based mode"
-                >
-                  <Cpu className="h-4 w-4 mr-1" />
-                  Intent
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant={processorMode === "agent" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setProcessorMode("agent")}
+                        className="rounded-r-none"
+                      />
+                    }
+                  >
+                    <Brain className="h-4 w-4 mr-1" />
+                    Agent
+                  </TooltipTrigger>
+                  <TooltipContent>Agent mode with tools</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant={processorMode === "intent" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setProcessorMode("intent")}
+                        className="rounded-l-none"
+                      />
+                    }
+                  >
+                    <Cpu className="h-4 w-4 mr-1" />
+                    Intent
+                  </TooltipTrigger>
+                  <TooltipContent>Intent-based mode</TooltipContent>
+                </Tooltip>
               </div>
               {onBack && (
                 <Button variant="ghost" size="sm" onClick={onBack}>

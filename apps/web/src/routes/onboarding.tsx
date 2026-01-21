@@ -10,6 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import SignInForm from "@/components/sign-in-form";
 
 export const Route = createFileRoute("/onboarding")({
@@ -210,19 +217,22 @@ function Step1BusinessInfo({ data, updateData, onNext }: StepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="type">Business Type</Label>
-          <select
-            id="type"
+          <Select
             value={data.type}
-            onChange={(e) =>
-              updateData({ type: e.target.value as WizardData["type"] })
+            onValueChange={(value) =>
+              value && updateData({ type: value as WizardData["type"] })
             }
-            className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="restaurant">Restaurant</option>
-            <option value="pharmacy">Pharmacy</option>
-            <option value="retail">Retail</option>
-            <option value="other">Other</option>
-          </select>
+            <SelectTrigger className="w-full h-11">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="restaurant">Restaurant</SelectItem>
+              <SelectItem value="pharmacy">Pharmacy</SelectItem>
+              <SelectItem value="retail">Retail</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
@@ -290,13 +300,15 @@ function Step2Branding({ data, updateData, onNext, onBack }: Step2Props) {
                   className="h-32 w-32 rounded-lg object-contain"
                   onError={() => setLogoError(true)}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="icon-xs"
                   onClick={clearLogo}
-                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="absolute -top-2 -right-2 rounded-full"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 text-center">

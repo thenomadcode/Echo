@@ -253,13 +253,13 @@ function ConversationDetailPage() {
                   <span className="text-sm font-medium">Related Order</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
                     onClick={() => navigate({ to: "/orders/$orderId", params: { orderId: conversation.order!._id } })}
-                    className="font-medium text-primary hover:underline"
+                    className="h-auto p-0 font-medium"
                   >
                     #{conversation.order.orderNumber}
-                  </button>
+                  </Button>
                   <span className="text-muted-foreground capitalize">
                     {conversation.order.status}
                   </span>

@@ -27,6 +27,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/conversations")({
@@ -152,17 +159,20 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                 <div className="flex flex-col gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="status" className="text-xs">Status</Label>
-                    <select
-                      id="status"
+                    <Select
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as ConversationStatus | "all")}
-                      className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      onValueChange={(value) => value && setStatusFilter(value as ConversationStatus | "all")}
                     >
-                      <option value="all">All</option>
-                      <option value="active">Active</option>
-                      <option value="escalated">Escalated</option>
-                      <option value="closed">Closed</option>
-                    </select>
+                      <SelectTrigger className="w-full h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="escalated">Escalated</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="search" className="text-xs">Search</Label>
@@ -207,24 +217,24 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                 <div className="flex-1 lg:overflow-y-auto px-6 py-4">
                   <div className="space-y-1">
                     {conversations.map((conversation) => (
-                      <button
+                      <Button
                         key={conversation._id}
-                        type="button"
+                        variant="ghost"
                         onClick={() => handleConversationClick(conversation._id)}
                         className={cn(
-                          "w-full text-left rounded-lg p-3 min-h-20 transition-colors hover:bg-muted/50",
+                          "w-full justify-start h-auto rounded-lg p-3 min-h-20",
                           "border-l-4",
                           getStatusBorderColor(conversation.status),
                           selectedConversationId === conversation._id && "bg-muted"
                         )}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 w-full">
                           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                             <span className="text-sm font-medium text-muted-foreground">
                               {getCustomerInitials(conversation.customerId)}
                             </span>
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 text-left">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0">
                                 {conversation.hasUnread && (
@@ -250,7 +260,7 @@ function ConversationsContent({ businessId }: ConversationsContentProps) {
                             </div>
                           </div>
                         </div>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -484,13 +494,13 @@ function ConversationDetail({ conversationId }: ConversationDetailProps) {
                 <span className="text-sm font-medium">Related Order</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <button
-                  type="button"
+                <Button
+                  variant="link"
                   onClick={handleOrderClick}
-                  className="font-medium text-primary hover:underline"
+                  className="h-auto p-0 font-medium"
                 >
                   #{conversation.order.orderNumber}
-                </button>
+                </Button>
                 <span className="text-muted-foreground capitalize">
                   {conversation.order.status}
                 </span>

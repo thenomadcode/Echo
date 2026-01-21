@@ -2,13 +2,31 @@ import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "convex/react";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PriceInput } from "@/components/ui/PriceInput";
 import ImageUpload from "@/components/ui/ImageUpload";
 
@@ -36,6 +54,10 @@ export default function ProductForm({
   const categories = useQuery(api.categories.list, { businessId });
   const createProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
+  const createCategory = useMutation(api.categories.create);
+
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const business = useQuery(
     api.businesses.get,
@@ -155,14 +177,14 @@ export default function ProductForm({
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Description</Label>
-                <textarea
+                <Textarea
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="Product description (optional)"
-                  className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  className="min-h-[100px]"
                 />
               </div>
             )}
@@ -196,21 +218,92 @@ export default function ProductForm({
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Category</Label>
-                <select
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                >
-                  <option value="">Select a category (optional)</option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category._id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <Select
+                    value={field.state.value || undefined}
+                    onValueChange={(value) => field.handleChange(value ?? "")}
+                  >
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select a category (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category._id} value={category._id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
+                    <DialogTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 shrink-0"
+                        />
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create Category</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-category-name">Category Name</Label>
+                        <Input
+                          id="new-category-name"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="Enter category name"
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setNewCategoryName("");
+                            setIsCreateCategoryOpen(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={async () => {
+                            const trimmedName = newCategoryName.trim();
+                            if (!trimmedName) {
+                              toast.error("Category name is required");
+                              return;
+                            }
+                            try {
+                              const newCategoryId = await createCategory({
+                                businessId,
+                                name: trimmedName,
+                                order: categories?.length ?? 0,
+                              });
+                              field.handleChange(newCategoryId);
+                              toast.success("Category created");
+                              setNewCategoryName("");
+                              setIsCreateCategoryOpen(false);
+                            } catch (error) {
+                              toast.error(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to create category"
+                              );
+                            }
+                          }}
+                        >
+                          Create
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             )}
           </form.Field>

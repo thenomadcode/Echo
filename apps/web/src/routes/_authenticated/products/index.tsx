@@ -22,6 +22,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/products/")({
   component: ProductsPageContent,
@@ -248,34 +255,40 @@ function ProductsPage({ businessId }: ProductsPageProps) {
 
               <div className="space-y-2 md:w-48">
                 <Label htmlFor="category">Category</Label>
-<select
-                                  id="category"
-                                  value={categoryFilter}
-                                  onChange={(e) => setCategoryFilter(e.target.value)}
-                                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                  <option value="all">All Categories</option>
-                  <option value="uncategorized">Uncategorized</option>
-                  {categories?.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={(value) => value && setCategoryFilter(value)}
+                >
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2 md:w-48">
                 <Label htmlFor="availability">Availability</Label>
-<select
-                                  id="availability"
-                                  value={availabilityFilter}
-                                  onChange={(e) => setAvailabilityFilter(e.target.value as AvailabilityFilter)}
-                                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                  <option value="all">All Products</option>
-                  <option value="available">Available Only</option>
-                  <option value="unavailable">Unavailable Only</option>
-                </select>
+                <Select
+                  value={availabilityFilter}
+                  onValueChange={(value) => value && setAvailabilityFilter(value as AvailabilityFilter)}
+                >
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="available">Available Only</SelectItem>
+                    <SelectItem value="unavailable">Unavailable Only</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex gap-2">
@@ -355,78 +368,77 @@ function ProductsPage({ businessId }: ProductsPageProps) {
         </CardContent>
       </Card>
 
-      <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg transform transition-transform duration-300 ease-out ${
-          selectedProducts.size > 0 ? "translate-y-0" : "translate-y-full"
-        }`}
-      >
-        <div className="container mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClearSelection}
-                disabled={isBulkActionRunning}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <span className="font-medium">
-                {selectedProducts.size} selected
-              </span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkMarkAvailable}
-                disabled={isBulkActionRunning}
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Mark Available
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkMarkUnavailable}
-                disabled={isBulkActionRunning}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Mark Unavailable
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowBulkDeleteConfirm(true)}
-                disabled={isBulkActionRunning}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-              <div className="flex items-center gap-2">
-                <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                <select
-                  value=""
-                  onChange={(e) => handleBulkChangeCategory(e.target.value)}
+      {selectedProducts.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg animate-in slide-in-from-bottom duration-300">
+          <div className="container mx-auto max-w-7xl px-6 py-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClearSelection}
                   disabled={isBulkActionRunning}
-                  className="flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-8 w-8"
                 >
-                  <option value="" disabled>
-                    Move to...
-                  </option>
-                  <option value="none">Uncategorized</option>
-                  {categories?.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  <X className="h-4 w-4" />
+                </Button>
+                <span className="font-medium">
+                  {selectedProducts.size} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkMarkAvailable}
+                  disabled={isBulkActionRunning}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Mark Available
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkMarkUnavailable}
+                  disabled={isBulkActionRunning}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Mark Unavailable
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowBulkDeleteConfirm(true)}
+                  disabled={isBulkActionRunning}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                  <Select
+                    value=""
+                    onValueChange={(value) => value && handleBulkChangeCategory(value)}
+                    disabled={isBulkActionRunning}
+                  >
+                    <SelectTrigger className="h-9 w-auto min-w-[120px]">
+                      <SelectValue placeholder="Move to..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Uncategorized</SelectItem>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
         <AlertDialogContent>

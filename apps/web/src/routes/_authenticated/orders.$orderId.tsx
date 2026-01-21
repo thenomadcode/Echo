@@ -235,19 +235,19 @@ function OrderDetailPage() {
           {order.conversationId && (
             <Card>
               <CardContent className="py-4">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => navigate({ to: "/conversations/$conversationId", params: { conversationId: order.conversationId } })}
-                  className="flex items-center gap-3 w-full text-left hover:bg-muted/50 -m-4 p-4 rounded-lg transition-colors"
+                  className="flex items-center gap-3 w-full justify-start h-auto -m-4 p-4 rounded-lg"
                 >
                   <div className="rounded-full bg-muted p-2">
                     <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <p className="text-sm font-medium">Related Conversation</p>
                     <p className="text-xs text-muted-foreground">View the chat that created this order</p>
                   </div>
-                </button>
+                </Button>
               </CardContent>
             </Card>
           )}

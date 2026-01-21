@@ -11,6 +11,12 @@ import {
 import { useState } from "react";
 
 import { useSidebar } from "@/components/layout/SidebarContext";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -58,11 +64,10 @@ export function Sidebar() {
           const isActive =
             currentPath === item.to || currentPath.startsWith(`${item.to}/`);
 
-          return (
+          const linkContent = (
             <Link
               key={item.to}
               to={item.to}
-              title={!isExpanded ? item.label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 "hover:bg-accent hover:text-accent-foreground",
@@ -82,33 +87,53 @@ export function Sidebar() {
               </span>
             </Link>
           );
+
+          if (!isExpanded) {
+            return (
+              <Tooltip key={item.to}>
+                <TooltipTrigger render={<span className="block" />}>
+                  {linkContent}
+                </TooltipTrigger>
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return linkContent;
         })}
       </nav>
 
       <div className="border-t p-2">
-        <button
-          type="button"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors",
-            "hover:bg-accent hover:text-accent-foreground"
-          )}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-5 w-5 shrink-0" />
-          ) : (
-            <ChevronLeft className="h-5 w-5 shrink-0" />
-          )}
-          <span
-            className={cn(
-              "whitespace-nowrap overflow-hidden transition-opacity duration-200",
-              isExpanded ? "opacity-100" : "opacity-0 w-0"
-            )}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={cn(
+                  "flex w-full items-center justify-start gap-3 h-auto rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground"
+                )}
+              />
+            }
           >
-            {isCollapsed ? "Expand" : "Collapse"}
-          </span>
-        </button>
+            {isCollapsed ? (
+              <ChevronRight className="h-5 w-5 shrink-0" />
+            ) : (
+              <ChevronLeft className="h-5 w-5 shrink-0" />
+            )}
+            <span
+              className={cn(
+                "whitespace-nowrap overflow-hidden transition-opacity duration-200",
+                isExpanded ? "opacity-100" : "opacity-0 w-0"
+              )}
+            >
+              {isCollapsed ? "Expand" : "Collapse"}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </aside>
   );

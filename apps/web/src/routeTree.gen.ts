@@ -150,7 +150,7 @@ export interface FileRoutesByFullPath {
   '/settings/ai': typeof AuthenticatedSettingsAiRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/products/': typeof AuthenticatedProductsIndexRoute
+  '/products': typeof AuthenticatedProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -214,7 +214,7 @@ export interface FileRouteTypes {
     | '/settings/ai'
     | '/settings/whatsapp'
     | '/api/auth/$'
-    | '/products/'
+    | '/products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -301,7 +301,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
-      fullPath: '/'
+      fullPath: ''
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -343,7 +343,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated/products/': {
       id: '/_authenticated/products/'
       path: '/products'
-      fullPath: '/products/'
+      fullPath: '/products'
       preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
@@ -474,3 +474,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

@@ -17,7 +17,6 @@ import { authClient } from "@/lib/auth-client";
 import { getToken } from "@/lib/auth-server";
 import { ThemeProvider, themeScript } from "@/lib/theme";
 
-import Header from "../components/header";
 import { OfflineIndicator } from "../components/OfflineIndicator";
 import appCss from "../index.css?url";
 
@@ -95,10 +94,7 @@ function RootDocument() {
         </head>
         <body>
           <ThemeProvider>
-            <div className="grid h-svh grid-rows-[auto_1fr]">
-              <Header />
-              <Outlet />
-            </div>
+            <Outlet />
             <Toaster richColors />
             <OfflineIndicator />
           </ThemeProvider>

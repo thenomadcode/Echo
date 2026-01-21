@@ -20,6 +20,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -274,14 +283,13 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Description</Label>
-                <textarea
+                <Textarea
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   rows={3}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
               </div>
             )}
@@ -320,18 +328,19 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Default Language</Label>
-                <select
-                  id={field.name}
-                  name={field.name}
+                <Select
                   value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onValueChange={(value) => value && field.handleChange(value)}
                 >
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="pt">Portuguese</option>
-                </select>
+                  <SelectTrigger className="w-full h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="pt">Portuguese</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>
@@ -340,20 +349,21 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Timezone</Label>
-                <select
-                  id={field.name}
-                  name={field.name}
+                <Select
                   value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onValueChange={(value) => value && field.handleChange(value)}
                 >
-                  {COMMON_TIMEZONES.map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMMON_TIMEZONES.map((tz) => (
+                      <SelectItem key={tz} value={tz}>
+                        {tz}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>
@@ -411,19 +421,17 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
                 <Label>Operating Days</Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {DAYS_OF_WEEK.map((day) => (
-                    <label key={day.value} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
+                    <label key={day.value} className="flex items-center space-x-2 cursor-pointer">
+                      <Checkbox
                         checked={field.state.value.includes(Number(day.value))}
-                        onChange={(e) => {
+                        onCheckedChange={(checked) => {
                           const dayNum = Number(day.value);
-                          if (e.target.checked) {
+                          if (checked) {
                             field.handleChange([...field.state.value, dayNum].sort());
                           } else {
                             field.handleChange(field.state.value.filter((d: number) => d !== dayNum));
                           }
                         }}
-                        className="h-4 w-4 rounded border-input"
                       />
                       <span className="text-sm">{day.label}</span>
                     </label>
@@ -498,7 +506,7 @@ function AISettings({ business, updateBusiness }: SettingsFormProps) {
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Greeting Message</Label>
-                <textarea
+                <Textarea
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
@@ -506,7 +514,6 @@ function AISettings({ business, updateBusiness }: SettingsFormProps) {
                   onChange={(e) => field.handleChange(e.target.value)}
                   rows={3}
                   placeholder="Hello! Welcome to our business. How can I help you today?"
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <p className="text-xs text-muted-foreground">
                   This message will be sent when a customer starts a new conversation
@@ -519,7 +526,7 @@ function AISettings({ business, updateBusiness }: SettingsFormProps) {
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Personality Instructions</Label>
-                <textarea
+                <Textarea
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
@@ -527,7 +534,6 @@ function AISettings({ business, updateBusiness }: SettingsFormProps) {
                   onChange={(e) => field.handleChange(e.target.value)}
                   rows={4}
                   placeholder="Be friendly and helpful. Use casual language. Always recommend our daily specials."
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <p className="text-xs text-muted-foreground">
                   Custom instructions to shape how the AI responds to customers

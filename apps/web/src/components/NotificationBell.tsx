@@ -76,13 +76,14 @@ export function NotificationBell() {
           <DropdownMenuLabel className="flex items-center justify-between">
             <span>Notifications</span>
             {unreadCount !== undefined && unreadCount > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={handleMarkAllRead}
-                className="text-xs font-normal text-muted-foreground hover:text-foreground transition-colors"
+                className="h-auto py-0 px-1 text-xs font-normal text-muted-foreground hover:text-foreground"
               >
                 Mark all as read
-              </button>
+              </Button>
             )}
           </DropdownMenuLabel>
         </DropdownMenuGroup>

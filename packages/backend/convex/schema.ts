@@ -66,6 +66,11 @@ export default defineSchema({
     deleted: v.boolean(),
     order: v.number(),
     description: v.optional(v.string()),
+    // Shopify sync fields
+    source: v.optional(v.union(v.literal("manual"), v.literal("shopify"))),
+    shopifyProductId: v.optional(v.string()),
+    shopifyVariantId: v.optional(v.string()),
+    lastShopifySyncAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

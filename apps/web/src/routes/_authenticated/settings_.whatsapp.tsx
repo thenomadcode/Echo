@@ -12,6 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated/settings_/whatsapp")({
   component: WhatsAppSettingsContent,
@@ -222,15 +234,21 @@ function WhatsAppSettingsForm({ businessId }: { businessId: Id<"businesses"> }) 
               value={webhookUrl}
               className="font-mono text-sm bg-muted"
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={handleCopyWebhook}
-              title="Copy webhook URL"
-            >
-              {webhookCopied ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyWebhook}
+                  />
+                }
+              >
+                {webhookCopied ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </TooltipTrigger>
+              <TooltipContent>Copy webhook URL</TooltipContent>
+            </Tooltip>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             Set this as the &quot;WHEN A MESSAGE COMES IN&quot; webhook URL in your Twilio WhatsApp Sandbox or Sender settings.
@@ -256,16 +274,17 @@ function WhatsAppSettingsForm({ businessId }: { businessId: Id<"businesses"> }) 
                 {(field) => (
                   <div className="space-y-2">
                     <Label htmlFor={field.name}>Provider</Label>
-                    <select
-                      id={field.name}
-                      name={field.name}
+                    <Select
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onValueChange={(value) => value && field.handleChange(value)}
                     >
-                      <option value="twilio">Twilio</option>
-                    </select>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="twilio">Twilio</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </form.Field>
