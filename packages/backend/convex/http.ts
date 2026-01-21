@@ -11,6 +11,42 @@ const http = httpRouter();
 authComponent.registerRoutes(http, createAuth);
 
 http.route({
+  path: "/shopify/callback",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const url = new URL(request.url);
+    const code = url.searchParams.get("code");
+    const shop = url.searchParams.get("shop");
+    const state = url.searchParams.get("state");
+
+    const frontendUrl = process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "";
+    const redirectBase = `${frontendUrl}/settings/integrations/shopify`;
+
+    if (!code || !shop || !state) {
+      return Response.redirect(`${redirectBase}?error=missing_params`, 302);
+    }
+
+    try {
+      const result = await ctx.runAction(api.shopify.handleCallback, {
+        code,
+        shop,
+        state,
+      });
+
+      if (result.success) {
+        return Response.redirect(`${redirectBase}?connected=true`, 302);
+      }
+
+      const errorParam = encodeURIComponent(result.error ?? "auth_failed");
+      return Response.redirect(`${redirectBase}?error=${errorParam}`, 302);
+    } catch (error) {
+      console.error("Shopify OAuth callback error:", error);
+      return Response.redirect(`${redirectBase}?error=auth_failed`, 302);
+    }
+  }),
+});
+
+http.route({
   path: "/webhook/whatsapp",
   method: "GET",
   handler: httpAction(async (_, request) => {
