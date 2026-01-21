@@ -463,7 +463,7 @@
       "id": "S25",
       "title": "Landing page hero section redesign",
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/index.tsx",

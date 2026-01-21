@@ -24,6 +24,30 @@
 
 ---
 
+## 2026-01-21 16:28 - S25: Landing page hero section redesign
+
+**What was implemented:**
+- Complete redesign of landing page with new hero section
+- Removed ASCII art, added Echo logo with MessageSquare icon
+- Hero tagline: "AI-Powered Customer Service for Your WhatsApp Business"
+- Subheading explaining value proposition for LATAM businesses
+- Warm gradient background using brand colors (terracotta oklch(0.58 0.2 35) to peach oklch(0.92 0.04 55))
+- Two CTAs: "Get Started Free" (white primary button) and "Sign In" (outline button)
+- Removed API health check display
+- Added auth-aware routing:
+  - Authenticated users redirected to /dashboard (or /onboarding if no businesses)
+  - Unauthenticated users see landing page
+- Added gradient fade at bottom of hero for smooth transition
+
+**Files changed:**
+- apps/web/src/routes/index.tsx (complete rewrite)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 16:22 - S24: Products page empty state
 
 **What was implemented:**
