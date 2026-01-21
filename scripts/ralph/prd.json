@@ -392,7 +392,7 @@
       "id": "S21",
       "title": "Orders detail page layout redesign",
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/orders_.$orderId.tsx",
