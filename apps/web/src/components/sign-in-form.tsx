@@ -1,5 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -59,8 +60,9 @@ export default function SignInForm() {
   });
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+    <div className="w-full">
+      <h1 className="mb-2 text-2xl font-bold font-heading">Welcome back</h1>
+      <p className="mb-8 text-muted-foreground">Enter your credentials to sign in</p>
 
       <form
         onSubmit={(e) => {
@@ -68,68 +70,67 @@ export default function SignInForm() {
           e.stopPropagation();
           form.handleSubmit();
         }}
-        className="space-y-4"
+        className="space-y-6"
       >
-        <div>
-          <form.Field name="email">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
+        <form.Field name="email">
+          {(field) => (
+            <div className="space-y-2">
+              <Label htmlFor={field.name}>Email</Label>
+              <Input
+                id={field.name}
+                name={field.name}
+                type="email"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                className="h-11"
+              />
+              {field.state.meta.errors.map((error) => (
+                <p key={error?.message} className="text-sm text-destructive">
+                  {error?.message}
+                </p>
+              ))}
+            </div>
+          )}
+        </form.Field>
 
-        <div>
-          <form.Field name="password">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
+        <form.Field name="password">
+          {(field) => (
+            <div className="space-y-2">
+              <Label htmlFor={field.name}>Password</Label>
+              <Input
+                id={field.name}
+                name={field.name}
+                type="password"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                className="h-11"
+              />
+              {field.state.meta.errors.map((error) => (
+                <p key={error?.message} className="text-sm text-destructive">
+                  {error?.message}
+                </p>
+              ))}
+            </div>
+          )}
+        </form.Field>
 
         <form.Subscribe>
           {(state) => (
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-11"
               disabled={!state.canSubmit || state.isSubmitting}
             >
-              {state.isSubmitting ? "Submitting..." : "Sign In"}
+              {state.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {state.isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           )}
         </form.Subscribe>
       </form>
 
-      <div className="relative my-4">
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
@@ -141,7 +142,7 @@ export default function SignInForm() {
       <Button
         type="button"
         variant="outline"
-        className="w-full"
+        className="w-full h-11"
         onClick={handleGoogleSignIn}
       >
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -165,11 +166,12 @@ export default function SignInForm() {
         Sign in with Google
       </Button>
 
-      <div className="mt-4 text-center">
-        <Link to="/signup" reloadDocument className="text-indigo-600 hover:text-indigo-800 text-sm">
-          Need an account? Sign Up
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Don't have an account?{" "}
+        <Link to="/signup" className="text-primary hover:underline font-medium">
+          Sign up
         </Link>
-      </div>
+      </p>
     </div>
   );
 }

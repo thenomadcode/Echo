@@ -503,7 +503,7 @@
       "id": "S27",
       "title": "Auth pages split layout redesign",
       "priority": 27,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/login.tsx with split layout",

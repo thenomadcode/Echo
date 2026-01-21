@@ -24,6 +24,32 @@
 
 ---
 
+## 2026-01-21 15:21 - S27: Auth pages split layout redesign
+
+**What was implemented:**
+- Updated login.tsx and signup.tsx routes with split layout design:
+  - Left panel (50% on desktop): brand gradient background with testimonial quote and Echo branding
+  - Right panel (50% on desktop): auth form with improved styling
+  - Mobile: hide left panel, show only form with logo above
+- Updated sign-in-form.tsx and sign-up-form.tsx with improved styling:
+  - Increased form field spacing to space-y-6
+  - Taller inputs with h-11 for better touch targets
+  - Error states use text-destructive color scheme
+  - Loading state on submit button with Loader2 spinner
+  - Improved link styling with text-primary and hover:underline
+
+**Files changed:**
+- apps/web/src/routes/login.tsx
+- apps/web/src/routes/signup.tsx
+- apps/web/src/components/sign-in-form.tsx
+- apps/web/src/components/sign-up-form.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 16:34 - S26: Landing page features and social proof
 
 **What was implemented:**
