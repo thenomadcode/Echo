@@ -7,6 +7,8 @@ import { useEffect } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { SidebarProvider, useSidebar } from "@/components/layout/SidebarContext";
+import { cn } from "@/lib/utils";
 import SignInForm from "@/components/sign-in-form";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -57,10 +59,25 @@ function AuthenticatedShell() {
   }
 
   return (
+    <SidebarProvider>
+      <AuthenticatedContent />
+    </SidebarProvider>
+  );
+}
+
+function AuthenticatedContent() {
+  const { isCollapsed } = useSidebar();
+
+  return (
     <div className="min-h-screen bg-background">
       <Sidebar />
 
-      <div className="lg:pl-64">
+      <div
+        className={cn(
+          "transition-[padding-left] duration-200 ease-in-out",
+          isCollapsed ? "lg:pl-16" : "lg:pl-60"
+        )}
+      >
         <AppHeader />
 
         <main className="pb-20 lg:pb-0">
