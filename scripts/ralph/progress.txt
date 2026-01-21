@@ -1,5 +1,7 @@
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
+- TailwindCSS 4: custom fonts defined in `@theme inline` block with `--font-*` variables
+- Google Fonts: use preconnect hints + `display=swap` for optimal loading
 - Auth pattern: `authComponent.safeGetAuthUser(ctx)` returns authUser with `userId` property - always check `!authUser || !authUser.userId`
 - After auth check, store userId in const: `const userId = authUser.userId;` to avoid TypeScript narrowing issues
 - Owner references use `ownerId: v.string()` (not v.id) since authUser.userId is a string
@@ -14,6 +16,78 @@
 - Lib utilities: create under `convex/lib/` using `GenericDatabaseReader<DataModel>` for db access
 - Dashboard conversation status: active | escalated | closed (separate from AI state machine)
 - Human assignment: assignedTo field with v.string() (user ID from better-auth), null/undefined means AI handling
+- TanStack Router layout routes: `_authenticated.tsx` creates pathless layout, child routes go in `_authenticated/` folder
+- Base UI AlertDialog: does NOT support asChild prop - use controlled open state instead of AlertDialogTrigger
+
+---
+
+## 2026-01-21 14:45 - S03: Create authenticated layout route structure
+
+**What was implemented:**
+- Created `apps/web/src/routes/_authenticated.tsx` as pathless layout route
+  - Uses `createFileRoute("/_authenticated")` with beforeLoad auth check
+  - Redirects to /login if not authenticated
+  - Wraps content with Authenticated/Unauthenticated/AuthLoading from convex/react
+  - Handles business loading and redirects to /onboarding if no businesses
+  - Shell structure: Sidebar (left), AppHeader (top), Outlet (content), BottomNav (bottom mobile)
+- Created `apps/web/src/components/layout/Sidebar.tsx`
+  - Desktop navigation (hidden on mobile via `lg:flex`)
+  - Fixed positioning with 64px width
+  - Echo logo at top, navigation items, version at bottom
+  - Active route highlighting with primary color
+- Created `apps/web/src/components/layout/AppHeader.tsx`
+  - Sticky header with BusinessSwitcher and UserMenu
+  - Command palette trigger placeholder (Cmd+K hint)
+- Created `apps/web/src/components/layout/BottomNav.tsx`
+  - Mobile bottom navigation (hidden on desktop via `lg:hidden`)
+  - Touch-friendly 44px minimum targets
+  - Fixed at bottom with z-50
+- Moved authenticated routes to `_authenticated/` folder:
+  - dashboard.tsx, settings.tsx, conversations.tsx, conversations.$conversationId.tsx
+  - orders.tsx, orders.$orderId.tsx
+- Simplified child routes (auth handled by layout)
+- Replaced window.confirm with AlertDialog for order cancellation (S08 partial)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated.tsx (created, ~75 lines)
+- apps/web/src/components/layout/Sidebar.tsx (created, ~55 lines)
+- apps/web/src/components/layout/AppHeader.tsx (created, ~30 lines)
+- apps/web/src/components/layout/BottomNav.tsx (created, ~40 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/settings.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/conversations.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/orders.tsx (moved and simplified)
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (moved and simplified, AlertDialog added)
+- apps/web/src/routeTree.gen.ts (regenerated)
+
+**Verification:**
+- bun run check-types: passes
+- Route generation: successful
+- Committed as: feat: S03 - Create authenticated layout route structure (commit e5016e5)
+
+---
+
+## 2026-01-21 14:27 - S02: Add Google Fonts for typography
+
+**What was implemented:**
+- Added Google Fonts link tags to apps/web/src/routes/__root.tsx head() function
+  - Preconnect hints for fonts.googleapis.com and fonts.gstatic.com for faster loading
+  - Font stylesheet with Plus Jakarta Sans (600, 700), DM Sans (400, 500), JetBrains Mono (400)
+  - `display=swap` parameter to prevent FOUT (flash of unstyled text)
+- Updated apps/web/src/index.css @theme inline block:
+  - `--font-sans`: "DM Sans" for body text (replaces Inter Variable)
+  - `--font-heading`: "Plus Jakarta Sans" for headings
+  - `--font-mono`: "JetBrains Mono" for monospace/code
+
+**Files changed:**
+- apps/web/src/routes/__root.tsx (+15 lines: preconnect + font stylesheet links)
+- apps/web/src/index.css (+2 lines: --font-heading, --font-mono; modified --font-sans)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bun run check-types: passes
+- Committed as: feat: S02 - Add Google Fonts for typography (commit f9ea2ee)
 
 ---
 

@@ -22,7 +22,7 @@
       "id": "S02",
       "title": "Add Google Fonts for typography",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/web/src/routes/__root.tsx to include Google Fonts",
@@ -39,7 +39,7 @@
       "id": "S03",
       "title": "Create authenticated layout route structure",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/_authenticated.tsx as layout route",
