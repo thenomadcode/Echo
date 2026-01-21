@@ -977,3 +977,281 @@ export const updateWebhookIds = internalMutation({
     }
   },
 });
+
+type SyncResult = {
+  updated: number;
+  added: number;
+  removed: number;
+  errors: string[];
+};
+
+export const syncProducts = action({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<SyncResult> => {
+    const authResult = await ctx.runQuery(internal.shopify.verifyBusinessOwnership, {
+      businessId: args.businessId,
+    });
+
+    if (!authResult.authorized) {
+      return { updated: 0, added: 0, removed: 0, errors: [authResult.error ?? "Not authorized"] };
+    }
+
+    const connection = await ctx.runQuery(internal.shopify.getConnectionInternal, {
+      businessId: args.businessId,
+    });
+
+    if (!connection) {
+      return { updated: 0, added: 0, removed: 0, errors: ["No Shopify connection found"] };
+    }
+
+    const { shop, accessToken, business } = connection;
+    let updated = 0;
+    let added = 0;
+    let removed = 0;
+    const errors: string[] = [];
+    const seenShopifyVariantIds = new Set<string>();
+
+    let hasNextPage = true;
+    let cursor: string | null = null;
+
+    try {
+      while (hasNextPage) {
+        const response = await fetch(
+          `https://${shop}/admin/api/2024-01/graphql.json`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Shopify-Access-Token": accessToken,
+            },
+            body: JSON.stringify({
+              query: SHOPIFY_PRODUCTS_QUERY,
+              variables: { first: 50, after: cursor },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          errors.push(`API error: ${response.status} ${response.statusText}`);
+          break;
+        }
+
+        const result = (await response.json()) as ShopifyGraphQLResponse;
+
+        if (result.errors) {
+          errors.push(...result.errors.map((e) => e.message));
+          break;
+        }
+
+        if (!result.data) {
+          errors.push("No data returned from Shopify");
+          break;
+        }
+
+        const products = result.data.products;
+
+        for (const edge of products.edges) {
+          const product = edge.node;
+
+          if (product.status !== "ACTIVE") {
+            for (const variantEdge of product.variants.edges) {
+              seenShopifyVariantIds.add(variantEdge.node.id);
+            }
+            continue;
+          }
+
+          const shopifyProductId = product.id;
+          const imageUrl = product.images.edges[0]?.node.url ?? null;
+
+          for (const variantEdge of product.variants.edges) {
+            const variant = variantEdge.node;
+            seenShopifyVariantIds.add(variant.id);
+
+            const isOnlyVariant = product.variants.edges.length === 1;
+            const variantTitle = isOnlyVariant || variant.title === "Default Title"
+              ? ""
+              : variant.title;
+
+            const name = variantTitle
+              ? `${product.title} - ${variantTitle}`
+              : product.title;
+
+            const priceInCents = Math.round(parseFloat(variant.price) * 100);
+            const available = variant.inventoryQuantity > 0;
+
+            try {
+              const syncResult = await ctx.runMutation(internal.shopify.upsertProductWithStats, {
+                businessId: args.businessId,
+                shopifyProductId,
+                shopifyVariantId: variant.id,
+                name,
+                description: product.descriptionHtml || undefined,
+                price: priceInCents,
+                currency: business.defaultLanguage === "es" ? "COP" : business.defaultLanguage === "pt" ? "BRL" : "USD",
+                imageUrl: imageUrl ?? undefined,
+                available,
+              });
+              
+              if (syncResult.isNew) {
+                added++;
+              } else {
+                updated++;
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Unknown error";
+              errors.push(`Failed to sync "${name}": ${msg}`);
+            }
+          }
+        }
+
+        hasNextPage = products.pageInfo.hasNextPage;
+        cursor = products.pageInfo.endCursor;
+      }
+
+      const removedCount = await ctx.runMutation(internal.shopify.markMissingProductsUnavailable, {
+        businessId: args.businessId,
+        seenShopifyVariantIds: Array.from(seenShopifyVariantIds),
+      });
+      removed = removedCount;
+
+      const status = errors.length === 0 ? "success" : (updated + added + removed) > 0 ? "partial" : "failed";
+      await ctx.runMutation(internal.shopify.updateSyncStatus, {
+        businessId: args.businessId,
+        status,
+      });
+
+      return { updated, added, removed, errors };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      await ctx.runMutation(internal.shopify.updateSyncStatus, {
+        businessId: args.businessId,
+        status: "failed",
+      });
+      return { updated, added, removed, errors: [...errors, message] };
+    }
+  },
+});
+
+export const verifyBusinessOwnership = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<{ authorized: boolean; error?: string }> => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return { authorized: false, error: "Not authenticated" };
+    }
+
+    const business = await ctx.db.get(args.businessId);
+    if (!business) {
+      return { authorized: false, error: "Business not found" };
+    }
+
+    if (business.ownerId !== authUser._id) {
+      return { authorized: false, error: "Not authorized to access this business" };
+    }
+
+    return { authorized: true };
+  },
+});
+
+export const upsertProductWithStats = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    shopifyProductId: v.string(),
+    shopifyVariantId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    price: v.number(),
+    currency: v.string(),
+    imageUrl: v.optional(v.string()),
+    available: v.boolean(),
+  },
+  handler: async (ctx, args): Promise<{ isNew: boolean }> => {
+    const existing = await ctx.db
+      .query("products")
+      .withIndex("by_shopify_id", (q) =>
+        q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId)
+      )
+      .filter((q) => q.eq(q.field("shopifyVariantId"), args.shopifyVariantId))
+      .first();
+
+    const now = Date.now();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        name: args.name,
+        description: args.description,
+        price: args.price,
+        available: args.available,
+        lastShopifySyncAt: now,
+        updatedAt: now,
+      });
+      return { isNew: false };
+    }
+
+    const existingProducts = await ctx.db
+      .query("products")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .collect();
+
+    const maxOrder = existingProducts.reduce((max, p) => Math.max(max, p.order), -1);
+
+    await ctx.db.insert("products", {
+      businessId: args.businessId,
+      name: args.name,
+      description: args.description,
+      price: args.price,
+      currency: args.currency,
+      available: args.available,
+      deleted: false,
+      order: maxOrder + 1,
+      source: "shopify",
+      shopifyProductId: args.shopifyProductId,
+      shopifyVariantId: args.shopifyVariantId,
+      lastShopifySyncAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { isNew: true };
+  },
+});
+
+export const markMissingProductsUnavailable = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    seenShopifyVariantIds: v.array(v.string()),
+  },
+  handler: async (ctx, args): Promise<number> => {
+    const shopifyProducts = await ctx.db
+      .query("products")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("source"), "shopify"),
+          q.eq(q.field("available"), true)
+        )
+      )
+      .collect();
+
+    const seenSet = new Set(args.seenShopifyVariantIds);
+    const now = Date.now();
+    let count = 0;
+
+    for (const product of shopifyProducts) {
+      if (product.shopifyVariantId && !seenSet.has(product.shopifyVariantId)) {
+        await ctx.db.patch(product._id, {
+          available: false,
+          lastShopifySyncAt: now,
+          updatedAt: now,
+        });
+        count++;
+      }
+    }
+
+    return count;
+  },
+});
