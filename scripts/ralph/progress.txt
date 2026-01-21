@@ -5,6 +5,36 @@
 - Shopify webhook variant IDs: Same pattern: `gid://shopify/ProductVariant/${id}`
 - Webhook handlers use internalAction with try/catch for graceful error handling
 - Shopify webhook registration: list existing webhooks first for idempotency, then register missing topics
+- Base UI Tooltip: doesn't have `asChild` prop, use className directly on TooltipTrigger
+
+---
+
+## 2026-01-21 10:59 - S15: Create sync status UI component
+
+**What was implemented:**
+- Created apps/web/src/components/shopify/SyncStatus.tsx component
+- Props: lastSyncAt (number | null), status ('success' | 'partial' | 'failed' | null)
+- Displays last sync time in relative format using date-fns formatDistanceToNow (e.g., '5 minutes ago')
+- Displays status icon: green check (success), yellow warning (partial), red X (failed)
+- Tooltip with absolute timestamp on hover using shadcn/ui tooltip component
+- Shows 'Never synced' with Clock icon when lastSyncAt is null
+- Added shadcn/ui tooltip component (apps/web/src/components/ui/tooltip.tsx)
+- Integrated SyncStatus component into Shopify settings page
+- Removed inline SyncStatusBadge function in favor of reusable component
+
+**Files changed:**
+- apps/web/src/components/shopify/SyncStatus.tsx (created, ~75 lines)
+- apps/web/src/components/ui/tooltip.tsx (added via shadcn)
+- apps/web/src/routes/settings_.integrations_.shopify.tsx (updated imports, removed inline SyncStatusBadge)
+
+**Learnings for future iterations:**
+- Base UI Tooltip doesn't support `asChild` prop - use className directly on TooltipTrigger
+- date-fns format() with 'PPpp' gives full date/time like "Jan 21, 2026, 10:59 AM"
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit (apps/web): passes
+- Committed as: feat: S15 - Create sync status UI component (commit ad8dde9)
 
 ---
 

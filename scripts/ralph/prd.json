@@ -276,7 +276,7 @@
       "id": "S15",
       "title": "Create sync status UI component",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/shopify/SyncStatus.tsx component",
