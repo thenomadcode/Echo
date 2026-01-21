@@ -24,6 +24,20 @@
 
 ---
 
+## 2026-01-21 15:50 - S32, S33, S34: Settings section forms (already implemented in S31)
+
+**What was verified:**
+- S32 (General settings forms): Business Info, Localization, Business Hours - all implemented with proper form validation and save functionality
+- S33 (AI settings forms): AI Personality (greeting, instructions) and Escalation Rules (keywords) - all inline in AI section
+- S34 (Integrations section): WhatsApp with connection status and configure/connect buttons, Shopify placeholder
+
+**Note:** Collapsible subsections mentioned in PRD not implemented - using card-based layout instead which provides clear visual separation without additional complexity.
+
+**Files changed:**
+- No additional changes needed (implemented in S31)
+
+---
+
 ## 2026-01-21 15:45 - S31: Settings page sidebar navigation structure
 
 **What was implemented:**

@@ -606,7 +606,7 @@
       "id": "S32",
       "title": "Settings General section forms",
       "priority": 32,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Render Business Info form in settings general section",
@@ -625,7 +625,7 @@
       "id": "S33",
       "title": "Settings AI section forms",
       "priority": 33,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Render AI Personality settings inline in settings page",
@@ -642,7 +642,7 @@
       "id": "S34",
       "title": "Settings Integrations section",
       "priority": 34,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Render WhatsApp integration settings inline",
