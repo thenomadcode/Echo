@@ -24,6 +24,28 @@
 
 ---
 
+## 2026-01-21 16:34 - S26: Landing page features and social proof
+
+**What was implemented:**
+- Added 3 feature cards below hero in bento-style grid (md:grid-cols-3)
+- Feature 1: "24/7 Support" with Clock icon - AI handles messages any time
+- Feature 2: "Smart AI" with Brain icon - Understands context and intent
+- Feature 3: "Easy Setup" with Zap icon - Connect in minutes
+- Each card has: icon in primary/10 background, semibold title, muted description
+- Cards have rounded-2xl, border, shadow-sm for depth
+- Added social proof text: "Trusted by 500+ LATAM businesses"
+- Mobile: cards stack vertically (grid default)
+- CTAs remain above fold on mobile (in hero section)
+
+**Files changed:**
+- apps/web/src/routes/index.tsx
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 16:28 - S25: Landing page hero section redesign
 
 **What was implemented:**

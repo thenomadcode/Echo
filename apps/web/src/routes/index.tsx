@@ -2,7 +2,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 import { useQuery } from "convex/react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Clock, Brain, Zap } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,46 @@ function LandingPage() {
             background: "linear-gradient(to top, var(--background), transparent)",
           }}
         />
+      </div>
+
+      <div className="container mx-auto px-6 py-20">
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 rounded-xl bg-primary/10 p-3 w-fit">
+              <Clock className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 font-heading">24/7 Support</h3>
+            <p className="text-sm text-muted-foreground">
+              AI handles customer messages any time of day or night, so you never miss a sale or inquiry.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 rounded-xl bg-primary/10 p-3 w-fit">
+              <Brain className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 font-heading">Smart AI</h3>
+            <p className="text-sm text-muted-foreground">
+              Understands context and customer intent to provide accurate, helpful responses every time.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 rounded-xl bg-primary/10 p-3 w-fit">
+              <Zap className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 font-heading">Easy Setup</h3>
+            <p className="text-sm text-muted-foreground">
+              Connect your WhatsApp Business number in minutes. No coding required.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center mt-16">
+          <p className="text-muted-foreground">
+            Trusted by <span className="font-semibold text-foreground">500+ LATAM businesses</span>
+          </p>
+        </div>
       </div>
     </div>
   );
