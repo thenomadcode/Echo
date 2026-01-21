@@ -564,7 +564,7 @@
       "id": "S30",
       "title": "Onboarding wizard step 3 - Ready",
       "priority": 30,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Step 3 of onboarding wizard - completion/celebration",
