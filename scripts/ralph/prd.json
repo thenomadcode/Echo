@@ -45,7 +45,7 @@
       "id": "S03",
       "title": "Real-time Product Sync via Webhooks",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Register Shopify webhooks on connection: products/create, products/update, products/delete",

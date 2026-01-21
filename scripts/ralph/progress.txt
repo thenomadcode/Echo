@@ -2768,3 +2768,46 @@
 - Committed as: feat: S01 - Connect Shopify Store - OAuth Flow (commit a2bce0f)
 
 ---
+
+## 2026-01-21 23:31 - S03: Real-time Product Sync via Webhooks
+
+**What was implemented:**
+- S03 was already fully implemented in previous commits. All acceptance criteria met:
+
+**Backend (packages/backend/convex/shopify.ts):**
+- `registerWebhooks` internalAction (line 812) registers webhooks for products/create, products/update, products/delete
+- Called automatically in `handleCallback` after OAuth completion (line 172)
+- Webhook topics defined in `WEBHOOK_TOPICS` constant (line 806-810)
+- `handleWebhook` internalAction (line 592) processes all webhook events
+- `upsertProduct` mutation (line 480) handles create/update for products
+- `markProductsUnavailable` mutation (line 563) soft-deletes products on products/delete webhook
+- `updateSyncStatus` mutation (line 543) updates lastSyncAt and lastSyncStatus on connection
+- `getConnectionStatus` query (line 745) returns sync status to frontend
+
+**HTTP Route (packages/backend/convex/http.ts):**
+- `/webhook/shopify` route (line 202) handles incoming webhooks
+- `verifyShopifySignature` function (line 404) validates HMAC using SHOPIFY_API_SECRET
+- Signature verified before processing (line 222)
+
+**Frontend (apps/web/src/routes/_authenticated/settings_.integrations_.shopify.tsx):**
+- SyncStatus component shows last sync timestamp with relative time
+- Status badge shows success/partial/failed with appropriate colors
+- Connection status card displays store name and sync info
+
+**SyncStatus Component (apps/web/src/components/shopify/SyncStatus.tsx):**
+- Displays "Never synced" when no sync yet
+- Shows relative time (e.g., "5 minutes ago") with tooltip for absolute time
+- Badge variants: success (green), partial (yellow), failed (red)
+
+**Files verified (no changes needed):**
+- packages/backend/convex/shopify.ts
+- packages/backend/convex/http.ts
+- apps/web/src/routes/_authenticated/settings_.integrations_.shopify.tsx
+- apps/web/src/components/shopify/SyncStatus.tsx
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+- All acceptance criteria confirmed met
+
+---
