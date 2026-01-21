@@ -2,9 +2,8 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Loader2, ShoppingBag, AlertTriangle, X, Download, Package } from "lucide-react";
+import { ArrowLeft, Check, Loader2, ShoppingBag, Download, Package } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
 
 import SignInForm from "@/components/sign-in-form";
 import BusinessSwitcher from "@/components/business-switcher";
@@ -16,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SyncStatus } from "@/components/shopify/SyncStatus";
 
 export const Route = createFileRoute("/settings_/integrations_/shopify")({
   component: ShopifySettingsPage,
@@ -263,18 +263,11 @@ function ShopifySettingsContent() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Last Sync</span>
-                  <span className="text-sm">
-                    {connectionStatus.lastSyncAt
-                      ? formatDistanceToNow(new Date(connectionStatus.lastSyncAt), { addSuffix: true })
-                      : "Never synced"}
-                  </span>
+                  <SyncStatus
+                    lastSyncAt={connectionStatus.lastSyncAt ?? null}
+                    status={connectionStatus.lastSyncStatus ?? null}
+                  />
                 </div>
-                {connectionStatus.lastSyncStatus && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Sync Status</span>
-                    <SyncStatusBadge status={connectionStatus.lastSyncStatus} />
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -355,32 +348,6 @@ function ShopifySettingsContent() {
       </main>
     </div>
   );
-}
-
-function SyncStatusBadge({ status }: { status: "success" | "partial" | "failed" }) {
-  switch (status) {
-    case "success":
-      return (
-        <Badge variant="success" className="flex items-center gap-1">
-          <Check className="h-3 w-3" />
-          Success
-        </Badge>
-      );
-    case "partial":
-      return (
-        <Badge variant="warning" className="flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" />
-          Partial
-        </Badge>
-      );
-    case "failed":
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <X className="h-3 w-3" />
-          Failed
-        </Badge>
-      );
-  }
 }
 
 function SyncOption({
