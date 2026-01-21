@@ -1,4 +1,7 @@
+import { Search } from "lucide-react";
+
 import BusinessSwitcher from "@/components/business-switcher";
+import { NotificationBell } from "@/components/NotificationBell";
 import UserMenu from "@/components/user-menu";
 
 export function AppHeader() {
@@ -13,14 +16,16 @@ export function AppHeader() {
           type="button"
           className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
         >
+          <Search className="h-4 w-4" />
           <span>Search...</span>
           <kbd className="ml-2 inline-flex h-5 items-center gap-1 rounded border bg-background px-1.5 font-mono text-xs text-muted-foreground">
-            <span className="text-xs">Cmd</span>K
+            <span className="text-xs">⌘</span>K
           </kbd>
         </button>
       </div>
 
       <div className="flex items-center gap-2">
+        <NotificationBell />
         <UserMenu />
       </div>
     </header>
