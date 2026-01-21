@@ -1,10 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Package, Settings, ShoppingBag } from "lucide-react";
+import { Home, MessageSquare, Package, Settings, ShoppingBag } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
+  { to: "/conversations", label: "Conversations", icon: MessageSquare },
   { to: "/orders", label: "Orders", icon: ShoppingBag },
   { to: "/products", label: "Products", icon: Package },
   { to: "/settings", label: "Settings", icon: Settings },

@@ -308,6 +308,8 @@ export const Route = createFileRoute("/dashboard")({
 - Committing `.env` files or secrets
 - Direct DOM manipulation - Use React patterns
 - `console.log` in production code - Remove before commit
+- `window.alert()`, `window.confirm()`, `window.prompt()` - Use shadcn AlertDialog or Dialog components instead
+- Building custom UI components when shadcn/ui has an equivalent - Always check `apps/web/src/components/ui/` first
 
 ---
 

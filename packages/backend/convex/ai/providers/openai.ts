@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import type { AIProvider, CompleteParams, CompleteResult, Message } from "../types";
 import type { Tool, ToolCall } from "../tools";
 
-const DEFAULT_MODEL = "gpt-4o-mini";
+const DEFAULT_MODEL = "gpt-5-nano";
 const DEFAULT_MAX_TOKENS = 4096;
 
 export interface CompleteWithToolsParams {

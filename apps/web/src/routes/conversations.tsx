@@ -18,6 +18,16 @@ import { StatusBadge } from "@/components/conversation/StatusBadge";
 import { NotificationBell } from "@/components/NotificationBell";
 import SignInForm from "@/components/sign-in-form";
 import UserMenu from "@/components/user-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -293,6 +303,7 @@ function ConversationDetail({ conversationId }: ConversationDetailProps) {
   const closeConversation = useMutation(api.conversations.close);
   const reopenConversation = useMutation(api.conversations.reopen);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showHandBackDialog, setShowHandBackDialog] = useState(false);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -325,9 +336,6 @@ function ConversationDetail({ conversationId }: ConversationDetailProps) {
   };
 
   const handleHandBack = async () => {
-    if (!window.confirm("AI will resume handling this conversation. Continue?")) {
-      return;
-    }
     setIsProcessing(true);
     try {
       await handBack({ conversationId });
@@ -336,6 +344,7 @@ function ConversationDetail({ conversationId }: ConversationDetailProps) {
       toast.error(error instanceof Error ? error.message : "Failed to hand back");
     } finally {
       setIsProcessing(false);
+      setShowHandBackDialog(false);
     }
   };
 
@@ -414,15 +423,32 @@ function ConversationDetail({ conversationId }: ConversationDetailProps) {
               </Button>
             )}
             {isAssignedToSomeone && !isClosed && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleHandBack}
-                disabled={isProcessing}
-              >
-                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Hand Back
-              </Button>
+              <AlertDialog open={showHandBackDialog} onOpenChange={setShowHandBackDialog}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowHandBackDialog(true)}
+                  disabled={isProcessing}
+                >
+                  {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Hand Back
+                </Button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hand back to AI?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      AI will resume handling this conversation. The customer will receive automated responses.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleHandBack} disabled={isProcessing}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Confirm
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             {!isClosed && (
               <Button

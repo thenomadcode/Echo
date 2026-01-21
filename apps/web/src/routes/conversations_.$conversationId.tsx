@@ -48,7 +48,9 @@ function ConversationDetailContent() {
   const navigate = useNavigate();
   const { conversationId } = Route.useParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
+  // All hooks must be called before any conditional returns
   const conversationQuery = useQuery(
     convexQuery(api.conversations.get, {
       conversationId: conversationId as Id<"conversations">,
@@ -62,6 +64,11 @@ function ConversationDetailContent() {
     })
   );
 
+  const takeOver = useMutation(api.conversations.takeOver);
+  const handBack = useMutation(api.conversations.handBack);
+  const closeConversation = useMutation(api.conversations.close);
+  const reopenConversation = useMutation(api.conversations.reopen);
+
   const conversation = conversationQuery.data;
   const messages = messagesQuery.data?.messages ?? [];
 
@@ -70,6 +77,18 @@ function ConversationDetailContent() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  const mapSender = (sender: string): "customer" | "ai" | "human" => {
+    if (sender === "customer") return "customer";
+    if (sender === "human") return "human";
+    return "ai";
+  };
+
+  const handleOrderClick = () => {
+    if (conversation?.order) {
+      window.location.href = `/orders/${conversation.order._id}`;
+    }
+  };
 
   if (conversationQuery.isLoading) {
     return (
@@ -117,24 +136,6 @@ function ConversationDetailContent() {
       </div>
     );
   }
-
-  const mapSender = (sender: string): "customer" | "ai" | "human" => {
-    if (sender === "customer") return "customer";
-    if (sender === "human") return "human";
-    return "ai";
-  };
-
-  const handleOrderClick = () => {
-    if (conversation.order) {
-      window.location.href = `/orders/${conversation.order._id}`;
-    }
-  };
-
-  const takeOver = useMutation(api.conversations.takeOver);
-  const handBack = useMutation(api.conversations.handBack);
-  const closeConversation = useMutation(api.conversations.close);
-  const reopenConversation = useMutation(api.conversations.reopen);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const isAssignedToSomeone = !!conversation.assignedTo;
   const isClosed = conversation.status === "closed";

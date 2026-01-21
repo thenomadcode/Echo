@@ -8,6 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -55,36 +56,36 @@ export function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="size-4" />
-            {unreadCount !== undefined && unreadCount > 0 && (
-              <span
-                className={cn(
-                  "absolute -top-1 -right-1",
-                  "flex h-[18px] min-w-[18px] items-center justify-center",
-                  "rounded-full bg-red-500 px-1 text-xs font-medium text-white"
-                )}
-              >
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
+        render={<Button variant="ghost" size="icon" className="relative" aria-label="Notifications" />}
+      >
+        <Bell className="size-4" />
+        {unreadCount !== undefined && unreadCount > 0 && (
+          <span
+            className={cn(
+              "absolute -top-1 -right-1",
+              "flex h-[18px] min-w-[18px] items-center justify-center",
+              "rounded-full bg-red-500 px-1 text-xs font-medium text-white"
             )}
-          </Button>
-        }
-      />
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 bg-card">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          {unreadCount !== undefined && unreadCount > 0 && (
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
-              className="text-xs font-normal text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Mark all as read
-            </button>
-          )}
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex items-center justify-between">
+            <span>Notifications</span>
+            {unreadCount !== undefined && unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="text-xs font-normal text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Mark all as read
+              </button>
+            )}
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
 
         {notifications === undefined ? (
