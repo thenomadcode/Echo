@@ -24,6 +24,33 @@
 
 ---
 
+## 2026-01-21 16:10 - S22: Products page card design improvements
+
+**What was implemented:**
+- Redesigned ProductCard component with improved visual design:
+  - Larger images using aspect-square ratio (fills card width)
+  - Product name now uses font-semibold for better prominence
+  - Price displayed with font-bold text-primary for clear visibility
+  - Added line-clamp-2 to product name to handle long names
+- Added availability indicator badge overlay on image:
+  - Green badge with dot for available products
+  - Gray badge with dot for unavailable products
+  - Badge positioned top-right on the image
+- Checkbox positioned top-left on image for selection
+- Selected cards now have ring-2 ring-primary visual indicator
+- Removed opacity dimming for unavailable products (badge provides status)
+- Grid gap already gap-6 (was implemented in previous story)
+- Category dropdown already in header filters (already existed)
+
+**Files changed:**
+- apps/web/src/components/products/ProductCard.tsx (complete redesign)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-21 16:02 - S21: Orders detail page layout redesign
 
 **What was implemented:**
