@@ -135,24 +135,29 @@ func (m Model) renderStoriesPanel(width, height int) string {
 }
 
 func (m Model) renderStoryLine(story Story, maxWidth int) string {
-	var icon string
+	var statusIcon string
 	var style lipgloss.Style
 
 	isCurrent := story.ID == m.currentStoryID
 
 	switch {
 	case story.Passes:
-		icon = SuccessIcon
+		statusIcon = SuccessIcon
 		style = StoryDoneStyle
 	case isCurrent:
-		icon = CurrentIcon
+		statusIcon = CurrentIcon
 		style = StoryCurrentStyle
 	default:
-		icon = PendingIcon
+		statusIcon = PendingIcon
 		style = StoryPendingStyle
 	}
 
-	titleMaxLen := maxWidth - 8
+	ultraworkIcon := NoUltrawork
+	if story.Ultrawork {
+		ultraworkIcon = UltraworkIcon
+	}
+
+	titleMaxLen := maxWidth - 11
 	if titleMaxLen < 10 {
 		titleMaxLen = 10
 	}
@@ -162,7 +167,7 @@ func (m Model) renderStoryLine(story Story, maxWidth int) string {
 		title = title[:titleMaxLen-3] + "..."
 	}
 
-	return fmt.Sprintf("%s %s %s", icon, story.ID, style.Render(title))
+	return fmt.Sprintf("%s %s %s %s", ultraworkIcon, statusIcon, story.ID, style.Render(title))
 }
 
 func (m Model) renderOutputPanel(width, height int) string {
