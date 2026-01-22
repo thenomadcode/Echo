@@ -339,4 +339,64 @@ export default defineSchema({
     .index("by_business_phone", ["businessId", "phone"])
     .index("by_business_tier", ["businessId", "tier"])
     .index("by_business_last_seen", ["businessId", "lastSeenAt"]),
+
+  // Customer addresses
+  customerAddresses: defineTable({
+    customerId: v.id("customers"),
+    label: v.string(),
+    address: v.string(),
+    isDefault: v.boolean(),
+    lastUsedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_customer", ["customerId"]),
+
+  // Customer memory - facts learned about the customer
+  customerMemory: defineTable({
+    customerId: v.id("customers"),
+    category: v.union(
+      v.literal("allergy"),
+      v.literal("restriction"),
+      v.literal("preference"),
+      v.literal("behavior"),
+      v.literal("complaint")
+    ),
+    fact: v.string(),
+    confidence: v.number(), // 0.0 to 1.0
+    source: v.union(
+      v.literal("ai_extracted"),
+      v.literal("manual"),
+      v.literal("order_history")
+    ),
+    extractedFrom: v.optional(v.id("conversations")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_customer", ["customerId"])
+    .index("by_customer_category", ["customerId", "category"]),
+
+  // Customer notes - staff-added notes about customers
+  customerNotes: defineTable({
+    customerId: v.id("customers"),
+    note: v.string(),
+    addedBy: v.string(), // user ID from better-auth
+    staffOnly: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_customer", ["customerId"]),
+
+  // Conversation summaries - AI-generated summaries of past conversations
+  conversationSummaries: defineTable({
+    conversationId: v.id("conversations"),
+    customerId: v.id("customers"),
+    summary: v.string(),
+    sentiment: v.union(
+      v.literal("positive"),
+      v.literal("neutral"),
+      v.literal("negative")
+    ),
+    keyEvents: v.array(v.string()),
+    orderIds: v.optional(v.array(v.id("orders"))),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_customer", ["customerId"]),
 });
