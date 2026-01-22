@@ -254,3 +254,163 @@ export const saveCustomerPreference = action({
     return { status: "success", memoryId };
   },
 });
+
+export const getAddressesForCustomer = internalQuery({
+  args: {
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("customerAddresses")
+      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+      .collect();
+  },
+});
+
+function normalizeAddress(address: string): string {
+  return address
+    .toLowerCase()
+    .replace(/[,.\-#]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function fuzzyAddressMatch(addr1: string, addr2: string): boolean {
+  const norm1 = normalizeAddress(addr1);
+  const norm2 = normalizeAddress(addr2);
+
+  if (norm1 === norm2) return true;
+
+  const words1 = new Set(norm1.split(" ").filter((w) => w.length > 2));
+  const words2 = new Set(norm2.split(" ").filter((w) => w.length > 2));
+
+  const intersection = [...words1].filter((w) => words2.has(w));
+  const similarity = (intersection.length * 2) / (words1.size + words2.size);
+
+  return similarity > 0.7;
+}
+
+function generateAddressLabel(address: string): string {
+  const lower = address.toLowerCase();
+
+  if (lower.includes("office") || lower.includes("oficina") || lower.includes("trabalho")) {
+    return "Work";
+  }
+  if (lower.includes("home") || lower.includes("casa") || lower.includes("hogar")) {
+    return "Home";
+  }
+
+  return "Address";
+}
+
+export const updateAddressLastUsed = internalMutation({
+  args: {
+    addressId: v.id("customerAddresses"),
+    setAsDefault: v.boolean(),
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    if (args.setAsDefault) {
+      const allAddresses = await ctx.db
+        .query("customerAddresses")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect();
+
+      for (const addr of allAddresses) {
+        if (addr.isDefault && addr._id !== args.addressId) {
+          await ctx.db.patch(addr._id, { isDefault: false });
+        }
+      }
+    }
+
+    await ctx.db.patch(args.addressId, {
+      lastUsedAt: Date.now(),
+      ...(args.setAsDefault ? { isDefault: true } : {}),
+    });
+  },
+});
+
+export const insertAddress = internalMutation({
+  args: {
+    customerId: v.id("customers"),
+    address: v.string(),
+    label: v.string(),
+    isDefault: v.boolean(),
+  },
+  handler: async (ctx, args): Promise<Id<"customerAddresses">> => {
+    if (args.isDefault) {
+      const allAddresses = await ctx.db
+        .query("customerAddresses")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect();
+
+      for (const addr of allAddresses) {
+        if (addr.isDefault) {
+          await ctx.db.patch(addr._id, { isDefault: false });
+        }
+      }
+    }
+
+    return await ctx.db.insert("customerAddresses", {
+      customerId: args.customerId,
+      address: args.address,
+      label: args.label,
+      isDefault: args.isDefault,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const updateCustomerAddress = action({
+  args: {
+    customerId: v.id("customers"),
+    address: v.string(),
+    label: v.optional(v.string()),
+    setAsDefault: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args): Promise<{
+    addressId: Id<"customerAddresses">;
+    isNew: boolean;
+  }> => {
+    const customerData = await ctx.runQuery(
+      internal.ai.customerHistory.getCustomerForHistory,
+      { customerId: args.customerId }
+    );
+
+    if (!customerData) {
+      throw new Error("Customer not found");
+    }
+
+    const existingAddresses = await ctx.runQuery(
+      internal.ai.customerHistory.getAddressesForCustomer,
+      { customerId: args.customerId }
+    );
+
+    const matchingAddress = existingAddresses.find((addr: Doc<"customerAddresses">) =>
+      fuzzyAddressMatch(addr.address, args.address)
+    );
+
+    if (matchingAddress) {
+      await ctx.runMutation(internal.ai.customerHistory.updateAddressLastUsed, {
+        addressId: matchingAddress._id,
+        setAsDefault: args.setAsDefault ?? false,
+        customerId: args.customerId,
+      });
+
+      return { addressId: matchingAddress._id, isNew: false };
+    }
+
+    const label = args.label ?? generateAddressLabel(args.address);
+    const isFirst = existingAddresses.length === 0;
+    const isDefault = args.setAsDefault ?? isFirst;
+
+    const addressId = await ctx.runMutation(internal.ai.customerHistory.insertAddress, {
+      customerId: args.customerId,
+      address: args.address,
+      label,
+      isDefault,
+    });
+
+    return { addressId, isNew: true };
+  },
+});
