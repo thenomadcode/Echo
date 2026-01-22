@@ -109,6 +109,39 @@ export const list = query({
   },
 });
 
+export const listByCustomer = query({
+  args: {
+    customerId: v.id("customers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return [];
+    }
+
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      return [];
+    }
+
+    const business = await ctx.db.get(customer.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return [];
+    }
+
+    const limit = args.limit ?? 50;
+
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_customer", (q) => q.eq("customerRecordId", args.customerId))
+      .order("desc")
+      .take(limit);
+
+    return conversations;
+  },
+});
+
 export const get = query({
   args: {
     conversationId: v.id("conversations"),

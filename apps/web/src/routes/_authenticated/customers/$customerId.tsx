@@ -1,23 +1,644 @@
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
-import { createFileRoute } from "@tanstack/react-router";
+import { convexQuery } from "@convex-dev/react-query";
+import { api } from "@echo/backend/convex/_generated/api";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  User,
+  Phone,
+  Star,
+  MapPin,
+  AlertCircle,
+  ShoppingBag,
+  MessageCircle,
+  Heart,
+  StickyNote,
+} from "lucide-react";
+import { useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/customers/$customerId")({
   component: CustomerDetailPage,
 });
 
+type CustomerTier = "regular" | "bronze" | "silver" | "gold" | "vip";
+type TabId = "overview" | "orders" | "conversations" | "preferences" | "notes";
+
+const TIER_CONFIG: Record<CustomerTier, { label: string; variant: "default" | "secondary" | "warning" | "info" | "success" }> = {
+  regular: { label: "Regular", variant: "secondary" },
+  bronze: { label: "Bronze", variant: "default" },
+  silver: { label: "Silver", variant: "info" },
+  gold: { label: "Gold", variant: "warning" },
+  vip: { label: "VIP", variant: "success" },
+};
+
+function TierBadge({ tier }: { tier: CustomerTier }) {
+  const config = TIER_CONFIG[tier] ?? TIER_CONFIG.regular;
+  const showStar = tier === "gold" || tier === "vip";
+
+  return (
+    <Badge variant={config.variant} className="gap-1">
+      {showStar && <Star className="h-3 w-3 fill-current" />}
+      {config.label}
+    </Badge>
+  );
+}
+
+const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: "overview", label: "Overview", icon: User },
+  { id: "orders", label: "Orders", icon: ShoppingBag },
+  { id: "conversations", label: "Conversations", icon: MessageCircle },
+  { id: "preferences", label: "Preferences", icon: Heart },
+  { id: "notes", label: "Notes", icon: StickyNote },
+];
+
 function CustomerDetailPage() {
+  const navigate = useNavigate();
   const { customerId } = Route.useParams();
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+
+  const customerQuery = useQuery(
+    convexQuery(api.customers.get, { customerId: customerId as Id<"customers"> })
+  );
+
+  const contextQuery = useQuery(
+    convexQuery(api.customers.getContext, { customerId: customerId as Id<"customers"> })
+  );
+
+  const customer = customerQuery.data;
+  const context = contextQuery.data;
+
+  const formatCurrency = (amount: number, currency: string = "USD") => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(amount / 100);
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  if (customerQuery.isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-8 max-w-5xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!customer) {
+    return (
+      <div className="container mx-auto px-6 py-8 max-w-5xl">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/customers" })}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Customers
+        </Button>
+
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <User className="mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">Customer not found</h3>
+            <p className="text-sm text-muted-foreground">
+              The customer you're looking for doesn't exist or you don't have access.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-5xl">
-      <h1 className="text-2xl font-bold font-heading mb-6">Customer Details</h1>
-      <p className="text-muted-foreground">
-        Customer ID: {customerId as Id<"customers">}
-      </p>
-      <p className="text-muted-foreground mt-2">
-        Full detail page coming in S22...
-      </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate({ to: "/customers" })}
+        className="mb-4"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Customers
+      </Button>
+
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-2xl font-semibold">
+              {customer.name?.[0]?.toUpperCase() || customer.phone[0]}
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold font-heading">
+                  {customer.name || "Unknown Customer"}
+                </h1>
+                <TierBadge tier={customer.tier as CustomerTier} />
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                <Phone className="h-4 w-4" />
+                <span>{customer.phone}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-6 text-center">
+            <div>
+              <p className="text-2xl font-bold">{customer.totalOrders}</p>
+              <p className="text-sm text-muted-foreground">Orders</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{formatCurrency(customer.totalSpent)}</p>
+              <p className="text-sm text-muted-foreground">Lifetime Spend</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b mb-6">
+        <nav className="flex gap-6 overflow-x-auto" role="tablist">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "overview" && (
+        <OverviewTab customer={customer} context={context} formatCurrency={formatCurrency} formatDate={formatDate} />
+      )}
+      {activeTab === "orders" && (
+        <OrdersTab customerId={customerId as Id<"customers">} formatCurrency={formatCurrency} formatDate={formatDate} navigate={navigate} />
+      )}
+      {activeTab === "conversations" && (
+        <ConversationsTab customerId={customerId as Id<"customers">} formatDate={formatDate} navigate={navigate} />
+      )}
+      {activeTab === "preferences" && (
+        <PreferencesTab context={context} />
+      )}
+      {activeTab === "notes" && (
+        <NotesTab customerId={customerId as Id<"customers">} formatDate={formatDate} />
+      )}
+    </div>
+  );
+}
+
+interface CustomerContext {
+  profile: {
+    name?: string;
+    phone: string;
+    tier: string;
+    preferredLanguage?: string;
+    firstSeenAt: number;
+    lastSeenAt: number;
+    totalOrders: number;
+    totalSpent: number;
+  };
+  addresses: Array<{ label: string; address: string; isDefault: boolean }>;
+  memory: {
+    allergies: string[];
+    restrictions: string[];
+    preferences: string[];
+    behaviors: string[];
+  };
+  businessNotes: string;
+}
+
+interface OverviewTabProps {
+  customer: {
+    _id: Id<"customers">;
+    name?: string;
+    phone: string;
+    tier: string;
+    totalOrders: number;
+    totalSpent: number;
+    firstSeenAt: number;
+    lastSeenAt: number;
+    preferredLanguage?: string;
+  };
+  context: CustomerContext | null | undefined;
+  formatCurrency: (amount: number, currency?: string) => string;
+  formatDate: (timestamp: number) => string;
+}
+
+function OverviewTab({ customer, context, formatCurrency, formatDate }: OverviewTabProps) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Quick Stats</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">First Seen</span>
+              <span>{formatDate(customer.firstSeenAt)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Last Seen</span>
+              <span>{formatDate(customer.lastSeenAt)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Average Order</span>
+              <span>
+                {customer.totalOrders > 0
+                  ? formatCurrency(Math.round(customer.totalSpent / customer.totalOrders))
+                  : "-"}
+              </span>
+            </div>
+            {customer.preferredLanguage && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Preferred Language</span>
+                <span className="capitalize">{customer.preferredLanguage}</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Saved Addresses
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {context?.addresses && context.addresses.length > 0 ? (
+            <div className="space-y-3">
+              {context.addresses.map((addr, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{addr.label}</span>
+                      {addr.isDefault && (
+                        <Badge variant="secondary" className="text-xs">Default</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{addr.address}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No saved addresses</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {context?.memory?.allergies && context.memory.allergies.length > 0 && (
+        <Card className="border-red-200 dark:border-red-900">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2 text-red-600 dark:text-red-400">
+              <AlertCircle className="h-4 w-4" />
+              Allergies
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {context.memory.allergies.map((allergy, idx) => (
+                <Badge key={idx} variant="destructive">{allergy}</Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {context && (context.memory?.preferences?.length > 0 || context.memory?.restrictions?.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Key Preferences</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {context.memory.restrictions.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mb-1">Restrictions</p>
+                  <div className="flex flex-wrap gap-1">
+                    {context.memory.restrictions.map((r, idx) => (
+                      <Badge key={idx} variant="warning" className="text-xs">{r}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {context.memory.preferences.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Preferences</p>
+                  <div className="flex flex-wrap gap-1">
+                    {context.memory.preferences.map((p, idx) => (
+                      <Badge key={idx} variant="info" className="text-xs">{p}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {context?.businessNotes && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Business Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm whitespace-pre-wrap">{context.businessNotes}</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+interface OrdersTabProps {
+  customerId: Id<"customers">;
+  formatCurrency: (amount: number, currency?: string) => string;
+  formatDate: (timestamp: number) => string;
+  navigate: ReturnType<typeof useNavigate>;
+}
+
+function OrdersTab({ customerId, formatCurrency, formatDate, navigate }: OrdersTabProps) {
+  const ordersQuery = useQuery(
+    convexQuery(api.orders.listByCustomer, { customerId })
+  );
+
+  const orders = ordersQuery.data?.orders ?? [];
+
+  if (ordersQuery.isLoading) {
+    return <div className="text-muted-foreground py-8 text-center">Loading orders...</div>;
+  }
+
+  if (orders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <ShoppingBag className="mb-4 h-10 w-10 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">No orders yet</h3>
+          <p className="text-sm text-muted-foreground">
+            This customer hasn't placed any orders
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left p-4 font-medium">Order #</th>
+              <th className="text-left p-4 font-medium">Items</th>
+              <th className="text-left p-4 font-medium">Status</th>
+              <th className="text-right p-4 font-medium">Total</th>
+              <th className="text-right p-4 font-medium">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr
+                key={order._id}
+                onClick={() => navigate({ to: "/orders/$orderId", params: { orderId: order._id } })}
+                className="border-b last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <td className="p-4 font-medium">{order.orderNumber}</td>
+                <td className="p-4 text-muted-foreground">{order.items.length} items</td>
+                <td className="p-4">
+                  <Badge variant={order.status === "delivered" ? "success" : order.status === "cancelled" ? "destructive" : "secondary"}>
+                    {order.status}
+                  </Badge>
+                </td>
+                <td className="p-4 text-right">{formatCurrency(order.total, order.currency)}</td>
+                <td className="p-4 text-right text-muted-foreground">{formatDate(order.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ConversationsTabProps {
+  customerId: Id<"customers">;
+  formatDate: (timestamp: number) => string;
+  navigate: ReturnType<typeof useNavigate>;
+}
+
+function ConversationsTab({ customerId, formatDate, navigate }: ConversationsTabProps) {
+  const conversationsQuery = useQuery(
+    convexQuery(api.conversations.listByCustomer, { customerId })
+  );
+
+  const summariesQuery = useQuery(
+    convexQuery(api.conversationSummaries.listByCustomer, { customerId })
+  );
+
+  const conversations = conversationsQuery.data ?? [];
+  const summaries = summariesQuery.data ?? [];
+
+  const summaryMap = new Map(summaries.map(s => [s.conversationId, s]));
+
+  if (conversationsQuery.isLoading) {
+    return <div className="text-muted-foreground py-8 text-center">Loading conversations...</div>;
+  }
+
+  if (conversations.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <MessageCircle className="mb-4 h-10 w-10 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">No conversations yet</h3>
+          <p className="text-sm text-muted-foreground">
+            Conversations with this customer will appear here
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {conversations.map((conv) => {
+        const summary = summaryMap.get(conv._id);
+        return (
+          <Card
+            key={conv._id}
+            className="cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => navigate({ to: "/conversations/$conversationId", params: { conversationId: conv._id } })}
+          >
+            <CardContent className="py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant={conv.status === "closed" ? "secondary" : conv.status === "escalated" ? "warning" : "default"}>
+                      {conv.status}
+                    </Badge>
+                    {summary?.sentiment && (
+                      <Badge variant={summary.sentiment === "positive" ? "success" : summary.sentiment === "negative" ? "destructive" : "secondary"}>
+                        {summary.sentiment}
+                      </Badge>
+                    )}
+                  </div>
+                  {summary ? (
+                    <p className="text-sm text-muted-foreground line-clamp-2">{summary.summary}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No summary available</p>
+                  )}
+                </div>
+                <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
+                  {formatDate(conv.createdAt)}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+interface PreferencesTabProps {
+  context: CustomerContext | null | undefined;
+}
+
+function PreferencesTab({ context }: PreferencesTabProps) {
+  const categories = [
+    { key: "allergies", label: "Allergies", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-950/30", items: context?.memory?.allergies ?? [] },
+    { key: "restrictions", label: "Restrictions", color: "text-orange-600 dark:text-orange-400", bgColor: "bg-orange-50 dark:bg-orange-950/30", items: context?.memory?.restrictions ?? [] },
+    { key: "preferences", label: "Preferences", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-950/30", items: context?.memory?.preferences ?? [] },
+    { key: "behaviors", label: "Behaviors", color: "text-gray-600 dark:text-gray-400", bgColor: "bg-gray-50 dark:bg-gray-950/30", items: context?.memory?.behaviors ?? [] },
+  ] as const;
+
+  const hasAnyPreferences = categories.some(c => c.items.length > 0);
+
+  if (!hasAnyPreferences) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Heart className="mb-4 h-10 w-10 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">No preferences recorded</h3>
+          <p className="text-sm text-muted-foreground">
+            Preferences will be extracted from conversations automatically
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {categories.map((category) => {
+        if (category.items.length === 0) return null;
+        return (
+          <Card key={category.key} className={category.key === "allergies" ? "border-red-200 dark:border-red-900" : ""}>
+            <CardHeader>
+              <CardTitle className={cn("text-base", category.color)}>
+                {category.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {category.items.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={cn("rounded-md px-3 py-2 text-sm", category.bgColor)}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+interface NotesTabProps {
+  customerId: Id<"customers">;
+  formatDate: (timestamp: number) => string;
+}
+
+function NotesTab({ customerId, formatDate }: NotesTabProps) {
+  const notesQuery = useQuery(
+    convexQuery(api.customerNotes.list, { customerId })
+  );
+
+  const notes = notesQuery.data ?? [];
+
+  if (notesQuery.isLoading) {
+    return <div className="text-muted-foreground py-8 text-center">Loading notes...</div>;
+  }
+
+  if (notes.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <StickyNote className="mb-4 h-10 w-10 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">No notes yet</h3>
+          <p className="text-sm text-muted-foreground">
+            Add notes about this customer for your team
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {notes.map((note) => (
+        <Card key={note._id}>
+          <CardContent className="py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-sm whitespace-pre-wrap">{note.note}</p>
+                {note.staffOnly && (
+                  <Badge variant="secondary" className="mt-2">Staff Only</Badge>
+                )}
+              </div>
+              <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
+                {formatDate(note.createdAt)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

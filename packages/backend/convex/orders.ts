@@ -549,6 +549,39 @@ export const listByBusiness = query({
   },
 });
 
+export const listByCustomer = query({
+  args: {
+    customerId: v.id("customers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return { orders: [] };
+    }
+
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      return { orders: [] };
+    }
+
+    const business = await ctx.db.get(customer.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return { orders: [] };
+    }
+
+    const limit = args.limit ?? 50;
+
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+      .order("desc")
+      .take(limit);
+
+    return { orders };
+  },
+});
+
 export const updatePaymentLink = mutation({
   args: {
     orderId: v.id("orders"),

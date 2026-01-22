@@ -31,6 +31,39 @@ export const get = query({
   },
 });
 
+export const listByCustomer = query({
+  args: {
+    customerId: v.id("customers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return [];
+    }
+
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      return [];
+    }
+
+    const business = await ctx.db.get(customer.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return [];
+    }
+
+    const limit = args.limit ?? 50;
+
+    const summaries = await ctx.db
+      .query("conversationSummaries")
+      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+      .order("desc")
+      .take(limit);
+
+    return summaries;
+  },
+});
+
 export const search = query({
   args: {
     customerId: v.id("customers"),
