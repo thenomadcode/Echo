@@ -24,6 +24,31 @@
 
 ---
 
+## 2026-01-22 23:15 - S29: Customer anonymization
+
+**What was implemented:**
+- Added `isAnonymized` optional boolean field to customers schema
+- Added `by_business_anonymized` index for efficient filtering
+- Added `customers.anonymize` mutation:
+  - Deletes: addresses, memories, notes, conversation summaries
+  - Clears: name, preferredLanguage, manualTier, averageOrderValue, lastOrderAt
+  - Sets: phone to "anonymized-{customerId}", tier to "regular", stats to 0
+  - Marks: isAnonymized = true
+  - Orders and conversations are NOT deleted (kept for history)
+- Updated `customers.list` query:
+  - Added `includeAnonymized` optional boolean arg (default: false)
+  - Anonymized customers hidden by default
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+3 lines)
+- packages/backend/convex/customers.ts (+80 lines)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+
+---
+
 ## 2026-01-22 23:00 - S28: Customer deletion workflow
 
 **What was implemented:**

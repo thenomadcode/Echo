@@ -489,7 +489,7 @@
       "id": "S29",
       "title": "Customer anonymization",
       "priority": 29,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Mutation customers.anonymize({ customerId }) keeps orders but removes PII",

@@ -74,6 +74,7 @@ export const list = query({
         v.literal("createdAt")
       )
     ),
+    includeAnonymized: v.optional(v.boolean()),
     cursor: v.optional(v.number()),
     limit: v.optional(v.number()),
   },
@@ -92,6 +93,10 @@ export const list = query({
       .query("customers")
       .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
       .collect();
+
+    if (!args.includeAnonymized) {
+      customers = customers.filter((c) => !c.isAnonymized);
+    }
 
     if (args.tier) {
       customers = customers.filter((c) => c.tier === args.tier);
@@ -636,6 +641,82 @@ export const deleteCustomer = mutation({
     );
 
     await ctx.db.delete(args.customerId);
+
+    return { success: true };
+  },
+});
+
+export const anonymize = mutation({
+  args: {
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      throw new Error("Customer not found");
+    }
+
+    const business = await ctx.db.get(customer.businessId);
+    if (!business) {
+      throw new Error("Business not found");
+    }
+
+    if (business.ownerId !== authUser._id) {
+      throw new Error("Not authorized to anonymize this customer");
+    }
+
+    if (customer.isAnonymized) {
+      throw new Error("Customer is already anonymized");
+    }
+
+    const [addresses, memories, notes, summaries] = await Promise.all([
+      ctx.db
+        .query("customerAddresses")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerMemory")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerNotes")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("conversationSummaries")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+    ]);
+
+    await Promise.all([
+      ...addresses.map((a) => ctx.db.delete(a._id)),
+      ...memories.map((m) => ctx.db.delete(m._id)),
+      ...notes.map((n) => ctx.db.delete(n._id)),
+      ...summaries.map((s) => ctx.db.delete(s._id)),
+    ]);
+
+    const anonymizedPhone = `anonymized-${args.customerId}`;
+    const now = Date.now();
+
+    await ctx.db.patch(args.customerId, {
+      name: undefined,
+      phone: anonymizedPhone,
+      preferredLanguage: undefined,
+      tier: "regular",
+      manualTier: undefined,
+      tierUpdatedAt: undefined,
+      totalOrders: 0,
+      totalSpent: 0,
+      averageOrderValue: undefined,
+      lastOrderAt: undefined,
+      isAnonymized: true,
+      updatedAt: now,
+    });
 
     return { success: true };
   },

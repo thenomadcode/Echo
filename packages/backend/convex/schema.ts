@@ -336,6 +336,9 @@ export default defineSchema({
     firstSeenAt: v.number(),
     lastSeenAt: v.number(),
 
+    // Privacy
+    isAnonymized: v.optional(v.boolean()),
+
     // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -343,7 +346,8 @@ export default defineSchema({
     .index("by_business", ["businessId"])
     .index("by_business_phone", ["businessId", "phone"])
     .index("by_business_tier", ["businessId", "tier"])
-    .index("by_business_last_seen", ["businessId", "lastSeenAt"]),
+    .index("by_business_last_seen", ["businessId", "lastSeenAt"])
+    .index("by_business_anonymized", ["businessId", "isAnonymized"]),
 
   // Customer addresses
   customerAddresses: defineTable({
