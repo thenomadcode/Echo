@@ -236,3 +236,92 @@ export const update = mutation({
     return args.customerId;
   },
 });
+
+export const getContext = query({
+  args: {
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      return null;
+    }
+
+    const business = await ctx.db.get(customer.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return null;
+    }
+
+    const [addresses, memories, notes] = await Promise.all([
+      ctx.db
+        .query("customerAddresses")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerMemory")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerNotes")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+    ]);
+
+    const sortedAddresses = addresses
+      .sort((a, b) => {
+        const aTime = a.lastUsedAt ?? a.createdAt;
+        const bTime = b.lastUsedAt ?? b.createdAt;
+        return bTime - aTime;
+      })
+      .map((a) => ({
+        label: a.label,
+        address: a.address,
+        isDefault: a.isDefault,
+      }));
+
+    const allergies = memories
+      .filter((m) => m.category === "allergy")
+      .map((m) => m.fact);
+    const restrictions = memories
+      .filter((m) => m.category === "restriction")
+      .map((m) => m.fact);
+    const preferences = memories
+      .filter((m) => m.category === "preference")
+      .map((m) => m.fact);
+    const behaviors = memories
+      .filter((m) => m.category === "behavior")
+      .map((m) => m.fact);
+
+    const businessNotes = notes
+      .filter((n) => !n.staffOnly)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((n) => n.note)
+      .join("\n");
+
+    return {
+      profile: {
+        name: customer.name,
+        phone: customer.phone,
+        tier: customer.tier,
+        preferredLanguage: customer.preferredLanguage,
+        firstSeenAt: customer.firstSeenAt,
+        lastSeenAt: customer.lastSeenAt,
+        totalOrders: customer.totalOrders,
+        totalSpent: customer.totalSpent,
+      },
+      addresses: sortedAddresses,
+      memory: {
+        allergies,
+        restrictions,
+        preferences,
+        behaviors,
+      },
+      businessNotes,
+    };
+  },
+});
