@@ -294,4 +294,49 @@ export default defineSchema({
   })
     .index("by_business", ["businessId"])
     .index("by_shop", ["shop"]),
+
+  // Customer Relationship Memory tables
+  customers: defineTable({
+    businessId: v.id("businesses"),
+    phone: v.string(),
+    name: v.optional(v.string()),
+    preferredLanguage: v.optional(v.string()),
+
+    // Tier system
+    tier: v.union(
+      v.literal("regular"),
+      v.literal("bronze"),
+      v.literal("silver"),
+      v.literal("gold"),
+      v.literal("vip")
+    ),
+    manualTier: v.optional(
+      v.union(
+        v.literal("regular"),
+        v.literal("bronze"),
+        v.literal("silver"),
+        v.literal("gold"),
+        v.literal("vip")
+      )
+    ),
+    tierUpdatedAt: v.optional(v.number()),
+
+    // Stats
+    totalOrders: v.number(),
+    totalSpent: v.number(),
+    averageOrderValue: v.optional(v.number()),
+
+    // Activity tracking
+    lastOrderAt: v.optional(v.number()),
+    firstSeenAt: v.number(),
+    lastSeenAt: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_business_phone", ["businessId", "phone"])
+    .index("by_business_tier", ["businessId", "tier"])
+    .index("by_business_last_seen", ["businessId", "lastSeenAt"]),
 });
