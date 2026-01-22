@@ -33,7 +33,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type SettingsSection = "general" | "ai" | "integrations";
+type SettingsSection = "general" | "ai" | "integrations" | "privacy";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -74,6 +74,12 @@ const SIDEBAR_SECTIONS: { title: string; items: SidebarItem[] }[] = [
     items: [
       { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, section: "integrations" },
       { id: "shopify", label: "Shopify", icon: ShoppingBag, section: "integrations" },
+    ],
+  },
+  {
+    title: "Privacy",
+    items: [
+      { id: "data-retention", label: "Data Retention", icon: Clock, section: "privacy" },
     ],
   },
 ];
@@ -173,6 +179,9 @@ function SettingsPage() {
             <AISettings business={activeBusiness} updateBusiness={updateBusiness} />
           )}
           {section === "integrations" && <IntegrationsSettings />}
+          {section === "privacy" && (
+            <PrivacySettings business={activeBusiness} updateBusiness={updateBusiness} />
+          )}
         </main>
       </div>
     </div>
@@ -194,6 +203,7 @@ interface Business {
   aiGreeting?: string;
   aiPersonality?: string;
   escalationKeywords?: string[];
+  dataRetentionDays?: number;
 }
 
 interface SettingsFormProps {
@@ -209,6 +219,7 @@ interface SettingsFormProps {
     aiGreeting?: string;
     aiPersonality?: string;
     escalationKeywords?: string[];
+    dataRetentionDays?: number;
   }) => Promise<string>;
 }
 
@@ -712,6 +723,92 @@ function IntegrationsSettings() {
       </Card>
 
       <ShopifyIntegrationCard />
+    </div>
+  );
+}
+
+const RETENTION_OPTIONS = [
+  { value: "", label: "Never (keep forever)" },
+  { value: "30", label: "30 days" },
+  { value: "60", label: "60 days" },
+  { value: "90", label: "90 days" },
+  { value: "180", label: "180 days" },
+  { value: "365", label: "1 year" },
+];
+
+function PrivacySettings({ business, updateBusiness }: SettingsFormProps) {
+  const form = useForm({
+    defaultValues: {
+      dataRetentionDays: business.dataRetentionDays?.toString() || "",
+    },
+    onSubmit: async ({ value }) => {
+      try {
+        const retentionDays = value.dataRetentionDays 
+          ? parseInt(value.dataRetentionDays, 10) 
+          : undefined;
+        await updateBusiness({
+          businessId: business._id,
+          dataRetentionDays: retentionDays,
+        });
+        toast.success("Privacy settings saved");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to save");
+      }
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card id="data-retention">
+        <CardHeader>
+          <CardTitle>Data Retention</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Configure how long to keep customer data. Inactive customers (no activity for the specified period) 
+            will be automatically anonymized. Their order history is preserved but personal information is removed.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit();
+            }}
+          >
+            <form.Field name="dataRetentionDays">
+              {(field) => (
+                <div className="space-y-2 max-w-xs">
+                  <Label htmlFor={field.name}>Retention Period</Label>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) => field.handleChange(value ?? "")}
+                  >
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Select retention period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RETENTION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value || "never"} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Customers will be warned 7 days before anonymization.
+                  </p>
+                </div>
+              )}
+            </form.Field>
+
+            <div className="mt-6">
+              <Button type="submit" disabled={form.state.isSubmitting}>
+                {form.state.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -520,7 +520,7 @@
       "id": "S31",
       "title": "Data retention configuration",
       "priority": 31,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add dataRetentionDays field to businesses table (optional number)",

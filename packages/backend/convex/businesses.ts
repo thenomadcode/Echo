@@ -93,6 +93,7 @@ export const update = mutation({
       })
     ),
     aiGreeting: v.optional(v.string()),
+    dataRetentionDays: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
@@ -124,6 +125,8 @@ export const update = mutation({
     if (args.businessHours !== undefined)
       updates.businessHours = args.businessHours;
     if (args.aiGreeting !== undefined) updates.aiGreeting = args.aiGreeting;
+    if (args.dataRetentionDays !== undefined)
+      updates.dataRetentionDays = args.dataRetentionDays;
 
     await ctx.db.patch(args.businessId, updates);
 

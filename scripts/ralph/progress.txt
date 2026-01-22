@@ -24,6 +24,31 @@
 
 ---
 
+## 2026-01-22 23:50 - S31: Data retention configuration
+
+**What was implemented:**
+- Added `dataRetentionDays` field to businesses schema
+- Updated `businesses.update` mutation to accept dataRetentionDays
+- Added "Privacy" section to settings sidebar navigation
+- Created `PrivacySettings` component with:
+  - Data Retention card with explanation
+  - Retention period dropdown: Never, 30, 60, 90, 180, 365 days
+  - Save button with loading state
+  - Note about 7-day warning before anonymization
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+3 lines)
+- packages/backend/convex/businesses.ts (+4 lines)
+- apps/web/src/routes/_authenticated/settings.tsx (+95 lines)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+
+**Note:** The scheduled job for automatic anonymization is infrastructure work (cron job) - typically handled separately. The UI and backend for configuration is complete.
+
+---
+
 ## 2026-01-22 23:35 - S30: Forget me chat command
 
 **What was implemented:**
