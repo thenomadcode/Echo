@@ -408,4 +408,23 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId"])
     .index("by_customer", ["customerId"]),
+
+  // Customer data deletion requests
+  deletionRequests: defineTable({
+    businessId: v.id("businesses"),
+    customerId: v.id("customers"),
+    conversationId: v.id("conversations"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("denied")
+    ),
+    denialReason: v.optional(v.string()),
+    processedBy: v.optional(v.string()),
+    processedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_business_status", ["businessId", "status"])
+    .index("by_customer", ["customerId"]),
 });

@@ -24,6 +24,48 @@
 
 ---
 
+## 2026-01-22 23:35 - S30: Forget me chat command
+
+**What was implemented:**
+- Added `deletionRequests` table to schema with fields:
+  - businessId, customerId, conversationId
+  - status (pending/approved/denied), denialReason
+  - processedBy, processedAt, createdAt
+  - Indexes: by_business, by_business_status, by_customer
+- Created `deletionRequests.ts` backend with:
+  - `list` query: returns deletion requests with customer info
+  - `getPendingCount` query: returns count of pending requests
+  - `create` internalMutation: creates new request (prevents duplicates)
+  - `approve` mutation: approves and deletes customer data
+  - `deny` mutation: denies with reason
+- Added `createDeletionRequest` action to ai/customerHistory.ts
+- Added `create_deletion_request` tool to AI tools list
+- Updated AI prompts (agentPrompt.ts, prompts.ts) with:
+  - Instructions to recognize "forget me", "delete my data", "LGPD" intents
+  - Confirmation flow: ask first, then submit request
+  - Tool mentioned in tools list section
+- Added tool handler in agent.ts:
+  - Validates customer confirmed deletion
+  - Requires customerRecordId on conversation
+  - Calls createDeletionRequest action
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+17 lines)
+- packages/backend/convex/deletionRequests.ts (created, ~190 lines)
+- packages/backend/convex/ai/customerHistory.ts (+60 lines)
+- packages/backend/convex/ai/tools.ts (+25 lines)
+- packages/backend/convex/ai/agent.ts (+40 lines)
+- packages/backend/convex/ai/agentPrompt.ts (+8 lines)
+- packages/backend/convex/ai/prompts.ts (+5 lines)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+
+**Note:** Dashboard UI for managing deletion requests not included in this story (separate feature).
+
+---
+
 ## 2026-01-22 23:15 - S29: Customer anonymization
 
 **What was implemented:**

@@ -11,6 +11,7 @@ import type {
   SubmitOrderArgs,
   CancelOrderArgs,
   EscalateArgs,
+  CreateDeletionRequestArgs,
 } from "./tools";
 import { buildAgentPrompt } from "./agentPrompt";
 import type { OrderState, OrderItem, LanguageCode, CustomerContext } from "./agentPrompt";
@@ -447,6 +448,12 @@ async function executeToolCall(
         toolCall.arguments as unknown as EscalateArgs,
         conversation
       );
+    case "create_deletion_request":
+      return executeCreateDeletionRequest(
+        ctx,
+        toolCall.arguments as unknown as CreateDeletionRequestArgs,
+        conversation
+      );
     default:
       return { success: false, message: `Unknown tool: ${toolCall.name}` };
   }
@@ -698,4 +705,37 @@ async function executeEscalate(
   });
 
   return { success: true, message: "Escalated to human" };
+}
+
+async function executeCreateDeletionRequest(
+  ctx: ActionContext,
+  args: CreateDeletionRequestArgs,
+  conversation: Doc<"conversations">
+): Promise<ToolExecutionResult> {
+  if (!args.confirmed) {
+    return { 
+      success: false, 
+      message: "Customer has not confirmed deletion. Ask them to confirm first." 
+    };
+  }
+
+  if (!conversation.customerRecordId) {
+    return { 
+      success: false, 
+      message: "No customer record linked to this conversation" 
+    };
+  }
+
+  const result = await ctx.runAction(
+    api.ai.customerHistory.createDeletionRequest,
+    {
+      customerId: conversation.customerRecordId,
+      conversationId: conversation._id,
+    }
+  );
+
+  return { 
+    success: result.success, 
+    message: result.message 
+  };
 }

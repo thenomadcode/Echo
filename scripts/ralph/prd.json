@@ -504,7 +504,7 @@
       "id": "S30",
       "title": "Forget me chat command",
       "priority": 30,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "AI recognizes 'forget me', 'delete my data', 'LGPD deletion' intents",

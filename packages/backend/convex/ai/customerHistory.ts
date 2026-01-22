@@ -414,3 +414,70 @@ export const updateCustomerAddress = action({
     return { addressId, isNew: true };
   },
 });
+
+export const createDeletionRequestInternal = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    customerId: v.id("customers"),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const existingPending = await ctx.db
+      .query("deletionRequests")
+      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .first();
+
+    if (existingPending) {
+      return { requestId: existingPending._id, alreadyExists: true };
+    }
+
+    const requestId = await ctx.db.insert("deletionRequests", {
+      businessId: args.businessId,
+      customerId: args.customerId,
+      conversationId: args.conversationId,
+      status: "pending",
+      createdAt: Date.now(),
+    });
+
+    return { requestId, alreadyExists: false };
+  },
+});
+
+export const createDeletionRequest = action({
+  args: {
+    customerId: v.id("customers"),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; message: string }> => {
+    const customerData = await ctx.runQuery(
+      internal.ai.customerHistory.getCustomerForHistory,
+      { customerId: args.customerId }
+    );
+
+    if (!customerData) {
+      return { success: false, message: "Customer not found" };
+    }
+
+    const result = await ctx.runMutation(
+      internal.ai.customerHistory.createDeletionRequestInternal,
+      {
+        businessId: customerData.business._id,
+        customerId: args.customerId,
+        conversationId: args.conversationId,
+      }
+    );
+
+    if (result.alreadyExists) {
+      return { 
+        success: true, 
+        message: "A deletion request is already pending. The business will review it shortly." 
+      };
+    }
+
+    return { 
+      success: true, 
+      message: "Your data deletion request has been submitted. The business will review and process it within 7 days." 
+    };
+  },
+});

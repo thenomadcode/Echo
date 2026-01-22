@@ -122,6 +122,24 @@ export const ORDER_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "create_deletion_request",
+      description:
+        "Submit a request to delete customer data. Use when customer explicitly confirms they want their data deleted (after you asked for confirmation). Do NOT use just because they mentioned it - wait for confirmation.",
+      parameters: {
+        type: "object",
+        properties: {
+          confirmed: {
+            type: "boolean",
+            description: "Set to true ONLY if customer explicitly confirmed deletion (said yes/si/sim/sure/okay)",
+          },
+        },
+        required: ["confirmed"],
+      },
+    },
+  },
 ];
 
 export interface ToolCall {
@@ -153,4 +171,8 @@ export interface CancelOrderArgs {
 
 export interface EscalateArgs {
   reason: string;
+}
+
+export interface CreateDeletionRequestArgs {
+  confirmed: boolean;
 }

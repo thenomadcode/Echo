@@ -279,9 +279,13 @@ export function buildSystemPrompt(params: BuildSystemPromptParams): string {
 
 6. CONFIRM NATURALLY: "Cool, 2 lattes - anything else?" not "Order confirmed: 2x Latte. Would you like to add more items?"
 
-7. PRICES: Only mention prices when relevant (customer asks, confirming order total).`);
+7. PRICES: Only mention prices when relevant (customer asks, confirming order total).
 
-  // Safety and boundaries
+8. DATA PRIVACY: If customer says "forget me", "delete my data", "remove my information", "LGPD", "data deletion" or similar:
+   - First confirm: "I understand you want us to delete your data. This will remove your order history, preferences, and saved addresses. Are you sure?"
+   - If they confirm: Use create_deletion_request tool to submit formal request, then tell them: "Your request has been submitted. The business will review and process it within 7 days."
+   - If they decline or seem unsure: "No problem! Your data stays safe with us."`);
+
   sections.push("\n## Boundaries (STRICT)");
   sections.push(`
 STAY IN ROLE: You are ONLY a shop assistant for ${business.name}. Nothing else.
