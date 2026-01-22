@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 export const get = query({
@@ -448,5 +448,86 @@ export const getOrCreate = internalMutation({
     });
 
     return customerId;
+  },
+});
+
+// Internal query to load customer context for AI (no auth required)
+// Used by AI prompt generation to include customer history in context
+export const getContextInternal = internalQuery({
+  args: {
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      return null;
+    }
+
+    const [addresses, memories, notes] = await Promise.all([
+      ctx.db
+        .query("customerAddresses")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerMemory")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerNotes")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+    ]);
+
+    const sortedAddresses = addresses
+      .sort((a, b) => {
+        const aTime = a.lastUsedAt ?? a.createdAt;
+        const bTime = b.lastUsedAt ?? b.createdAt;
+        return bTime - aTime;
+      })
+      .map((a) => ({
+        label: a.label,
+        address: a.address,
+        isDefault: a.isDefault,
+      }));
+
+    const allergies = memories
+      .filter((m) => m.category === "allergy")
+      .map((m) => m.fact);
+    const restrictions = memories
+      .filter((m) => m.category === "restriction")
+      .map((m) => m.fact);
+    const preferences = memories
+      .filter((m) => m.category === "preference")
+      .map((m) => m.fact);
+    const behaviors = memories
+      .filter((m) => m.category === "behavior")
+      .map((m) => m.fact);
+
+    const businessNotes = notes
+      .filter((n) => !n.staffOnly)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((n) => n.note)
+      .join("\n");
+
+    return {
+      profile: {
+        name: customer.name,
+        phone: customer.phone,
+        tier: customer.tier,
+        preferredLanguage: customer.preferredLanguage,
+        firstSeenAt: customer.firstSeenAt,
+        lastSeenAt: customer.lastSeenAt,
+        totalOrders: customer.totalOrders,
+        totalSpent: customer.totalSpent,
+      },
+      addresses: sortedAddresses,
+      memory: {
+        allergies,
+        restrictions,
+        preferences,
+        behaviors,
+      },
+      businessNotes,
+    };
   },
 });

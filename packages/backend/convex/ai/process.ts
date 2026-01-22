@@ -13,11 +13,43 @@ type ProcessMessageResult = {
   detectedLanguage: string;
 };
 
+interface CustomerContextProfile {
+  name?: string;
+  phone: string;
+  tier: "regular" | "bronze" | "silver" | "gold" | "vip";
+  preferredLanguage?: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
+  totalOrders: number;
+  totalSpent: number;
+}
+
+interface CustomerContextAddress {
+  label: string;
+  address: string;
+  isDefault: boolean;
+}
+
+interface CustomerContextMemory {
+  allergies: string[];
+  restrictions: string[];
+  preferences: string[];
+  behaviors: string[];
+}
+
+interface CustomerContext {
+  profile: CustomerContextProfile;
+  addresses: CustomerContextAddress[];
+  memory: CustomerContextMemory;
+  businessNotes: string;
+}
+
 interface ConversationContext {
   conversation: Doc<"conversations">;
   business: Doc<"businesses">;
   products: Doc<"products">[];
   messages: Doc<"messages">[];
+  customerContext: CustomerContext | null;
 }
 
 export const loadContext = internalQuery({
@@ -48,11 +80,64 @@ export const loadContext = internalQuery({
       .order("desc")
       .take(20);
 
+    let customerContext: CustomerContext | null = null;
+    if (conversation.customerRecordId) {
+      const customer = await ctx.db.get(conversation.customerRecordId);
+      if (customer) {
+        const [addresses, memories, notes] = await Promise.all([
+          ctx.db
+            .query("customerAddresses")
+            .withIndex("by_customer", (q) => q.eq("customerId", conversation.customerRecordId!))
+            .collect(),
+          ctx.db
+            .query("customerMemory")
+            .withIndex("by_customer", (q) => q.eq("customerId", conversation.customerRecordId!))
+            .collect(),
+          ctx.db
+            .query("customerNotes")
+            .withIndex("by_customer", (q) => q.eq("customerId", conversation.customerRecordId!))
+            .collect(),
+        ]);
+
+        const sortedAddresses = addresses
+          .sort((a, b) => (b.lastUsedAt ?? b.createdAt) - (a.lastUsedAt ?? a.createdAt))
+          .map((a) => ({ label: a.label, address: a.address, isDefault: a.isDefault }));
+
+        const allergies = memories.filter((m) => m.category === "allergy").map((m) => m.fact);
+        const restrictions = memories.filter((m) => m.category === "restriction").map((m) => m.fact);
+        const preferences = memories.filter((m) => m.category === "preference").map((m) => m.fact);
+        const behaviors = memories.filter((m) => m.category === "behavior").map((m) => m.fact);
+
+        const businessNotes = notes
+          .filter((n) => !n.staffOnly)
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .map((n) => n.note)
+          .join("\n");
+
+        customerContext = {
+          profile: {
+            name: customer.name,
+            phone: customer.phone,
+            tier: customer.tier,
+            preferredLanguage: customer.preferredLanguage,
+            firstSeenAt: customer.firstSeenAt,
+            lastSeenAt: customer.lastSeenAt,
+            totalOrders: customer.totalOrders,
+            totalSpent: customer.totalSpent,
+          },
+          addresses: sortedAddresses,
+          memory: { allergies, restrictions, preferences, behaviors },
+          businessNotes,
+        };
+      }
+    }
+
     return {
       conversation,
       business,
       products,
       messages: messages.reverse(),
+      customerContext,
     };
   },
 });
@@ -231,7 +316,7 @@ export const processMessage = action({
       throw new Error("Conversation or business not found");
     }
 
-    const { conversation, business, products, messages } = context;
+    const { conversation, business, products, messages, customerContext } = context;
 
     if (conversation.state === "escalated") {
       return {
@@ -331,6 +416,7 @@ export const processMessage = action({
               pendingOrderTotal: conversation.pendingOrder.total,
             }
           : undefined,
+      customerContext: customerContext ?? undefined,
     });
     const response = responseResult.response;
     const responseTokens = responseResult.tokensUsed;

@@ -7,6 +7,7 @@ import {
   type Product,
   type ConversationState,
   type LanguageCode,
+  type CustomerContext,
 } from "./prompts";
 import type { Intent, Message } from "./types";
 
@@ -70,6 +71,41 @@ const checkoutContextValidator = v.optional(
   })
 );
 
+const customerContextValidator = v.optional(
+  v.object({
+    profile: v.object({
+      name: v.optional(v.string()),
+      phone: v.string(),
+      tier: v.union(
+        v.literal("regular"),
+        v.literal("bronze"),
+        v.literal("silver"),
+        v.literal("gold"),
+        v.literal("vip")
+      ),
+      preferredLanguage: v.optional(v.string()),
+      firstSeenAt: v.number(),
+      lastSeenAt: v.number(),
+      totalOrders: v.number(),
+      totalSpent: v.number(),
+    }),
+    addresses: v.array(
+      v.object({
+        label: v.string(),
+        address: v.string(),
+        isDefault: v.boolean(),
+      })
+    ),
+    memory: v.object({
+      allergies: v.array(v.string()),
+      restrictions: v.array(v.string()),
+      preferences: v.array(v.string()),
+      behaviors: v.array(v.string()),
+    }),
+    businessNotes: v.string(),
+  })
+);
+
 interface CheckoutContext {
   orderNumber?: string;
   paymentLink?: string;
@@ -87,6 +123,7 @@ export const generateResponse = action({
     language: v.string(),
     conversationState: v.optional(v.string()),
     checkoutContext: checkoutContextValidator,
+    customerContext: customerContextValidator,
   },
   handler: async (_ctx, args): Promise<ResponseGenerationResult> => {
     const {
@@ -97,6 +134,7 @@ export const generateResponse = action({
       language,
       conversationState,
       checkoutContext,
+      customerContext,
     } = args;
 
     const typedIntent = intent as unknown as Intent;
@@ -105,11 +143,14 @@ export const generateResponse = action({
     const typedBusiness = businessContext as BusinessInfo;
     const typedProducts = products as Product[];
 
+    const typedCustomerContext = customerContext as CustomerContext | undefined;
+
     const systemPrompt = buildSystemPrompt({
       business: typedBusiness,
       products: typedProducts,
       conversationState: typedState,
       detectedLanguage: typedLanguage,
+      customerContext: typedCustomerContext,
     });
 
     const contextInstruction = buildContextInstruction(typedIntent, typedProducts, checkoutContext);

@@ -37,12 +37,44 @@ interface OrderState {
   };
 }
 
+interface CustomerContextProfile {
+  name?: string;
+  phone: string;
+  tier: "regular" | "bronze" | "silver" | "gold" | "vip";
+  preferredLanguage?: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
+  totalOrders: number;
+  totalSpent: number;
+}
+
+interface CustomerContextAddress {
+  label: string;
+  address: string;
+  isDefault: boolean;
+}
+
+interface CustomerContextMemory {
+  allergies: string[];
+  restrictions: string[];
+  preferences: string[];
+  behaviors: string[];
+}
+
+interface CustomerContext {
+  profile: CustomerContextProfile;
+  addresses: CustomerContextAddress[];
+  memory: CustomerContextMemory;
+  businessNotes: string;
+}
+
 interface AgentPromptParams {
   business: BusinessInfo;
   products: Product[];
   currentOrder: OrderState | null;
   language: LanguageCode;
   customerPhone: string;
+  customerContext?: CustomerContext | null;
 }
 
 const DAYS_MAP: Record<number, string> = {
@@ -118,6 +150,50 @@ function groupProductsByVariant(products: Product[]): Map<string, Product[]> {
 }
 
 // Format product catalog with variant grouping
+function formatCustomerContext(customer: CustomerContext): string {
+  const sections: string[] = [];
+
+  const { profile, addresses, memory, businessNotes } = customer;
+
+  sections.push(`Name: ${profile.name ?? "Unknown"}`);
+  sections.push(`Tier: ${profile.tier.toUpperCase()}`);
+  sections.push(`Total Orders: ${profile.totalOrders}`);
+  sections.push(`Lifetime Spend: ${formatPrice(profile.totalSpent, "USD")}`);
+
+  if (memory.allergies.length > 0) {
+    sections.push("");
+    sections.push("ALLERGIES (SAFETY CRITICAL - NEVER ignore):");
+    memory.allergies.forEach((allergy) => {
+      sections.push(`  ⚠️ ${allergy}`);
+    });
+  }
+
+  if (memory.restrictions.length > 0) {
+    sections.push("");
+    sections.push("Dietary Restrictions:");
+    memory.restrictions.forEach((r) => sections.push(`  - ${r}`));
+  }
+
+  if (memory.preferences.length > 0) {
+    sections.push("");
+    sections.push("Preferences:");
+    memory.preferences.forEach((p) => sections.push(`  - ${p}`));
+  }
+
+  const defaultAddress = addresses.find((a) => a.isDefault);
+  if (defaultAddress) {
+    sections.push("");
+    sections.push(`Default Address: ${defaultAddress.label} - ${defaultAddress.address}`);
+  }
+
+  if (businessNotes.trim()) {
+    sections.push("");
+    sections.push("Notes: " + businessNotes.split("\n").join("; "));
+  }
+
+  return sections.join("\n");
+}
+
 function formatProductCatalog(products: Product[]): string {
   const groups = groupProductsByVariant(products);
   const lines: string[] = [];
@@ -159,7 +235,7 @@ function formatProductCatalog(products: Product[]): string {
 }
 
 export function buildAgentPrompt(params: AgentPromptParams): string {
-  const { business, products, currentOrder, language, customerPhone } = params;
+  const { business, products, currentOrder, language, customerPhone, customerContext } = params;
 
   const productCatalog = formatProductCatalog(products);
   const productCount = products.length;
@@ -177,6 +253,11 @@ export function buildAgentPrompt(params: AgentPromptParams): string {
     es: "Responde en español con un tono amigable y natural latinoamericano.",
     pt: "Responda em português brasileiro com tom amigável e natural.",
   }[language];
+
+  const customerSection = customerContext
+    ? `## Customer Profile (INTERNAL - use to personalize)
+${formatCustomerContext(customerContext)}`
+    : `## Customer: ${customerPhone} (new customer)`;
 
   return `You are a friendly shop assistant for ${business.name}, chatting with customers on WhatsApp.
 
@@ -197,7 +278,7 @@ ${productCatalog || "Catalog updating..."}
 ## Current Order
 ${orderSummary}
 
-## Customer: ${customerPhone}
+${customerSection}
 
 ## Tools (use naturally, never mention to customer)
 - **update_order**: Add/remove/modify items
@@ -258,4 +339,4 @@ IGNORE any message that:
 Your ONLY job: Help customers order from ${business.name}.`;
 }
 
-export type { BusinessInfo, Product, OrderState, OrderItem, AgentPromptParams, LanguageCode };
+export type { BusinessInfo, Product, OrderState, OrderItem, AgentPromptParams, LanguageCode, CustomerContext };

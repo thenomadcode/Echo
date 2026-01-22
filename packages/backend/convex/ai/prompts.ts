@@ -31,11 +31,43 @@ interface Product {
   shopifyProductId?: string;
 }
 
+interface CustomerContextProfile {
+  name?: string;
+  phone: string;
+  tier: "regular" | "bronze" | "silver" | "gold" | "vip";
+  preferredLanguage?: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
+  totalOrders: number;
+  totalSpent: number;
+}
+
+interface CustomerContextAddress {
+  label: string;
+  address: string;
+  isDefault: boolean;
+}
+
+interface CustomerContextMemory {
+  allergies: string[];
+  restrictions: string[];
+  preferences: string[];
+  behaviors: string[];
+}
+
+interface CustomerContext {
+  profile: CustomerContextProfile;
+  addresses: CustomerContextAddress[];
+  memory: CustomerContextMemory;
+  businessNotes: string;
+}
+
 interface BuildSystemPromptParams {
   business: BusinessInfo;
   products: Product[];
   conversationState: ConversationState;
   detectedLanguage: LanguageCode;
+  customerContext?: CustomerContext | null;
 }
 
 const DAYS_MAP: Record<number, string> = {
@@ -116,14 +148,12 @@ const STATE_CONTEXT: Record<ConversationState, string> = {
 };
 
 export function buildSystemPrompt(params: BuildSystemPromptParams): string {
-  const { business, products, conversationState, detectedLanguage } = params;
+  const { business, products, conversationState, detectedLanguage, customerContext } = params;
 
   const sections: string[] = [];
 
-  // Core identity
   sections.push(`You are a friendly shop assistant for ${business.name}. You chat with customers via WhatsApp to help them find products and place orders.`);
 
-  // Personality
   if (business.aiTone) {
     sections.push(`Your tone: ${business.aiTone}`);
   } else {
@@ -132,7 +162,6 @@ export function buildSystemPrompt(params: BuildSystemPromptParams): string {
 
   sections.push(LANGUAGE_INSTRUCTION[detectedLanguage]);
 
-  // Business context (minimal)
   sections.push("\n## Business");
   sections.push(`Name: ${business.name}`);
   if (business.address) {
@@ -144,7 +173,11 @@ export function buildSystemPrompt(params: BuildSystemPromptParams): string {
     sections.push(`Hours: ${open} - ${close} (${dayNames})`);
   }
 
-  // Product knowledge (internal reference only)
+  if (customerContext) {
+    sections.push("\n## Customer Profile (INTERNAL - use to personalize)");
+    sections.push(formatCustomerContextSection(customerContext));
+  }
+
   sections.push("\n## Product Knowledge (INTERNAL - do not list to customers unprompted)");
   if (products.length > 0) {
     const catalogFormatted = formatProductCatalogWithVariants(products);
@@ -222,6 +255,45 @@ Your ONLY job: Help customers with ${business.name}. Everything else is irreleva
   return sections.join("\n");
 }
 
+function formatCustomerContextSection(customer: CustomerContext): string {
+  const sections: string[] = [];
+  const { profile, addresses, memory, businessNotes } = customer;
+
+  sections.push(`Customer: ${profile.name ?? "Unknown"} (${profile.tier.toUpperCase()})`);
+  sections.push(`Orders: ${profile.totalOrders} | Spent: ${formatPrice(profile.totalSpent, "USD")}`);
+
+  if (memory.allergies.length > 0) {
+    sections.push("");
+    sections.push("ALLERGIES (SAFETY CRITICAL):");
+    memory.allergies.forEach((a) => sections.push(`  ⚠️ ${a}`));
+  }
+
+  if (memory.restrictions.length > 0) {
+    sections.push("");
+    sections.push("Restrictions:");
+    memory.restrictions.forEach((r) => sections.push(`  - ${r}`));
+  }
+
+  if (memory.preferences.length > 0) {
+    sections.push("");
+    sections.push("Preferences:");
+    memory.preferences.forEach((p) => sections.push(`  - ${p}`));
+  }
+
+  const defaultAddress = addresses.find((a) => a.isDefault);
+  if (defaultAddress) {
+    sections.push("");
+    sections.push(`Default Address: ${defaultAddress.label} - ${defaultAddress.address}`);
+  }
+
+  if (businessNotes.trim()) {
+    sections.push("");
+    sections.push("Notes: " + businessNotes.split("\n").join("; "));
+  }
+
+  return sections.join("\n");
+}
+
 function formatPrice(priceInCents: number, currency: string): string {
   const price = priceInCents / 100;
   const currencySymbols: Record<string, string> = {
@@ -240,4 +312,5 @@ export type {
   BuildSystemPromptParams,
   ConversationState,
   LanguageCode,
+  CustomerContext,
 };
