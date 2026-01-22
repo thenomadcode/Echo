@@ -18,6 +18,9 @@ import {
   StickyNote,
   Pencil,
   Loader2,
+  Plus,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -33,6 +36,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -330,35 +349,7 @@ function OverviewTab({ customer, context, formatCurrency, formatDate }: Overview
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Saved Addresses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {context?.addresses && context.addresses.length > 0 ? (
-            <div className="space-y-3">
-              {context.addresses.map((addr, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{addr.label}</span>
-                      {addr.isDefault && (
-                        <Badge variant="secondary" className="text-xs">Default</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{addr.address}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No saved addresses</p>
-          )}
-        </CardContent>
-      </Card>
+      <AddressesSection customerId={customer._id} />
 
       {context?.memory?.allergies && context.memory.allergies.length > 0 && (
         <Card className="border-red-200 dark:border-red-900">
@@ -812,5 +803,235 @@ function EditCustomerDialog({ open, onOpenChange, customer, onSuccess }: EditCus
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface AddressesSectionProps {
+  customerId: Id<"customers">;
+}
+
+function AddressesSection({ customerId }: AddressesSectionProps) {
+  const queryClient = useQueryClient();
+  const addressesQuery = useQuery(
+    convexQuery(api.customerAddresses.list, { customerId })
+  );
+  const addAddress = useMutation(api.customerAddresses.add);
+  const updateAddress = useMutation(api.customerAddresses.update);
+  const deleteAddress = useMutation(api.customerAddresses.deleteAddress);
+  const setDefaultAddress = useMutation(api.customerAddresses.setDefault);
+
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<{ _id: Id<"customerAddresses">; label: string; address: string } | null>(null);
+  const [deletingAddressId, setDeletingAddressId] = useState<Id<"customerAddresses"> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [label, setLabel] = useState("");
+  const [address, setAddress] = useState("");
+
+  const addresses = addressesQuery.data ?? [];
+
+  const handleAdd = async () => {
+    if (!label.trim() || !address.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await addAddress({ customerId, label: label.trim(), address: address.trim() });
+      toast.success("Address added");
+      await queryClient.invalidateQueries();
+      setShowAddDialog(false);
+      setLabel("");
+      setAddress("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add address");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editingAddress || !label.trim() || !address.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await updateAddress({ addressId: editingAddress._id, label: label.trim(), address: address.trim() });
+      toast.success("Address updated");
+      await queryClient.invalidateQueries();
+      setEditingAddress(null);
+      setLabel("");
+      setAddress("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update address");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingAddressId) return;
+    setIsSubmitting(true);
+    try {
+      await deleteAddress({ addressId: deletingAddressId });
+      toast.success("Address deleted");
+      await queryClient.invalidateQueries();
+      setDeletingAddressId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete address");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSetDefault = async (addressId: Id<"customerAddresses">) => {
+    try {
+      await setDefaultAddress({ addressId });
+      toast.success("Default address updated");
+      await queryClient.invalidateQueries();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to set default address");
+    }
+  };
+
+  const openEditDialog = (addr: { _id: Id<"customerAddresses">; label: string; address: string }) => {
+    setEditingAddress(addr);
+    setLabel(addr.label);
+    setAddress(addr.address);
+  };
+
+  const closeDialogs = () => {
+    setShowAddDialog(false);
+    setEditingAddress(null);
+    setLabel("");
+    setAddress("");
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Saved Addresses
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {addresses.length > 0 ? (
+            <div className="space-y-3">
+              {addresses.map((addr) => (
+                <div key={addr._id} className="flex items-start gap-2 group">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{addr.label}</span>
+                      {addr.isDefault && (
+                        <Badge variant="secondary" className="text-xs">Default</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{addr.address}</p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md hover:bg-accent">
+                      <MoreVertical className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEditDialog(addr)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      {!addr.isDefault && (
+                        <DropdownMenuItem onClick={() => handleSetDefault(addr._id)}>
+                          <Star className="h-4 w-4 mr-2" />
+                          Set as Default
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setDeletingAddressId(addr._id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No saved addresses</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) closeDialogs(); else setShowAddDialog(true); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Address</DialogTitle>
+            <DialogDescription>Add a new address for this customer</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-label">Label</Label>
+              <Input id="add-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g., Home, Work" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-address">Address</Label>
+              <Input id="add-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialogs} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting || !label.trim() || !address.trim()}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Address
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingAddress} onOpenChange={(open) => { if (!open) closeDialogs(); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Address</DialogTitle>
+            <DialogDescription>Update address information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-label">Label</Label>
+              <Input id="edit-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g., Home, Work" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-address">Address</Label>
+              <Input id="edit-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialogs} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={isSubmitting || !label.trim() || !address.trim()}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deletingAddressId} onOpenChange={(open) => { if (!open) setDeletingAddressId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Address</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this address? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isSubmitting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
