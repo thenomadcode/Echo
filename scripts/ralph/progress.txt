@@ -24,6 +24,235 @@
 
 ---
 
+## 2026-01-22 21:10 - S11: Auto-create customer on conversation start
+
+**What was implemented:**
+- Added `getOrCreate({ businessId, phone })` internalMutation to customers.ts
+  - Uses by_business_phone index to find existing customer
+  - If exists: updates lastSeenAt and returns customerId
+  - If not found: creates new customer with defaults and returns customerId
+- Updated WhatsApp webhook (processIncomingMessage) to:
+  - Call customers.getOrCreate for every incoming message
+  - Link customerRecordId to conversation record
+  - Updates existing conversations with customerRecordId if missing
+
+**Files changed:**
+- packages/backend/convex/customers.ts (+40 lines)
+- packages/backend/convex/integrations/whatsapp/webhook.ts (+8 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+**Learnings for future iterations:**
+- Use ctx.runMutation(internal.module.function, args) to call internal mutations from handlers
+- customerRecordId links conversation to customers table (vs customerId which is phone string)
+
+---
+
+## 2026-01-22 21:05 - S10: VIP tier calculation
+
+**What was implemented:**
+- Added `calculateTier(totalOrders, totalSpent, thresholds?)` helper function
+- Default thresholds (in cents):
+  - Bronze: 3 orders OR $50 (5000 cents)
+  - Silver: 10 orders OR $200 (20000 cents)
+  - Gold: 25 orders OR $500 (50000 cents)
+  - VIP: 50 orders OR $1000 (100000 cents)
+- Added `updateStats({ customerId, orderTotal })` mutation
+  - Increments totalOrders by 1
+  - Adds orderTotal to totalSpent
+  - Calculates new averageOrderValue
+  - Updates lastOrderAt to current time
+  - If no manualTier set, recalculates tier and updates if changed
+  - Sets tierUpdatedAt when tier changes
+
+**Files changed:**
+- packages/backend/convex/customers.ts (+86 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+---
+
+## 2026-01-22 21:00 - S09: Customer context loading for AI
+
+**What was implemented:**
+- Added `getContext({ customerId })` query to customers.ts
+- Returns CustomerContext object with:
+  - `profile`: name, phone, tier, preferredLanguage, firstSeenAt, lastSeenAt, totalOrders, totalSpent
+  - `addresses`: array of {label, address, isDefault} sorted by lastUsedAt desc
+  - `memory`: { allergies[], restrictions[], preferences[], behaviors[] } 
+    - Allergies loaded first (safety critical)
+  - `businessNotes`: concatenated notes where staffOnly=false
+- Uses Promise.all for parallel loading of addresses, memories, notes (no N+1)
+- Uses indexes for efficient queries
+
+**Files changed:**
+- packages/backend/convex/customers.ts (+89 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+---
+
+## 2026-01-22 20:55 - S08: Conversation summary operations
+
+**What was implemented:**
+- Created packages/backend/convex/conversationSummaries.ts
+- Query `get({ conversationId })` - returns summary or null using by_conversation index
+- Query `search({ customerId, query, limit? })` - searches summaries
+  - Matches query against summary text (case-insensitive substring)
+  - Returns limit results (default 5) sorted by createdAt desc
+- Mutation `create({ conversationId, customerId, summary, sentiment?, keyEvents?, orderIds? })`
+  - Defaults sentiment to "neutral", keyEvents to []
+  - If summary exists for conversation, updates instead of creating duplicate
+  - Validates customer belongs to same business as conversation
+
+**Files changed:**
+- packages/backend/convex/conversationSummaries.ts (created, 142 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+---
+
+## 2026-01-22 20:52 - S07: Customer notes operations
+
+**What was implemented:**
+- Created packages/backend/convex/customerNotes.ts
+- Query `list({ customerId })` - returns all notes sorted by createdAt desc (newest first)
+- Mutation `add({ customerId, note, staffOnly? })` - creates note
+  - staffOnly defaults to false
+  - addedBy populated from authUser._id
+- Mutation `update({ noteId, note?, staffOnly? })` - updates note
+- Mutation `deleteNote({ noteId })` - removes note
+
+**Files changed:**
+- packages/backend/convex/customerNotes.ts (created, 148 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+---
+
+## 2026-01-22 20:48 - S06: Customer memory operations
+
+**What was implemented:**
+- Created packages/backend/convex/customerMemory.ts
+- Query `list({ customerId, category? })` - returns memories, optionally filtered by category
+  - Uses by_customer_category index when category provided
+  - Uses by_customer index otherwise
+- Mutation `add({ customerId, category, fact, source, confidence?, extractedFrom? })`
+  - Confidence defaults to 1.0 for manual entries, 0.9 otherwise
+  - Categories: allergy, restriction, preference, behavior, complaint
+  - Sources: ai_extracted, manual, order_history
+- Mutation `update({ memoryId, fact?, confidence? })` - updates memory
+- Mutation `deleteMemory({ memoryId, confirmAllergyDeletion? })`
+  - Allergies require explicit confirmation flag (confirmAllergyDeletion=true)
+  - Throws error if trying to delete allergy without confirmation
+
+**Files changed:**
+- packages/backend/convex/customerMemory.ts (created, 186 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+---
+
+## 2026-01-22 20:45 - S05: Customer address operations
+
+**What was implemented:**
+- Created packages/backend/convex/customerAddresses.ts
+- Query `list({ customerId })` - returns all addresses sorted by lastUsedAt desc (falls back to createdAt)
+- Mutation `add({ customerId, address, label, isDefault? })` - creates address
+  - If isDefault=true, unsets isDefault on other addresses first
+  - If first address for customer, automatically sets isDefault=true
+- Mutation `update({ addressId, address?, label?, isDefault? })` - updates address
+  - Setting isDefault=true unsets other defaults
+- Mutation `deleteAddress({ addressId })` - removes address
+- Mutation `setDefault({ addressId })` - sets as default and unsets others
+
+**Files changed:**
+- packages/backend/convex/customerAddresses.ts (created, 234 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+
+---
+
+## 2026-01-22 20:40 - S04: Customer CRUD operations
+
+**What was implemented:**
+- Created packages/backend/convex/customers.ts with full CRUD operations
+- Query `get({ customerId })` - returns customer by ID with auth check
+- Query `getByPhone({ businessId, phone })` - returns customer or null using by_business_phone index
+- Query `list({ businessId, search?, tier?, sortBy?, cursor?, limit? })` - paginated list with:
+  - Optional tier filter (regular|bronze|silver|gold|vip)
+  - Optional search by name or phone substring (case-insensitive)
+  - Optional sortBy: lastSeenAt (default), totalOrders, totalSpent, createdAt
+  - Cursor-based pagination with configurable limit
+- Mutation `create({ businessId, phone, name? })` - creates customer with defaults:
+  - tier: "regular"
+  - totalOrders: 0, totalSpent: 0
+  - firstSeenAt and lastSeenAt set to Date.now()
+  - Validates no duplicate phone for business
+- Mutation `update({ customerId, name?, tier?, preferredLanguage? })` - updates customer
+  - Setting tier also sets manualTier and tierUpdatedAt
+
+**Files changed:**
+- packages/backend/convex/customers.ts (created, 238 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Backend node types issue is pre-existing
+
+---
+
+## 2026-01-22 20:33 - S03: Update conversations and orders to reference customers
+
+**What was implemented:**
+- Added `customerRecordId: v.optional(v.id("customers"))` to conversations table
+  - Note: Named `customerRecordId` (not `customerId`) because conversations already has `customerId: v.string()` for phone
+- Added `customerId: v.optional(v.id("customers"))` to orders table
+- Added `by_customer` index on conversations table (indexes customerRecordId)
+- Added `by_customer` index on orders table (indexes customerId)
+- Existing fields preserved for backward compatibility
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+7 lines, -2 lines)
+
+**Verification:**
+- Convex dev compiles successfully
+- Indexes created: conversations.by_customer, orders.by_customer
+
+**Learnings for future iterations:**
+- When adding reference fields, check for naming conflicts with existing fields
+- conversations.customerId is a string (phone/contact ID), not an Id reference
+
+---
+
+## 2026-01-22 20:30 - S02: Create customer-related tables schema
+
+**What was implemented:**
+- Added `customerAddresses` table: customerId (Id<customers>), label, address, isDefault, lastUsedAt (optional), createdAt
+- Added `customerMemory` table: customerId, category (allergy|restriction|preference|behavior|complaint), fact, confidence (0.0-1.0), source (ai_extracted|manual|order_history), extractedFrom (optional Id<conversations>), createdAt, updatedAt
+- Added `customerNotes` table: customerId, note, addedBy (string), staffOnly (boolean), createdAt
+- Added `conversationSummaries` table: conversationId, customerId, summary, sentiment (positive|neutral|negative), keyEvents (array), orderIds (optional array of Id<orders>), createdAt
+- All tables have appropriate indexes:
+  - customerAddresses: by_customer
+  - customerMemory: by_customer, by_customer_category
+  - customerNotes: by_customer
+  - conversationSummaries: by_conversation, by_customer
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+60 lines)
+
+**Verification:**
+- Convex dev compiles successfully (bunx convex dev --once)
+- All indexes created and visible in output
+
+---
+
 ## 2026-01-22 19:08 - S01: Create customers table schema
 
 **What was implemented:**

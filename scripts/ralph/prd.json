@@ -26,7 +26,7 @@
       "id": "S02",
       "title": "Create customer-related tables schema",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create customerAddresses table: customerId, label, address, isDefault, lastUsedAt, createdAt",
@@ -46,7 +46,7 @@
       "id": "S03",
       "title": "Update conversations and orders to reference customers",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Add customerId field (optional Id<customers>) to conversations table",
@@ -61,7 +61,7 @@
       "id": "S04",
       "title": "Customer CRUD operations",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/customers.ts file",
@@ -79,7 +79,7 @@
       "id": "S05",
       "title": "Customer address operations",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/customerAddresses.ts file",
@@ -96,7 +96,7 @@
       "id": "S06",
       "title": "Customer memory operations",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/customerMemory.ts file",
@@ -112,7 +112,7 @@
       "id": "S07",
       "title": "Customer notes operations",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/customerNotes.ts file",
@@ -128,7 +128,7 @@
       "id": "S08",
       "title": "Conversation summary operations",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/conversationSummaries.ts file",
@@ -143,7 +143,7 @@
       "id": "S09",
       "title": "Customer context loading for AI",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create query customers.getContext({ customerId }) that returns CustomerContext object",
@@ -160,7 +160,7 @@
       "id": "S10",
       "title": "VIP tier calculation",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create helper function calculateTier(customer, thresholds) in customers.ts",
@@ -176,7 +176,7 @@
       "id": "S11",
       "title": "Auto-create customer on conversation start",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create mutation customers.getOrCreate({ businessId, phone }) that returns existing or creates new",

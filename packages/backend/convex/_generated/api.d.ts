@@ -10,6 +10,7 @@
 
 import type * as ai_agent from "../ai/agent.js";
 import type * as ai_agentPrompt from "../ai/agentPrompt.js";
+import type * as ai_customerHistory from "../ai/customerHistory.js";
 import type * as ai_escalation from "../ai/escalation.js";
 import type * as ai_intent from "../ai/intent.js";
 import type * as ai_language from "../ai/language.js";
@@ -23,7 +24,12 @@ import type * as ai_types from "../ai/types.js";
 import type * as auth from "../auth.js";
 import type * as businesses from "../businesses.js";
 import type * as categories from "../categories.js";
+import type * as conversationSummaries from "../conversationSummaries.js";
 import type * as conversations from "../conversations.js";
+import type * as customerAddresses from "../customerAddresses.js";
+import type * as customerMemory from "../customerMemory.js";
+import type * as customerNotes from "../customerNotes.js";
+import type * as customers from "../customers.js";
 import type * as dashboard from "../dashboard.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
@@ -51,6 +57,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   "ai/agent": typeof ai_agent;
   "ai/agentPrompt": typeof ai_agentPrompt;
+  "ai/customerHistory": typeof ai_customerHistory;
   "ai/escalation": typeof ai_escalation;
   "ai/intent": typeof ai_intent;
   "ai/language": typeof ai_language;
@@ -64,7 +71,12 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   businesses: typeof businesses;
   categories: typeof categories;
+  conversationSummaries: typeof conversationSummaries;
   conversations: typeof conversations;
+  customerAddresses: typeof customerAddresses;
+  customerMemory: typeof customerMemory;
+  customerNotes: typeof customerNotes;
+  customers: typeof customers;
   dashboard: typeof dashboard;
   healthCheck: typeof healthCheck;
   http: typeof http;
