@@ -70,6 +70,60 @@ interface BuildSystemPromptParams {
   customerContext?: CustomerContext | null;
 }
 
+type CustomerTier = "regular" | "bronze" | "silver" | "gold" | "vip";
+
+function getVIPPromptSection(tier: CustomerTier, customerName?: string): string {
+  const name = customerName ?? "the customer";
+  
+  switch (tier) {
+    case "regular":
+      return "";
+    case "bronze":
+      return `## VIP Treatment (Bronze)
+- Use ${name}'s name when natural
+- Be extra friendly and welcoming
+- Make them feel valued`;
+    case "silver":
+      return `## VIP Treatment (Silver - Loyal Customer)
+- Warmly acknowledge their loyalty subtly ("Great to hear from you again!")
+- Be personalized and remember their preferences
+- Use ${name}'s name naturally throughout conversation
+- Go the extra mile in helpfulness`;
+    case "gold":
+      return `## VIP Treatment (Gold - High-Value Customer)
+- Very personal, warm service
+- Thank them for their loyalty when natural ("Always great serving you!")
+- Use ${name}'s name naturally
+- Offer the best service experience
+- Prioritize their requests
+- Be extra attentive to their preferences and needs`;
+    case "vip":
+      return `## VIP Treatment (VIP - Top Customer) 
+- White-glove service - this is your most valuable customer
+- Use ${name}'s name naturally and frequently
+- Apologize profusely and immediately for ANY inconvenience
+- Go above and beyond on every interaction
+- Make them feel truly special and appreciated
+- Anticipate needs based on their history
+- Be exceptionally warm, personal, and attentive`;
+    default:
+      return "";
+  }
+}
+
+function getReturningCustomerGreeting(customerName?: string, isReturning?: boolean): string {
+  if (!isReturning) return "";
+  
+  if (customerName) {
+    return `\n## Returning Customer Greeting
+When greeting, acknowledge you know them: "Hey ${customerName}!" or "Good to see you again, ${customerName}!"
+Don't be overly formal or robotic about it - just naturally use their name.`;
+  }
+  
+  return `\n## Returning Customer
+When greeting, be warm: "Hey! Good to see you again!" or "Welcome back!"`;
+}
+
 const DAYS_MAP: Record<number, string> = {
   0: "Sunday",
   1: "Monday",
@@ -176,6 +230,20 @@ export function buildSystemPrompt(params: BuildSystemPromptParams): string {
   if (customerContext) {
     sections.push("\n## Customer Profile (INTERNAL - use to personalize)");
     sections.push(formatCustomerContextSection(customerContext));
+    
+    const isReturningCustomer = customerContext.profile.totalOrders > 0;
+    const customerName = customerContext.profile.name;
+    const customerTier = customerContext.profile.tier;
+    
+    const vipSection = getVIPPromptSection(customerTier, customerName);
+    if (vipSection) {
+      sections.push("\n" + vipSection);
+    }
+    
+    const returningGreeting = getReturningCustomerGreeting(customerName, isReturningCustomer);
+    if (returningGreeting) {
+      sections.push(returningGreeting);
+    }
   }
 
   sections.push("\n## Product Knowledge (INTERNAL - do not list to customers unprompted)");
