@@ -438,8 +438,8 @@ function ShopifySettingsPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Disconnect Shopify?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Products will remain in Echo but sync will stop. Webhook subscriptions 
-                        will be removed. You can reconnect anytime.
+                        Products will remain but won't sync. Future orders will use Stripe 
+                        (if configured) or cash only. You can reconnect anytime.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
