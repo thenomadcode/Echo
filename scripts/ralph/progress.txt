@@ -3493,3 +3493,42 @@
 - Committed as: feat: [S05] - Create Draft Order for Payment (commit 4b76230)
 
 ---
+
+## 2026-01-22 21:38 - S20: Memory processing pipeline on conversation close
+
+**What was implemented:**
+- Created `processConversationMemory` internalAction in packages/backend/convex/ai/summary.ts
+- Orchestrates full memory extraction pipeline on conversation close:
+  1. Generate conversation summary via `generateConversationSummary`
+  2. Store summary in `conversationSummaries` table
+  3. Extract memory facts via `extractMemoryFacts`
+  4. Filter facts with confidence > 0.8
+  5. Detect contradictions (e.g., "likes spicy" vs "no spicy") and skip contradicted facts
+  6. Check for duplicate facts before storing new ones
+  7. Update customer stats if orders were placed in conversation
+  8. Recalculate and update tier based on new stats
+- Added internal mutations without auth for background processing:
+  - `conversationSummaries.createInternal` - store summaries without auth
+  - `customerMemory.addInternal` - add memories without auth
+  - `customerMemory.listByCustomerInternal` - list existing memories without auth
+  - `customers.updateStatsInternal` - update stats without auth
+- Added `getConversationForPipeline` internalQuery to load conversation data for pipeline
+- Pipeline triggered via scheduler from `conversations.close` mutation (async, non-blocking)
+- Converted `generateConversationSummary` and `extractMemoryFacts` from action to internalAction
+- Contradiction detection uses pattern matching for common opposite preferences (spicy, vegetarian, vegan, dairy, gluten)
+- Duplicate detection uses normalized string comparison and substring matching
+- Error handling: pipeline logs errors but doesn't fail conversation close
+
+**Files changed:**
+- packages/backend/convex/ai/summary.ts (+280 lines: pipeline action, contradiction detection, helpers)
+- packages/backend/convex/conversationSummaries.ts (+38 lines: createInternal mutation)
+- packages/backend/convex/customerMemory.ts (+35 lines: addInternal mutation, listByCustomerInternal query)
+- packages/backend/convex/customers.ts (+36 lines: updateStatsInternal mutation)
+- packages/backend/convex/conversations.ts (+4 lines: scheduler call in close mutation)
+
+**Verification:**
+- LSP diagnostics: no errors on all changed files
+- bunx convex dev --once: compiles successfully
+- web tsc --noEmit: passes
+
+---

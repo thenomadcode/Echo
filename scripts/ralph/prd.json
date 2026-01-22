@@ -318,7 +318,7 @@
       "id": "S20",
       "title": "Memory processing pipeline on conversation close",
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create action processConversationMemory({ conversationId }) that orchestrates memory extraction",
