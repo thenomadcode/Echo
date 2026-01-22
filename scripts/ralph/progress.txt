@@ -24,6 +24,48 @@
 
 ---
 
+## 2026-01-22 10:10 - S08: Handle Variants in Chat
+
+**What was implemented:**
+- Updated AI prompt system to detect and handle product variants
+- Added shopifyProductId to Product interfaces in agentPrompt.ts, prompts.ts, response.ts
+- Created variant grouping functions:
+  - getBaseProductName(): Extracts base name from "Product - Variant" format
+  - getVariantName(): Extracts variant name
+  - groupProductsByVariant(): Groups products by shopifyProductId
+  - formatProductCatalog/formatProductCatalogWithVariants(): Formats catalog with variant grouping
+- Products with same shopifyProductId are grouped and displayed as:
+  ```
+  - Blue Hoodie (HAS VARIANTS - ask customer which they want):
+      • Small: $25.00
+      • Medium: $25.00
+      • Large: $25.00 [OUT OF STOCK]
+  ```
+- Added variant handling instructions to both AI prompts:
+  - Always ask which variant before adding to order
+  - Use full product name (e.g., "Hoodie - Medium")
+  - Handle out-of-stock variants gracefully
+- Updated agent.ts and process.ts to pass shopifyProductId to AI context
+
+**Files changed:**
+- packages/backend/convex/ai/agentPrompt.ts (added variant grouping and instructions)
+- packages/backend/convex/ai/prompts.ts (added variant grouping and instructions)
+- packages/backend/convex/ai/response.ts (added shopifyProductId to validator)
+- packages/backend/convex/ai/agent.ts (pass shopifyProductId)
+- packages/backend/convex/ai/process.ts (pass shopifyProductId)
+
+**Verification:**
+- LSP diagnostics: no errors
+- web tsc --noEmit: passes
+
+**Learnings for future iterations:**
+- Shopify variants become separate Echo products with names "Product - Variant"
+- Products with same shopifyProductId are variants of same Shopify product
+- AI instructions for variant handling must be explicit: always ask, use full name
+- Out-of-stock variants should be shown but marked, so AI can suggest alternatives
+
+---
+
 ## 2026-01-22 09:57 - S07: Payment Method Routing
 
 **What was implemented:**

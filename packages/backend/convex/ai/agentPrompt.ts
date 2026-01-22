@@ -17,6 +17,7 @@ interface Product {
   currency: string;
   description?: string;
   available: boolean;
+  shopifyProductId?: string;
 }
 
 interface OrderItem {
@@ -88,17 +89,79 @@ function formatOrderSummary(order: OrderState): string {
   return lines.join("\n");
 }
 
+// Extract base product name from variant name (e.g., "Hoodie - Small" -> "Hoodie")
+function getBaseProductName(name: string): string {
+  const dashIndex = name.lastIndexOf(" - ");
+  return dashIndex > 0 ? name.substring(0, dashIndex) : name;
+}
+
+// Extract variant name from product name (e.g., "Hoodie - Small" -> "Small")
+function getVariantName(name: string): string {
+  const dashIndex = name.lastIndexOf(" - ");
+  return dashIndex > 0 ? name.substring(dashIndex + 3) : "";
+}
+
+// Group products by shopifyProductId to identify variants
+function groupProductsByVariant(products: Product[]): Map<string, Product[]> {
+  const groups = new Map<string, Product[]>();
+  
+  for (const product of products) {
+    // Products with shopifyProductId are grouped by it
+    // Products without are considered standalone (manual products)
+    const key = product.shopifyProductId ?? `standalone_${product.name}`;
+    const existing = groups.get(key) ?? [];
+    existing.push(product);
+    groups.set(key, existing);
+  }
+  
+  return groups;
+}
+
+// Format product catalog with variant grouping
+function formatProductCatalog(products: Product[]): string {
+  const groups = groupProductsByVariant(products);
+  const lines: string[] = [];
+  
+  for (const [, variants] of groups) {
+    const availableVariants = variants.filter((p) => p.available);
+    const unavailableVariants = variants.filter((p) => !p.available);
+    
+    if (availableVariants.length === 0 && unavailableVariants.length === 0) {
+      continue;
+    }
+    
+    // Single product (no variants) or standalone manual product
+    if (variants.length === 1) {
+      const p = variants[0];
+      if (!p) continue;
+      const price = formatPrice(p.price, p.currency);
+      const desc = p.description ? ` - ${p.description}` : "";
+      const status = p.available ? "" : " [OUT OF STOCK]";
+      lines.push(`  - ${p.name}: ${price}${desc}${status}`);
+      continue;
+    }
+    
+    // Multiple variants - group under base product name
+    const baseName = getBaseProductName(variants[0]?.name ?? "");
+    const description = variants[0]?.description ? ` - ${variants[0].description}` : "";
+    
+    lines.push(`  - ${baseName}${description} (HAS VARIANTS - ask customer which they want):`);
+    
+    for (const v of variants) {
+      const variantName = getVariantName(v.name);
+      const price = formatPrice(v.price, v.currency);
+      const status = v.available ? "" : " [OUT OF STOCK]";
+      lines.push(`      • ${variantName}: ${price}${status}`);
+    }
+  }
+  
+  return lines.join("\n");
+}
+
 export function buildAgentPrompt(params: AgentPromptParams): string {
   const { business, products, currentOrder, language, customerPhone } = params;
 
-  const availableProducts = products.filter((p) => p.available);
-  const productCatalog = availableProducts
-    .map((p) => {
-      const price = formatPrice(p.price, p.currency);
-      const desc = p.description ? ` - ${p.description}` : "";
-      return `  - ${p.name}: ${price}${desc}`;
-    })
-    .join("\n");
+  const productCatalog = formatProductCatalog(products);
 
   const businessHours = business.businessHours
     ? `${business.businessHours.open} - ${business.businessHours.close} (${business.businessHours.days.map((d) => DAYS_MAP[d]).join(", ")})`
@@ -179,12 +242,23 @@ You have access to these tools to manage orders:
 - "Wait, I want delivery instead" → use set_delivery to update
 - Be flexible and accommodating
 
+### Handling Products with Variants (IMPORTANT)
+- Some products have multiple variants (size, color, etc.) - marked with "HAS VARIANTS" in the catalog
+- When customer asks for a product that has variants WITHOUT specifying which one:
+  1. ALWAYS ask which variant they want before adding to order
+  2. List the available options with their prices
+  3. Example: "Which size would you like? We have Small ($10), Medium ($12), Large ($14)"
+- When customer specifies a variant (e.g., "medium hoodie"), add the FULL product name (e.g., "Hoodie - Medium")
+- If a variant is marked [OUT OF STOCK], let the customer know and suggest available alternatives
+- NEVER add a generic product name if variants exist - always get the specific variant first
+
 ### Edge Cases
 - Empty cart + "that's all" → Ask what they'd like to order
 - Unknown product → Suggest similar available products
 - Unclear quantity → Default to 1, confirm with customer
 - Vague requests → Ask clarifying questions naturally
 - Customer seems upset → Offer to connect with human
+- Customer asks for out-of-stock variant → Apologize and suggest available variants
 
 ## Important Rules
 1. NEVER invent products - only offer what's in the catalog
@@ -194,6 +268,8 @@ You have access to these tools to manage orders:
 5. Keep responses SHORT - this is WhatsApp, not email
 6. Be helpful even if customer makes typos or uses slang
 7. You can use emojis sparingly to be friendly 😊
+8. For products with variants, ALWAYS ask which variant before adding to order
+9. When adding variant products, use the FULL name (e.g., "Hoodie - Medium", not just "Hoodie")
 
 ## Response Format
 - Respond naturally as if chatting on WhatsApp

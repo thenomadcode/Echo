@@ -130,7 +130,7 @@
       "id": "S08",
       "title": "Handle Variants in Chat",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Update AI agent to detect when product has multiple variants",

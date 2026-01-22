@@ -52,6 +52,7 @@ const productValidator = v.object({
   currency: v.string(),
   description: v.optional(v.string()),
   available: v.boolean(),
+  shopifyProductId: v.optional(v.string()),
 });
 
 interface ResponseGenerationResult {
