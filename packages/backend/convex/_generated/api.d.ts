@@ -19,6 +19,7 @@ import type * as ai_prompts from "../ai/prompts.js";
 import type * as ai_providers_openai from "../ai/providers/openai.js";
 import type * as ai_response from "../ai/response.js";
 import type * as ai_settings from "../ai/settings.js";
+import type * as ai_summary from "../ai/summary.js";
 import type * as ai_tools from "../ai/tools.js";
 import type * as ai_types from "../ai/types.js";
 import type * as auth from "../auth.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   "ai/providers/openai": typeof ai_providers_openai;
   "ai/response": typeof ai_response;
   "ai/settings": typeof ai_settings;
+  "ai/summary": typeof ai_summary;
   "ai/tools": typeof ai_tools;
   "ai/types": typeof ai_types;
   auth: typeof auth;

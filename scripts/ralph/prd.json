@@ -267,7 +267,7 @@
       "id": "S17",
       "title": "VIP-aware AI responses",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create function getVIPPromptSection(customer) that returns tier-specific instructions",
@@ -284,7 +284,7 @@
       "id": "S18",
       "title": "Conversation summary generation",
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create action generateConversationSummary({ conversationId }) in packages/backend/convex/ai/",

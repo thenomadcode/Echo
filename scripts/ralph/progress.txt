@@ -24,6 +24,64 @@
 
 ---
 
+## 2026-01-22 21:27 - S18: Conversation summary generation
+
+**What was implemented:**
+- Created packages/backend/convex/ai/summary.ts
+- Added `getConversationMessages` internalQuery that loads:
+  - All messages for conversation (sorted by createdAt ascending)
+  - Customer data (if customerRecordId exists)
+  - Orders associated with conversation
+  - Business name for formatting
+- Added `generateConversationSummary` action that:
+  - Loads conversation context (messages, customer, orders)
+  - Builds context string with customer name, tier, orders, escalation status
+  - Formats messages as "Customer: ..." / "Business: ..." conversation transcript
+  - Uses OpenAI (gpt-5-nano) to generate 100-200 word summary
+  - Returns { summary, sentiment, keyEvents } with JSON response format
+- Sentiment classification: positive | neutral | negative
+- Key events extraction includes: complaint, compliment, refund_request, order_placed, order_cancelled, escalation, allergy_mentioned, delivery_issue, product_unavailable, price_inquiry, repeat_customer
+- Fallback handling: returns basic summary if AI call fails
+
+**Files changed:**
+- packages/backend/convex/ai/summary.ts (created, ~200 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx convex dev --once: compiles successfully
+- web tsc --noEmit: passes
+- Backend node types error is pre-existing
+
+---
+
+## 2026-01-22 21:19 - S17: VIP-aware AI responses
+
+**What was implemented:**
+- Created `getVIPPromptSection(tier, customerName?)` function in both agentPrompt.ts and prompts.ts
+- Tier-specific instructions:
+  - Regular: no special instructions (returns empty string)
+  - Bronze: "Use customer name, be friendly, make them feel valued"
+  - Silver: "Acknowledge loyalty subtly, be personalized, go the extra mile"
+  - Gold: "Very personal, thank for loyalty, prioritize requests, be attentive"
+  - VIP: "White-glove service, apologize profusely for any issue, use name naturally and frequently"
+- Created `getReturningCustomerGreeting(customerName?, isReturning?)` function
+  - If returning customer with name: greet with "Hey {name}!" naturally
+  - If returning customer without name: greet warmly "Welcome back!"
+- Integrated VIP section and returning customer greeting into buildAgentPrompt()
+- Integrated VIP section and returning customer greeting into buildSystemPrompt()
+- Returning customer detection: totalOrders > 0
+
+**Files changed:**
+- packages/backend/convex/ai/agentPrompt.ts (+63 lines)
+- packages/backend/convex/ai/prompts.ts (+68 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- web tsc --noEmit: passes
+- Backend node types error is pre-existing
+
+---
+
 ## 2026-01-22 21:11 - S16: Customer context in AI system prompt
 
 **What was implemented:**
