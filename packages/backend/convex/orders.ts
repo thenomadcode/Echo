@@ -7,7 +7,7 @@ import {
   mutation,
   query,
 } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { generateOrderNumber } from "./lib/orderNumber";
 import { authComponent } from "./auth";
 
@@ -588,9 +588,25 @@ export const generatePaymentLink = action({
       throw new Error("Payment link can only be generated for draft orders or expired links");
     }
 
+    const shopifyConnection = await ctx.runQuery(internal.orders.getShopifyConnectionForOrder, {
+      businessId: order.businessId,
+    });
+
+    if (shopifyConnection) {
+      const result = await ctx.runAction(api.shopify.createOrder, {
+        orderId: args.orderId,
+      });
+
+      if (!result.success || !result.invoiceUrl) {
+        throw new Error(result.error ?? "Failed to create Shopify draft order");
+      }
+
+      return result.invoiceUrl;
+    }
+
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
-      throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY.");
+      throw new Error("No payment provider configured. Please connect Shopify or set up Stripe.");
     }
 
     const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3001";
@@ -648,6 +664,7 @@ export const generatePaymentLink = action({
       stripeSessionId: session.id,
       paymentLinkUrl: session.url,
       paymentLinkExpiresAt: expiresAt,
+      paymentProvider: "stripe",
     });
 
     return session.url;
@@ -663,20 +680,37 @@ export const getOrderForPayment = internalQuery({
   },
 });
 
+export const getShopifyConnectionForOrder = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("shopifyConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+  },
+});
+
 export const updatePaymentLinkInternal = internalMutation({
   args: {
     orderId: v.id("orders"),
     stripeSessionId: v.string(),
     paymentLinkUrl: v.string(),
     paymentLinkExpiresAt: v.number(),
+    paymentProvider: v.optional(v.union(v.literal("stripe"), v.literal("shopify"), v.literal("cash"))),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.orderId, {
+    const updates: Record<string, unknown> = {
       stripeSessionId: args.stripeSessionId,
       paymentLinkUrl: args.paymentLinkUrl,
       paymentLinkExpiresAt: args.paymentLinkExpiresAt,
       updatedAt: Date.now(),
-    });
+    };
+    if (args.paymentProvider) {
+      updates.paymentProvider = args.paymentProvider;
+    }
+    await ctx.db.patch(args.orderId, updates);
   },
 });
 

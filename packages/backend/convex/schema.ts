@@ -249,8 +249,10 @@ export default defineSchema({
     paymentLinkUrl: v.optional(v.string()),
     paymentLinkExpiresAt: v.optional(v.number()),
     stripeSessionId: v.optional(v.string()),
-    shopifyOrderId: v.optional(v.string()),
+    shopifyDraftOrderId: v.optional(v.string()), // Shopify Draft Order ID (before payment)
+    shopifyOrderId: v.optional(v.string()), // Shopify Order ID (after payment completed)
     shopifyOrderNumber: v.optional(v.string()),
+    paymentProvider: v.optional(v.union(v.literal("stripe"), v.literal("shopify"), v.literal("cash"))),
     estimatedReadyTime: v.optional(v.number()),
     notes: v.optional(v.string()),
     createdAt: v.number(),

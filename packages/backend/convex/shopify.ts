@@ -1256,13 +1256,14 @@ export const markMissingProductsUnavailable = internalMutation({
   },
 });
 
-type ShopifyOrderResponse = {
-  order: {
+type ShopifyDraftOrderResponse = {
+  draft_order: {
     id: number;
     name: string;
-    order_number: number;
-    created_at: string;
+    invoice_url: string;
+    status: string;
     total_price: string;
+    created_at: string;
   };
 };
 
@@ -1270,10 +1271,11 @@ type ShopifyOrderErrorResponse = {
   errors?: Record<string, string[]> | string;
 };
 
-type CreateOrderResult = {
+type CreateDraftOrderResult = {
   success: boolean;
-  shopifyOrderId: string | null;
+  shopifyDraftOrderId: string | null;
   shopifyOrderNumber: string | null;
+  invoiceUrl: string | null;
   error: string | null;
 };
 
@@ -1281,22 +1283,22 @@ export const createOrder = action({
   args: {
     orderId: v.id("orders"),
   },
-  handler: async (ctx, args): Promise<CreateOrderResult> => {
+  handler: async (ctx, args): Promise<CreateDraftOrderResult> => {
     const orderData = await ctx.runQuery(internal.shopify.getOrderForShopify, {
       orderId: args.orderId,
     });
 
     if (!orderData) {
-      return { success: false, shopifyOrderId: null, shopifyOrderNumber: null, error: "Order not found" };
+      return { success: false, shopifyDraftOrderId: null, shopifyOrderNumber: null, invoiceUrl: null, error: "Order not found" };
     }
 
     const { order, products, shopifyConnection } = orderData;
 
     if (!shopifyConnection) {
-      return { success: false, shopifyOrderId: null, shopifyOrderNumber: null, error: "No Shopify connection found for this business" };
+      return { success: false, shopifyDraftOrderId: null, shopifyOrderNumber: null, invoiceUrl: null, error: "No Shopify connection found for this business" };
     }
 
-    const lineItems: Array<{ variant_id: string; quantity: number }> = [];
+    const lineItems: Array<{ variant_id: number; quantity: number }> = [];
     const skippedItems: string[] = [];
 
     for (const item of order.items) {
@@ -1311,7 +1313,6 @@ export const createOrder = action({
         continue;
       }
 
-      // GID format: gid://shopify/ProductVariant/12345 → extract numeric ID
       const variantIdMatch = product.shopifyVariantId.match(/\/ProductVariant\/(\d+)$/);
       if (!variantIdMatch) {
         skippedItems.push(`${item.name} (invalid Shopify variant ID format)`);
@@ -1319,7 +1320,7 @@ export const createOrder = action({
       }
 
       lineItems.push({
-        variant_id: variantIdMatch[1],
+        variant_id: parseInt(variantIdMatch[1], 10),
         quantity: item.quantity,
       });
     }
@@ -1327,31 +1328,31 @@ export const createOrder = action({
     if (lineItems.length === 0) {
       return {
         success: false,
-        shopifyOrderId: null,
+        shopifyDraftOrderId: null,
         shopifyOrderNumber: null,
+        invoiceUrl: null,
         error: `No Shopify products to order. Skipped: ${skippedItems.join(", ")}`,
       };
     }
 
-    const orderPayload: Record<string, unknown> = {
-      order: {
+    const draftOrderPayload: Record<string, unknown> = {
+      draft_order: {
         line_items: lineItems,
-        financial_status: order.paymentStatus === "paid" ? "paid" : "pending",
         note: order.notes ?? `Echo Order: ${order.orderNumber}`,
         tags: `echo,${order.orderNumber}`,
-        phone: order.contactPhone,
+        use_customer_default_address: false,
       },
     };
 
     if (order.contactName || order.contactPhone) {
-      (orderPayload.order as Record<string, unknown>).customer = {
+      (draftOrderPayload.draft_order as Record<string, unknown>).customer = {
         first_name: order.contactName ?? "Customer",
         phone: order.contactPhone,
       };
     }
 
     if (order.deliveryType === "delivery" && order.deliveryAddress) {
-      (orderPayload.order as Record<string, unknown>).shipping_address = {
+      (draftOrderPayload.draft_order as Record<string, unknown>).shipping_address = {
         address1: order.deliveryAddress,
         phone: order.contactPhone,
       };
@@ -1359,14 +1360,14 @@ export const createOrder = action({
 
     try {
       const response = await fetch(
-        `https://${shopifyConnection.shop}/admin/api/2024-01/orders.json`,
+        `https://${shopifyConnection.shop}/admin/api/2024-01/draft_orders.json`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-Shopify-Access-Token": shopifyConnection.accessToken,
           },
-          body: JSON.stringify(orderPayload),
+          body: JSON.stringify(draftOrderPayload),
         }
       );
 
@@ -1375,26 +1376,29 @@ export const createOrder = action({
         const errorMessage = typeof errorData.errors === "string"
           ? errorData.errors
           : JSON.stringify(errorData.errors);
-        console.error(`Shopify order creation failed: ${response.status} - ${errorMessage}`);
+        console.error(`Shopify draft order creation failed: ${response.status} - ${errorMessage}`);
         return {
           success: false,
-          shopifyOrderId: null,
+          shopifyDraftOrderId: null,
           shopifyOrderNumber: null,
+          invoiceUrl: null,
           error: `Shopify API error: ${errorMessage}`,
         };
       }
 
-      const data = (await response.json()) as ShopifyOrderResponse;
-      const shopifyOrderId = String(data.order.id);
-      const shopifyOrderNumber = data.order.name;
+      const data = (await response.json()) as ShopifyDraftOrderResponse;
+      const shopifyDraftOrderId = String(data.draft_order.id);
+      const shopifyOrderNumber = data.draft_order.name;
+      const invoiceUrl = data.draft_order.invoice_url;
 
-      await ctx.runMutation(internal.shopify.updateOrderWithShopifyInfo, {
+      await ctx.runMutation(internal.shopify.updateOrderWithDraftOrderInfo, {
         orderId: args.orderId,
-        shopifyOrderId,
+        shopifyDraftOrderId,
         shopifyOrderNumber,
+        invoiceUrl,
       });
 
-      console.log(`Created Shopify order ${shopifyOrderNumber} (ID: ${shopifyOrderId}) for Echo order ${order.orderNumber}`);
+      console.log(`Created Shopify draft order ${shopifyOrderNumber} (ID: ${shopifyDraftOrderId}) for Echo order ${order.orderNumber}`);
 
       if (skippedItems.length > 0) {
         console.warn(`Skipped items for Echo order ${order.orderNumber}: ${skippedItems.join(", ")}`);
@@ -1402,17 +1406,19 @@ export const createOrder = action({
 
       return {
         success: true,
-        shopifyOrderId,
+        shopifyDraftOrderId,
         shopifyOrderNumber,
+        invoiceUrl,
         error: skippedItems.length > 0 ? `Skipped items: ${skippedItems.join(", ")}` : null,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.error(`Shopify order creation failed for Echo order ${order.orderNumber}: ${message}`);
+      console.error(`Shopify draft order creation failed for Echo order ${order.orderNumber}: ${message}`);
       return {
         success: false,
-        shopifyOrderId: null,
+        shopifyDraftOrderId: null,
         shopifyOrderNumber: null,
+        invoiceUrl: null,
         error: message,
       };
     }
@@ -1459,6 +1465,25 @@ export const updateOrderWithShopifyInfo = internalMutation({
     await ctx.db.patch(args.orderId, {
       shopifyOrderId: args.shopifyOrderId,
       shopifyOrderNumber: args.shopifyOrderNumber,
+      paymentProvider: "shopify",
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const updateOrderWithDraftOrderInfo = internalMutation({
+  args: {
+    orderId: v.id("orders"),
+    shopifyDraftOrderId: v.string(),
+    shopifyOrderNumber: v.string(),
+    invoiceUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.orderId, {
+      shopifyDraftOrderId: args.shopifyDraftOrderId,
+      shopifyOrderNumber: args.shopifyOrderNumber,
+      paymentLinkUrl: args.invoiceUrl,
+      paymentProvider: "shopify",
       updatedAt: Date.now(),
     });
   },
@@ -1587,22 +1612,22 @@ export const createOrderInternal = internalAction({
   args: {
     orderId: v.id("orders"),
   },
-  handler: async (ctx, args): Promise<CreateOrderResult> => {
+  handler: async (ctx, args): Promise<CreateDraftOrderResult> => {
     const orderData = await ctx.runQuery(internal.shopify.getOrderForShopify, {
       orderId: args.orderId,
     });
 
     if (!orderData) {
-      return { success: false, shopifyOrderId: null, shopifyOrderNumber: null, error: "Order not found" };
+      return { success: false, shopifyDraftOrderId: null, shopifyOrderNumber: null, invoiceUrl: null, error: "Order not found" };
     }
 
     const { order, products, shopifyConnection } = orderData;
 
     if (!shopifyConnection) {
-      return { success: false, shopifyOrderId: null, shopifyOrderNumber: null, error: "No Shopify connection found for this business" };
+      return { success: false, shopifyDraftOrderId: null, shopifyOrderNumber: null, invoiceUrl: null, error: "No Shopify connection found for this business" };
     }
 
-    const lineItems: Array<{ variant_id: string; quantity: number }> = [];
+    const lineItems: Array<{ variant_id: number; quantity: number }> = [];
     const skippedItems: string[] = [];
 
     for (const item of order.items) {
@@ -1624,7 +1649,7 @@ export const createOrderInternal = internalAction({
       }
 
       lineItems.push({
-        variant_id: variantIdMatch[1],
+        variant_id: parseInt(variantIdMatch[1], 10),
         quantity: item.quantity,
       });
     }
@@ -1632,31 +1657,31 @@ export const createOrderInternal = internalAction({
     if (lineItems.length === 0) {
       return {
         success: false,
-        shopifyOrderId: null,
+        shopifyDraftOrderId: null,
         shopifyOrderNumber: null,
+        invoiceUrl: null,
         error: `No Shopify products to order. Skipped: ${skippedItems.join(", ")}`,
       };
     }
 
-    const orderPayload: Record<string, unknown> = {
-      order: {
+    const draftOrderPayload: Record<string, unknown> = {
+      draft_order: {
         line_items: lineItems,
-        financial_status: order.paymentStatus === "paid" ? "paid" : "pending",
         note: order.notes ?? `Echo Order: ${order.orderNumber}`,
         tags: `echo,${order.orderNumber}`,
-        phone: order.contactPhone,
+        use_customer_default_address: false,
       },
     };
 
     if (order.contactName || order.contactPhone) {
-      (orderPayload.order as Record<string, unknown>).customer = {
+      (draftOrderPayload.draft_order as Record<string, unknown>).customer = {
         first_name: order.contactName ?? "Customer",
         phone: order.contactPhone,
       };
     }
 
     if (order.deliveryType === "delivery" && order.deliveryAddress) {
-      (orderPayload.order as Record<string, unknown>).shipping_address = {
+      (draftOrderPayload.draft_order as Record<string, unknown>).shipping_address = {
         address1: order.deliveryAddress,
         phone: order.contactPhone,
       };
@@ -1664,14 +1689,14 @@ export const createOrderInternal = internalAction({
 
     try {
       const response = await fetch(
-        `https://${shopifyConnection.shop}/admin/api/2024-01/orders.json`,
+        `https://${shopifyConnection.shop}/admin/api/2024-01/draft_orders.json`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-Shopify-Access-Token": shopifyConnection.accessToken,
           },
-          body: JSON.stringify(orderPayload),
+          body: JSON.stringify(draftOrderPayload),
         }
       );
 
@@ -1680,26 +1705,29 @@ export const createOrderInternal = internalAction({
         const errorMessage = typeof errorData.errors === "string"
           ? errorData.errors
           : JSON.stringify(errorData.errors);
-        console.error(`Shopify order creation failed: ${response.status} - ${errorMessage}`);
+        console.error(`Shopify draft order creation failed: ${response.status} - ${errorMessage}`);
         return {
           success: false,
-          shopifyOrderId: null,
+          shopifyDraftOrderId: null,
           shopifyOrderNumber: null,
+          invoiceUrl: null,
           error: `Shopify API error: ${errorMessage}`,
         };
       }
 
-      const data = (await response.json()) as ShopifyOrderResponse;
-      const shopifyOrderId = String(data.order.id);
-      const shopifyOrderNumber = data.order.name;
+      const data = (await response.json()) as ShopifyDraftOrderResponse;
+      const shopifyDraftOrderId = String(data.draft_order.id);
+      const shopifyOrderNumber = data.draft_order.name;
+      const invoiceUrl = data.draft_order.invoice_url;
 
-      await ctx.runMutation(internal.shopify.updateOrderWithShopifyInfo, {
+      await ctx.runMutation(internal.shopify.updateOrderWithDraftOrderInfo, {
         orderId: args.orderId,
-        shopifyOrderId,
+        shopifyDraftOrderId,
         shopifyOrderNumber,
+        invoiceUrl,
       });
 
-      console.log(`Created Shopify order ${shopifyOrderNumber} (ID: ${shopifyOrderId}) for Echo order ${order.orderNumber}`);
+      console.log(`Created Shopify draft order ${shopifyOrderNumber} (ID: ${shopifyDraftOrderId}) for Echo order ${order.orderNumber}`);
 
       if (skippedItems.length > 0) {
         console.warn(`Skipped items for Echo order ${order.orderNumber}: ${skippedItems.join(", ")}`);
@@ -1707,17 +1735,19 @@ export const createOrderInternal = internalAction({
 
       return {
         success: true,
-        shopifyOrderId,
+        shopifyDraftOrderId,
         shopifyOrderNumber,
+        invoiceUrl,
         error: skippedItems.length > 0 ? `Skipped items: ${skippedItems.join(", ")}` : null,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.error(`Shopify order creation failed for Echo order ${order.orderNumber}: ${message}`);
+      console.error(`Shopify draft order creation failed for Echo order ${order.orderNumber}: ${message}`);
       return {
         success: false,
-        shopifyOrderId: null,
+        shopifyDraftOrderId: null,
         shopifyOrderNumber: null,
+        invoiceUrl: null,
         error: message,
       };
     }
