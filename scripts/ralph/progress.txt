@@ -24,6 +24,44 @@
 
 ---
 
+## 2026-01-22 21:11 - S16: Customer context in AI system prompt
+
+**What was implemented:**
+- Added `getContextInternal` internalQuery to customers.ts for AI to load customer context without auth
+- Added CustomerContext interface types to agentPrompt.ts and prompts.ts
+- Updated `loadAgentContext` (agent.ts) to load customer context from customerRecordId
+- Updated `loadContext` (process.ts) to load customer context from customerRecordId
+- Added `formatCustomerContext()` helper to agentPrompt.ts for prompt formatting
+- Added `formatCustomerContextSection()` helper to prompts.ts for prompt formatting
+- Updated `buildAgentPrompt()` to include customer profile section with:
+  - Customer name, tier, total orders, lifetime spend
+  - Allergies with "SAFETY CRITICAL" warning
+  - Restrictions and preferences
+  - Default address for quick suggestions
+  - Business notes (non-staff-only)
+- Updated `buildSystemPrompt()` with same customer context section
+- Updated `generateResponse` action to accept customerContext validator
+- Passed customerContext through the entire AI pipeline
+
+**Files changed:**
+- packages/backend/convex/customers.ts (+83 lines)
+- packages/backend/convex/ai/agentPrompt.ts (+87 lines)
+- packages/backend/convex/ai/prompts.ts (+83 lines)
+- packages/backend/convex/ai/agent.ts (+60 lines)
+- packages/backend/convex/ai/process.ts (+88 lines)
+- packages/backend/convex/ai/response.ts (+41 lines)
+
+**Verification:**
+- LSP diagnostics: no errors on all changed files
+- Backend node types error is pre-existing
+
+**Learnings for future iterations:**
+- CustomerContext loaded via customerRecordId field on conversations (not customerId which is phone string)
+- Allergies displayed first with SAFETY CRITICAL warning in prompts
+- Customer context loading done inline in loadContext/loadAgentContext rather than separate query call for efficiency
+
+---
+
 ## 2026-01-22 21:09 - S15: update_customer_address AI tool
 
 **What was implemented:**

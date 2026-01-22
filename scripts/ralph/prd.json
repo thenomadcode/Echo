@@ -250,7 +250,7 @@
       "id": "S16",
       "title": "Customer context in AI system prompt",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Modify AI system prompt generation to include customer context",
