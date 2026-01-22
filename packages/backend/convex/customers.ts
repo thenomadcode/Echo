@@ -325,3 +325,89 @@ export const getContext = query({
     };
   },
 });
+
+type Tier = "regular" | "bronze" | "silver" | "gold" | "vip";
+
+interface TierThresholds {
+  bronze: { orders: number; spent: number };
+  silver: { orders: number; spent: number };
+  gold: { orders: number; spent: number };
+  vip: { orders: number; spent: number };
+}
+
+const DEFAULT_THRESHOLDS: TierThresholds = {
+  bronze: { orders: 3, spent: 5000 },
+  silver: { orders: 10, spent: 20000 },
+  gold: { orders: 25, spent: 50000 },
+  vip: { orders: 50, spent: 100000 },
+};
+
+function calculateTier(
+  totalOrders: number,
+  totalSpent: number,
+  thresholds: TierThresholds = DEFAULT_THRESHOLDS
+): Tier {
+  if (
+    totalOrders >= thresholds.vip.orders ||
+    totalSpent >= thresholds.vip.spent
+  ) {
+    return "vip";
+  }
+  if (
+    totalOrders >= thresholds.gold.orders ||
+    totalSpent >= thresholds.gold.spent
+  ) {
+    return "gold";
+  }
+  if (
+    totalOrders >= thresholds.silver.orders ||
+    totalSpent >= thresholds.silver.spent
+  ) {
+    return "silver";
+  }
+  if (
+    totalOrders >= thresholds.bronze.orders ||
+    totalSpent >= thresholds.bronze.spent
+  ) {
+    return "bronze";
+  }
+  return "regular";
+}
+
+export const updateStats = mutation({
+  args: {
+    customerId: v.id("customers"),
+    orderTotal: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      throw new Error("Customer not found");
+    }
+
+    const newTotalOrders = customer.totalOrders + 1;
+    const newTotalSpent = customer.totalSpent + args.orderTotal;
+    const newAverageOrderValue = Math.round(newTotalSpent / newTotalOrders);
+    const now = Date.now();
+
+    const updates: Record<string, unknown> = {
+      totalOrders: newTotalOrders,
+      totalSpent: newTotalSpent,
+      averageOrderValue: newAverageOrderValue,
+      lastOrderAt: now,
+      updatedAt: now,
+    };
+
+    if (!customer.manualTier) {
+      const calculatedTier = calculateTier(newTotalOrders, newTotalSpent);
+      if (calculatedTier !== customer.tier) {
+        updates.tier = calculatedTier;
+        updates.tierUpdatedAt = now;
+      }
+    }
+
+    await ctx.db.patch(args.customerId, updates);
+
+    return args.customerId;
+  },
+});
