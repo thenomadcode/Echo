@@ -206,7 +206,7 @@
       "id": "S13",
       "title": "get_recent_orders AI tool",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create action ai.getRecentOrders({ customerId, limit? }) in packages/backend/convex/ai/",

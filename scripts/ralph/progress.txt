@@ -24,6 +24,24 @@
 
 ---
 
+## 2026-01-22 21:06 - S13: get_recent_orders AI tool
+
+**What was implemented:**
+- Added `getOrdersByCustomer` internalQuery to fetch orders by customerId
+- Added `getRecentOrders` action with args: customerId, limit (default 5)
+- Uses by_customer index, sorts by createdAt desc
+- Returns order summaries: orderNumber, items (as "Qx Name" strings), total, status, createdAt
+- Security: validates customer exists before querying
+
+**Files changed:**
+- packages/backend/convex/ai/customerHistory.ts (+66 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Convex dev: compiles successfully
+
+---
+
 ## 2026-01-22 21:03 - S12: search_customer_history AI tool
 
 **What was implemented:**
