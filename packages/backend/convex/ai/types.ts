@@ -112,6 +112,13 @@ export interface UnknownIntent extends BaseIntent {
   type: "unknown";
 }
 
+export type OffTopicCategory = "politics" | "flirting" | "inappropriate" | "manipulation" | "unrelated";
+
+export interface OffTopicIntent extends BaseIntent {
+  type: "off_topic";
+  category: OffTopicCategory;
+}
+
 export type Intent =
   | GreetingIntent
   | ProductQuestionIntent
@@ -124,6 +131,7 @@ export type Intent =
   | DeliveryChoiceIntent
   | PaymentChoiceIntent
   | AddressProvidedIntent
+  | OffTopicIntent
   | UnknownIntent;
 
 export type IntentType = Intent["type"];
@@ -145,6 +153,7 @@ export interface SerializedIntent {
   deliveryType?: "pickup" | "delivery";
   address?: string;
   paymentMethod?: "cash" | "card";
+  category?: OffTopicCategory;
 }
 
 export function serializeIntent(intent: Intent): SerializedIntent {
@@ -165,6 +174,8 @@ export function serializeIntent(intent: Intent): SerializedIntent {
       return { ...base, paymentMethod: intent.paymentMethod };
     case "address_provided":
       return { ...base, address: intent.address };
+    case "off_topic":
+      return { ...base, category: intent.category };
     default:
       return base;
   }
@@ -207,6 +218,11 @@ export function parseIntent(serialized: SerializedIntent): Intent {
       return {
         type: "address_provided",
         address: serialized.address ?? "",
+      };
+    case "off_topic":
+      return {
+        type: "off_topic",
+        category: (serialized.category as OffTopicCategory) ?? "unrelated",
       };
     default:
       return { type: "unknown" };
