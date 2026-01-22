@@ -301,7 +301,7 @@
       "id": "S19",
       "title": "Memory fact extraction",
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create action extractMemoryFacts({ conversationId }) in packages/backend/convex/ai/",

@@ -99,6 +99,130 @@ function formatMessagesForPrompt(
     .join("\n");
 }
 
+interface MemoryFact {
+  category: "allergy" | "restriction" | "preference" | "behavior" | "complaint";
+  fact: string;
+  confidence: number;
+}
+
+const MEMORY_EXTRACTION_SYSTEM_PROMPT = `You are analyzing a WhatsApp customer service conversation to extract memorable facts about the customer.
+
+Your task: Extract facts that would be useful to remember for future interactions with this customer.
+
+Categories to extract:
+1. **allergy**: Food allergies or intolerances (e.g., "allergic to peanuts", "lactose intolerant", "can't eat shellfish")
+   - These are SAFETY CRITICAL - be very confident when extracting
+   - Confidence: 0.95-1.0 for explicit mentions, 0.85-0.94 for implied
+   
+2. **restriction**: Dietary restrictions (e.g., "vegetarian", "halal", "no pork", "keto diet")
+   - Confidence: 0.85-0.95 for explicit, 0.75-0.84 for implied
+
+3. **preference**: Food or service preferences (e.g., "likes extra spicy", "prefers delivery", "always orders same thing")
+   - Confidence: 0.80-0.90 for explicit, 0.65-0.79 for implied
+
+4. **behavior**: Ordering patterns or behaviors (e.g., "usually orders on weekends", "tips well", "frequent customer")
+   - Confidence: 0.70-0.85
+
+5. **complaint**: Past complaints or issues (e.g., "had delivery problem before", "complained about cold food")
+   - Confidence: 0.80-0.95
+
+Rules:
+- Only extract facts explicitly stated or strongly implied in the conversation
+- Do not infer facts that are not supported by the messages
+- Keep facts concise (under 100 characters each)
+- Avoid duplicates - each fact should be unique
+- Confidence scores: 0.0-1.0 where 1.0 is absolutely certain
+- If no facts found for a category, that's fine - don't make things up
+
+Respond in JSON format:
+{
+  "facts": [
+    {"category": "allergy", "fact": "allergic to peanuts", "confidence": 0.98},
+    {"category": "preference", "fact": "likes food extra spicy", "confidence": 0.85}
+  ]
+}
+
+Return an empty array if no relevant facts are found:
+{"facts": []}`;
+
+export const extractMemoryFacts = action({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<MemoryFact[]> => {
+    const conversationData = await ctx.runQuery(
+      internal.ai.summary.getConversationMessages,
+      { conversationId: args.conversationId }
+    );
+
+    if (!conversationData) {
+      throw new Error("Conversation not found");
+    }
+
+    const { messages, businessName } = conversationData;
+
+    if (messages.length < 2) {
+      return [];
+    }
+
+    const formattedMessages = formatMessagesForPrompt(messages, businessName);
+
+    try {
+      const provider = createOpenAIProvider();
+
+      const result = await provider.complete({
+        messages: [{ role: "user", content: `Extract customer facts from this conversation:\n\n${formattedMessages}` }],
+        systemPrompt: MEMORY_EXTRACTION_SYSTEM_PROMPT,
+        maxTokens: 512,
+        responseFormat: "json",
+      });
+
+      const parsed = JSON.parse(result.content) as {
+        facts?: Array<{
+          category?: string;
+          fact?: string;
+          confidence?: number;
+        }>;
+      };
+
+      if (!Array.isArray(parsed.facts)) {
+        return [];
+      }
+
+      const validCategories = ["allergy", "restriction", "preference", "behavior", "complaint"];
+      const validatedFacts: MemoryFact[] = [];
+      
+      for (const item of parsed.facts) {
+        if (!item.category || !validCategories.includes(item.category)) {
+          continue;
+        }
+
+        if (!item.fact || typeof item.fact !== "string" || item.fact.trim().length === 0) {
+          continue;
+        }
+
+        let confidence = typeof item.confidence === "number" ? item.confidence : 0.8;
+        confidence = Math.max(0, Math.min(1, confidence));
+
+        if (item.category === "allergy" && confidence < 0.85) {
+          confidence = 0.85;
+        }
+
+        validatedFacts.push({
+          category: item.category as MemoryFact["category"],
+          fact: item.fact.trim().slice(0, 200),
+          confidence,
+        });
+      }
+
+      return validatedFacts;
+    } catch (error) {
+      console.error("Failed to extract memory facts:", error);
+      return [];
+    }
+  },
+});
+
 export const generateConversationSummary = action({
   args: {
     conversationId: v.id("conversations"),

@@ -24,6 +24,34 @@
 
 ---
 
+## 2026-01-22 21:31 - S19: Memory fact extraction
+
+**What was implemented:**
+- Added `extractMemoryFacts` action to packages/backend/convex/ai/summary.ts
+- Reuses `getConversationMessages` internalQuery for loading conversation data
+- Uses OpenAI (gpt-5-nano) with structured JSON output to extract customer facts
+- Returns array of { category, fact, confidence }
+- Categories: allergy, restriction, preference, behavior, complaint
+- Confidence scoring:
+  - Allergies: 0.95-1.0 explicit, 0.85-0.94 implied (safety critical, minimum 0.85 enforced)
+  - Restrictions: 0.85-0.95 explicit
+  - Preferences: 0.80-0.90 explicit, defaults to 0.8
+  - Behaviors: 0.70-0.85
+  - Complaints: 0.80-0.95
+- Validation: validates category, fact text presence, clamps confidence 0-1
+- Fact length limited to 200 characters
+- Returns empty array if < 2 messages or on error
+
+**Files changed:**
+- packages/backend/convex/ai/summary.ts (+120 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx convex dev --once: compiles successfully
+- web tsc --noEmit: passes
+
+---
+
 ## 2026-01-22 21:27 - S18: Conversation summary generation
 
 **What was implemented:**
