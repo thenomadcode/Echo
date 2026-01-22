@@ -235,7 +235,7 @@
       "id": "S15",
       "title": "update_customer_address AI tool",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create action ai.updateCustomerAddress({ customerId, address, label, setAsDefault? }) in packages/backend/convex/ai/",

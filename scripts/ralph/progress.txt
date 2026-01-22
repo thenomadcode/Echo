@@ -24,6 +24,29 @@
 
 ---
 
+## 2026-01-22 21:09 - S15: update_customer_address AI tool
+
+**What was implemented:**
+- Added `getAddressesForCustomer` internalQuery
+- Added `normalizeAddress()` and `fuzzyAddressMatch()` helper functions for address matching
+- Fuzzy match uses word similarity (>0.7 threshold)
+- Added `generateAddressLabel()` to auto-generate labels based on address content (home/work/address)
+- Added `updateAddressLastUsed` internalMutation to update lastUsedAt and optionally setAsDefault
+- Added `insertAddress` internalMutation to create new addresses
+- Added `updateCustomerAddress` action with args: customerId, address, label?, setAsDefault?
+- If exists: updates lastUsedAt, optionally sets as default
+- If new: creates with AI-generated label if not provided, auto-default if first address
+- Returns { addressId, isNew: boolean }
+
+**Files changed:**
+- packages/backend/convex/ai/customerHistory.ts (+160 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Convex dev: compiles successfully
+
+---
+
 ## 2026-01-22 21:07 - S14: save_customer_preference AI tool
 
 **What was implemented:**
