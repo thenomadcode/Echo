@@ -24,6 +24,33 @@
 
 ---
 
+## 2026-01-22 22:45 - S27: Customer context panel in conversations
+
+**What was implemented:**
+- Added collapsible side panel to conversation detail page
+- Panel shows when conversation has a linked customer (customerRecordId)
+- Panel header: Customer name (or phone), tier badge with star for VIP/Gold
+- Panel stats: Order count, total spent
+- Sections displayed:
+  - Default address with MapPin icon
+  - Allergies (prominent, red badges with AlertTriangle icon)
+  - Restrictions (orange badges)
+  - Preferences (limited to 5 with "+N more" indicator)
+  - Staff notes (non-staff-only, truncated to 3 lines)
+- "View Full Profile" link navigates to customer detail page
+- Collapsed state shows User icon and allergy warning indicator
+- Panel remembers collapsed/expanded state in localStorage
+- Smooth transition animation (300ms)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (+200 lines)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+
+---
+
 ## 2026-01-22 22:30 - S26: Notes management UI
 
 **What was implemented:**

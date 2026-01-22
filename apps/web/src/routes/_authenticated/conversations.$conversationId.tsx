@@ -3,10 +3,22 @@ import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 
-import { ArrowLeft, MessageSquare, ShoppingCart, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ChevronLeft, 
+  ChevronRight, 
+  AlertTriangle, 
+  MapPin, 
+  MessageSquare, 
+  ShoppingCart, 
+  Star, 
+  User, 
+  Loader2, 
+  StickyNote 
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,12 +35,217 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/conversations/$conversationId")({
   component: ConversationDetailPage,
 });
+
+const PANEL_COLLAPSED_KEY = "echo-customer-panel-collapsed";
+
+function getTierVariant(tier: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (tier) {
+    case "vip":
+    case "gold":
+      return "default";
+    case "silver":
+    case "bronze":
+      return "secondary";
+    default:
+      return "outline";
+  }
+}
+
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+}
+
+function CustomerContextPanel({ 
+  customerId, 
+  isCollapsed, 
+  onToggle 
+}: { 
+  customerId: Id<"customers">; 
+  isCollapsed: boolean; 
+  onToggle: () => void;
+}) {
+  const contextQuery = useQuery(
+    convexQuery(api.customers.getContext, { customerId })
+  );
+
+  const context = contextQuery.data;
+  const isLoading = contextQuery.isLoading;
+
+  if (isLoading) {
+    return (
+      <div className={`border-l bg-muted/30 transition-all duration-300 ${isCollapsed ? "w-10" : "w-80"}`}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onToggle}
+          className="w-10 h-10 border-b"
+        >
+          {isCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </Button>
+        {!isCollapsed && (
+          <div className="p-4 flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (!context) {
+    return null;
+  }
+
+  const defaultAddress = context.addresses.find(a => a.isDefault);
+  const hasAllergies = context.memory.allergies.length > 0;
+
+  return (
+    <div className={`border-l bg-muted/30 transition-all duration-300 flex flex-col ${isCollapsed ? "w-10" : "w-80"}`}>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={onToggle}
+        className="w-10 h-10 border-b flex-shrink-0"
+        aria-label={isCollapsed ? "Expand customer panel" : "Collapse customer panel"}
+      >
+        {isCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      </Button>
+
+      {isCollapsed && (
+        <div className="flex-1 flex flex-col items-center pt-4 gap-2">
+          <User className="h-5 w-5 text-muted-foreground" />
+          {hasAllergies && (
+            <span title="Has allergies">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </span>
+          )}
+        </div>
+      )}
+
+      {!isCollapsed && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold truncate">
+                {context.profile.name || context.profile.phone}
+              </h3>
+              <Badge variant={getTierVariant(context.profile.tier)} className="flex-shrink-0">
+                {context.profile.tier === "vip" || context.profile.tier === "gold" ? (
+                  <Star className="h-3 w-3 mr-1 fill-current" />
+                ) : null}
+                {context.profile.tier.charAt(0).toUpperCase() + context.profile.tier.slice(1)}
+              </Badge>
+            </div>
+            {context.profile.name && (
+              <p className="text-sm text-muted-foreground">{context.profile.phone}</p>
+            )}
+          </div>
+
+          <div className="flex gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Orders:</span>{" "}
+              <span className="font-medium">{context.profile.totalOrders}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Spent:</span>{" "}
+              <span className="font-medium">{formatCurrency(context.profile.totalSpent)}</span>
+            </div>
+          </div>
+
+          {defaultAddress && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                Default Address
+              </div>
+              <p className="text-sm text-muted-foreground pl-5">
+                {defaultAddress.label}: {defaultAddress.address}
+              </p>
+            </div>
+          )}
+
+          {hasAllergies && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Allergies
+              </div>
+              <div className="flex flex-wrap gap-1 pl-5">
+                {context.memory.allergies.map((allergy, i) => (
+                  <Badge key={i} variant="destructive" className="text-xs">
+                    {allergy}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {context.memory.restrictions.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium">Restrictions</p>
+              <div className="flex flex-wrap gap-1">
+                {context.memory.restrictions.map((restriction, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                    {restriction}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {context.memory.preferences.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium">Preferences</p>
+              <div className="flex flex-wrap gap-1">
+                {context.memory.preferences.slice(0, 5).map((pref, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs">
+                    {pref}
+                  </Badge>
+                ))}
+                {context.memory.preferences.length > 5 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{context.memory.preferences.length - 5} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {context.businessNotes && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
+                Notes
+              </div>
+              <p className="text-sm text-muted-foreground pl-5 whitespace-pre-wrap line-clamp-3">
+                {context.businessNotes}
+              </p>
+            </div>
+          )}
+
+          <div className="pt-2">
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId }}
+              className="text-sm text-primary hover:underline"
+            >
+              View Full Profile →
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ConversationDetailPage() {
   const navigate = useNavigate();
@@ -55,6 +272,18 @@ function ConversationDetailPage() {
   const reopenConversation = useMutation(api.conversations.reopen);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showHandBackDialog, setShowHandBackDialog] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(PANEL_COLLAPSED_KEY) === "true";
+  });
+
+  const togglePanel = () => {
+    setIsPanelCollapsed((prev) => {
+      const newValue = !prev;
+      localStorage.setItem(PANEL_COLLAPSED_KEY, String(newValue));
+      return newValue;
+    });
+  };
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -156,9 +385,10 @@ function ConversationDetailPage() {
   const isAssignedToSomeone = !!conversation.assignedTo;
   const isClosed = conversation.status === "closed";
   const canSendMessage = isAssignedToSomeone && !isClosed;
+  const hasCustomerRecord = !!conversation.customerRecordId;
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <div className="container mx-auto px-6 py-8 max-w-6xl">
       <Button
         variant="ghost"
         size="sm"
@@ -169,7 +399,8 @@ function ConversationDetailPage() {
         Back to Conversations
       </Button>
 
-      <Card className="flex flex-col h-[calc(100vh-220px)]">
+      <div className="flex h-[calc(100vh-220px)]">
+        <Card className="flex flex-col flex-1 min-w-0">
         <CardHeader className="flex-shrink-0 border-b">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -309,7 +540,16 @@ function ConversationDetailPage() {
             disabled={!canSendMessage}
           />
         </div>
-      </Card>
+        </Card>
+
+        {hasCustomerRecord && (
+          <CustomerContextPanel
+            customerId={conversation.customerRecordId as Id<"customers">}
+            isCollapsed={isPanelCollapsed}
+            onToggle={togglePanel}
+          />
+        )}
+      </div>
     </div>
   );
 }

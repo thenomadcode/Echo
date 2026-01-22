@@ -452,7 +452,7 @@
       "id": "S27",
       "title": "Customer context panel in conversations",
       "priority": 27,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add collapsible side panel to conversation view page",
