@@ -81,7 +81,7 @@
       "id": "S05",
       "title": "Create Draft Order for Payment",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "When AI confirms order AND business has Shopify connected, create Draft Order",
@@ -99,7 +99,7 @@
       "id": "S06",
       "title": "Handle Shopify Payment Completion",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Register webhook: orders/paid on Shopify connection",

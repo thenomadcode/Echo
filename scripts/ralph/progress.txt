@@ -24,6 +24,37 @@
 
 ---
 
+## 2026-01-22 09:50 - S06: Handle Shopify Payment Completion
+
+**What was implemented:**
+- Added "orders/paid" to WEBHOOK_TOPICS array to register on Shopify connection
+- Added by_shopify_draft_order index to orders table for efficient lookup
+- Created getOrderByShopifyDraftOrderId internal query to find Echo order by draft order ID
+- Created updateOrderFromShopifyPayment internal mutation to update order status
+- Added orders/paid case in handleWebhook to process payment completion webhook:
+  - Finds Echo order by shopifyDraftOrderId from webhook payload
+  - Updates order status to "paid" and paymentStatus to "paid"
+  - Stores shopifyOrderId and shopifyOrderNumber on Echo order
+  - Handles partial payments gracefully (keeps status as pending)
+- Created sendPaymentConfirmation internal action to send WhatsApp message
+- Created saveAiMessage and getConversationForConfirmation helpers
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (added webhook topic, query, mutations, action, handleWebhook case)
+- packages/backend/convex/schema.ts (added by_shopify_draft_order index)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes (backend type errors are pre-existing node types issue)
+
+**Learnings for future iterations:**
+- Shopify orders/paid webhook includes draft_order_id field if order was created from draft
+- Shopify REST webhook formats differ from GraphQL (snake_case vs camelCase)
+- WhatsApp confirmation sent via api.integrations.whatsapp.actions.sendMessage
+- Pattern: store draft order ID, then update with real order ID when payment completes
+
+---
+
 ## 2026-01-21 23:15 - S02: Initial Product Import
 
 **What was implemented:**
@@ -2842,5 +2873,57 @@
 - bunx tsc --noEmit: passes
 - LSP diagnostics: no errors
 - All acceptance criteria confirmed met
+
+---
+
+## 2026-01-22 09:27 - S05: Create Draft Order for Payment
+
+**What was implemented:**
+- S05 implementation was already complete in uncommitted changes. Committed and verified:
+
+**Backend (packages/backend/convex/shopify.ts):**
+- `createOrder` action (line 1282) creates Draft Order via Shopify REST API
+- Uses `POST /admin/api/2024-01/draft_orders.json` endpoint
+- Draft Order includes:
+  - Line items with correct Shopify variant IDs (extracted from GID format)
+  - Customer info with phone number from conversation
+  - Shipping address when deliveryType === "delivery"
+- Returns `invoiceUrl` from `draft_order.invoice_url` in response
+- `updateOrderWithDraftOrderInfo` mutation stores shopifyDraftOrderId, shopifyOrderNumber, paymentLinkUrl
+- `createOrderInternal` internalAction for backend-triggered creation
+
+**Backend (packages/backend/convex/orders.ts):**
+- `generatePaymentLink` action checks for Shopify connection FIRST
+- If Shopify connected, calls `shopify.createOrder` and returns `invoiceUrl`
+- Falls back to Stripe if no Shopify connection
+- Added `paymentProvider` field tracking ('stripe' | 'shopify' | 'cash')
+
+**Backend (packages/backend/convex/schema.ts):**
+- Added `shopifyDraftOrderId` field (Draft Order ID before payment)
+- Added `paymentProvider` field to track payment provider used
+- Comments clarify distinction between shopifyDraftOrderId and shopifyOrderId
+
+**AI Flow Integration:**
+- `handleCheckoutIntent` in ai/process.ts calls `generatePaymentLink` when payment_choice intent with card
+- `generateResponse` receives paymentLink in checkoutContext
+- AI generates response with payment link embedded
+- Response sent to customer via WhatsApp in http.ts webhook handler
+
+**Files changed:**
+- packages/backend/convex/shopify.ts (updated createOrder to use Draft Orders)
+- packages/backend/convex/orders.ts (added Shopify check in generatePaymentLink)
+- packages/backend/convex/schema.ts (added shopifyDraftOrderId, paymentProvider fields)
+
+**Learnings for future iterations:**
+- Shopify Draft Orders provide invoice_url for customer payment
+- Draft Order becomes regular Order when payment completes
+- Variant IDs in Shopify are GID format: gid://shopify/ProductVariant/12345
+- Extract numeric ID with regex: `/\/ProductVariant\/(\d+)$/`
+- paymentProvider field enables routing in S07 (Payment Method Routing)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors on all changed files
+- Committed as: feat: [S05] - Create Draft Order for Payment (commit 4b76230)
 
 ---

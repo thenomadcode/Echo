@@ -263,7 +263,8 @@ export default defineSchema({
     .index("by_business", ["businessId", "status", "createdAt"])
     .index("by_conversation", ["conversationId"])
     .index("by_number", ["orderNumber"])
-    .index("by_payment_session", ["stripeSessionId"]),
+    .index("by_payment_session", ["stripeSessionId"])
+    .index("by_shopify_draft_order", ["shopifyDraftOrderId"]),
 
   // Conversation Dashboard notifications
   notifications: defineTable({

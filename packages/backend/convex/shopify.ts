@@ -696,6 +696,71 @@ export const handleWebhook = internalAction({
           break;
         }
 
+        case "orders/paid": {
+          const orderData = args.data as ShopifyWebhookOrder | null;
+          if (!orderData || !orderData.id) {
+            console.error("Invalid order data for orders/paid:", args.data);
+            return;
+          }
+
+          const shopifyOrderId = String(orderData.id);
+          const shopifyOrderNumber = orderData.name;
+          const financialStatus = orderData.financial_status;
+
+          if (financialStatus !== "paid" && financialStatus !== "partially_paid") {
+            console.log(`Skipping orders/paid for order ${shopifyOrderId} with status ${financialStatus}`);
+            return;
+          }
+
+          const shopifyDraftOrderId = orderData.draft_order_id
+            ? String(orderData.draft_order_id)
+            : null;
+
+          if (!shopifyDraftOrderId) {
+            const echoOrderNumber = orderData.tags?.split(",")
+              .map((t) => t.trim())
+              .find((t) => t.startsWith("ECH-"));
+
+            if (!echoOrderNumber) {
+              console.log(`Order ${shopifyOrderId} not from Echo draft order, skipping`);
+              return;
+            }
+            console.log(`Order ${shopifyOrderId} has Echo tag ${echoOrderNumber} but no draft_order_id`);
+          }
+
+          const echoOrderData = shopifyDraftOrderId
+            ? await ctx.runQuery(internal.shopify.getOrderByShopifyDraftOrderId, {
+                shopifyDraftOrderId,
+              })
+            : null;
+
+          if (!echoOrderData) {
+            console.log(`No Echo order found for Shopify draft order ${shopifyDraftOrderId}`);
+            return;
+          }
+
+          const { order: echoOrder, conversation } = echoOrderData;
+
+          await ctx.runMutation(internal.shopify.updateOrderFromShopifyPayment, {
+            orderId: echoOrder._id,
+            shopifyOrderId,
+            shopifyOrderNumber,
+            financialStatus,
+          });
+
+          console.log(`Updated Echo order ${echoOrder.orderNumber} from Shopify payment (${financialStatus})`);
+
+          if (financialStatus === "paid" && conversation) {
+            await ctx.runAction(internal.shopify.sendPaymentConfirmation, {
+              conversationId: conversation._id,
+              orderNumber: echoOrder.orderNumber,
+              shopifyOrderNumber,
+            });
+          }
+
+          break;
+        }
+
         default:
           console.log(`Unhandled Shopify webhook topic: ${args.topic}`);
       }
@@ -807,6 +872,7 @@ const WEBHOOK_TOPICS = [
   "products/create",
   "products/update",
   "products/delete",
+  "orders/paid",
 ] as const;
 
 export const registerWebhooks = internalAction({
@@ -1751,5 +1817,141 @@ export const createOrderInternal = internalAction({
         error: message,
       };
     }
+  },
+});
+
+type ShopifyWebhookOrder = {
+  id: number;
+  name: string;
+  financial_status: "pending" | "paid" | "partially_paid" | "refunded" | "voided" | "partially_refunded";
+  fulfillment_status: string | null;
+  draft_order_id?: number;
+  note?: string;
+  tags?: string;
+  total_price: string;
+  customer?: {
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+};
+
+export const getOrderByShopifyDraftOrderId = internalQuery({
+  args: {
+    shopifyDraftOrderId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_shopify_draft_order", (q) =>
+        q.eq("shopifyDraftOrderId", args.shopifyDraftOrderId)
+      )
+      .first();
+
+    if (!order) {
+      return null;
+    }
+
+    const conversation = await ctx.db.get(order.conversationId);
+    const business = await ctx.db.get(order.businessId);
+
+    return {
+      order,
+      conversation,
+      business,
+    };
+  },
+});
+
+export const updateOrderFromShopifyPayment = internalMutation({
+  args: {
+    orderId: v.id("orders"),
+    shopifyOrderId: v.string(),
+    shopifyOrderNumber: v.string(),
+    financialStatus: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const updates: Record<string, unknown> = {
+      shopifyOrderId: args.shopifyOrderId,
+      shopifyOrderNumber: args.shopifyOrderNumber,
+      updatedAt: now,
+    };
+
+    if (args.financialStatus === "paid") {
+      updates.status = "paid";
+      updates.paymentStatus = "paid";
+    } else if (args.financialStatus === "partially_paid") {
+      updates.paymentStatus = "pending";
+    } else if (args.financialStatus === "refunded" || args.financialStatus === "voided") {
+      updates.paymentStatus = "refunded";
+    }
+
+    await ctx.db.patch(args.orderId, updates);
+    return await ctx.db.get(args.orderId);
+  },
+});
+
+export const sendPaymentConfirmation = internalAction({
+  args: {
+    conversationId: v.id("conversations"),
+    orderNumber: v.string(),
+    shopifyOrderNumber: v.string(),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const conversation = await ctx.runQuery(internal.shopify.getConversationForConfirmation, {
+        conversationId: args.conversationId,
+      });
+
+      if (!conversation) {
+        console.error(`Conversation not found for payment confirmation: ${args.conversationId}`);
+        return;
+      }
+
+      const confirmationMessage = `Thank you for your payment! Your order ${args.orderNumber} has been confirmed. Shopify order reference: ${args.shopifyOrderNumber}. We'll start preparing it right away!`;
+
+      await ctx.runMutation(internal.shopify.saveAiMessage, {
+        conversationId: args.conversationId,
+        content: confirmationMessage,
+      });
+
+      const { api } = await import("./_generated/api");
+      await ctx.runAction(api.integrations.whatsapp.actions.sendMessage, {
+        conversationId: args.conversationId,
+        content: confirmationMessage,
+        type: "text",
+      });
+
+      console.log(`Payment confirmation sent for order ${args.orderNumber}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(`Failed to send payment confirmation for order ${args.orderNumber}: ${message}`);
+    }
+  },
+});
+
+export const getConversationForConfirmation = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.conversationId);
+  },
+});
+
+export const saveAiMessage = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      sender: "ai",
+      content: args.content,
+      createdAt: Date.now(),
+    });
+    return messageId;
   },
 });
