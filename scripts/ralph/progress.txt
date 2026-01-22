@@ -24,6 +24,26 @@
 
 ---
 
+## 2026-01-22 21:03 - S12: search_customer_history AI tool
+
+**What was implemented:**
+- Created packages/backend/convex/ai/customerHistory.ts
+- Added `getCustomerForHistory` internalQuery to validate customer exists
+- Added `searchSummaries` internalQuery to search conversationSummaries by customerId
+- Added `searchCustomerHistory` action with args: customerId, query, limit (default 3)
+- Searches summaries using by_customer index, then filters by case-insensitive query match
+- Returns token-efficient array of { summary, sentiment, keyEvents, createdAt }
+- Security: scoped to single customer only
+
+**Files changed:**
+- packages/backend/convex/ai/customerHistory.ts (created, 90 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Convex dev: compiles successfully
+
+---
+
 ## 2026-01-22 21:10 - S11: Auto-create customer on conversation start
 
 **What was implemented:**

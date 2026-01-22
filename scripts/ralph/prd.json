@@ -191,7 +191,7 @@
       "id": "S12",
       "title": "search_customer_history AI tool",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create action ai.searchCustomerHistory({ customerId, query, limit? }) in packages/backend/convex/ai/",
