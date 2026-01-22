@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { action, internalQuery } from "../_generated/server";
+import { action, internalMutation, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 
 export const getCustomerForHistory = internalQuery({
   args: {
@@ -157,5 +157,100 @@ export const getRecentOrders = action({
       orders: orderSummaries,
       count: orderSummaries.length,
     };
+  },
+});
+
+const memoryCategory = v.union(
+  v.literal("allergy"),
+  v.literal("restriction"),
+  v.literal("preference"),
+  v.literal("behavior")
+);
+
+export const getExistingMemory = internalQuery({
+  args: {
+    customerId: v.id("customers"),
+    category: memoryCategory,
+    fact: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const memories = await ctx.db
+      .query("customerMemory")
+      .withIndex("by_customer_category", (q) =>
+        q.eq("customerId", args.customerId).eq("category", args.category)
+      )
+      .collect();
+
+    const factLower = args.fact.toLowerCase().trim();
+    return memories.find((m) => m.fact.toLowerCase().trim() === factLower) ?? null;
+  },
+});
+
+export const insertMemory = internalMutation({
+  args: {
+    customerId: v.id("customers"),
+    category: memoryCategory,
+    fact: v.string(),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<Id<"customerMemory">> => {
+    const now = Date.now();
+    return await ctx.db.insert("customerMemory", {
+      customerId: args.customerId,
+      category: args.category,
+      fact: args.fact,
+      confidence: 0.9,
+      source: "ai_extracted",
+      extractedFrom: args.conversationId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const saveCustomerPreference = action({
+  args: {
+    customerId: v.id("customers"),
+    category: memoryCategory,
+    fact: v.string(),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{
+    status: "success" | "already_exists";
+    memoryId?: Id<"customerMemory">;
+  }> => {
+    const customerData = await ctx.runQuery(
+      internal.ai.customerHistory.getCustomerForHistory,
+      { customerId: args.customerId }
+    );
+
+    if (!customerData) {
+      throw new Error("Customer not found");
+    }
+
+    const existing = await ctx.runQuery(
+      internal.ai.customerHistory.getExistingMemory,
+      {
+        customerId: args.customerId,
+        category: args.category,
+        fact: args.fact,
+      }
+    );
+
+    if (existing) {
+      return { status: "already_exists", memoryId: existing._id };
+    }
+
+    const memoryId = await ctx.runMutation(
+      internal.ai.customerHistory.insertMemory,
+      {
+        customerId: args.customerId,
+        category: args.category,
+        fact: args.fact,
+        conversationId: args.conversationId,
+      }
+    );
+
+    return { status: "success", memoryId };
   },
 });
