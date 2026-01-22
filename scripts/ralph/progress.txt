@@ -24,6 +24,26 @@
 
 ---
 
+## 2026-01-22 19:08 - S01: Create customers table schema
+
+**What was implemented:**
+- Added `customers` table to packages/backend/convex/schema.ts
+- Fields: businessId (Id<businesses>), phone (string), name (optional), preferredLanguage (optional)
+- Tier system: tier (regular|bronze|silver|gold|vip), manualTier (optional), tierUpdatedAt (optional)
+- Stats: totalOrders, totalSpent, averageOrderValue (optional)
+- Activity tracking: lastOrderAt (optional), firstSeenAt, lastSeenAt
+- Timestamps: createdAt, updatedAt
+- Indexes: by_business, by_business_phone, by_business_tier, by_business_last_seen
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+45 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Schema compiles successfully
+
+---
+
 ## 2026-01-22 10:15 - S10: View Shopify Order in Dashboard
 
 **What was implemented:**

@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Create customers table schema",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create customers table in packages/backend/convex/schema.ts",
