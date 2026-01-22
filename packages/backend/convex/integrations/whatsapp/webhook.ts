@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
+import { internal } from "../../_generated/api";
 
 
 export const processIncomingMessage = internalMutation({
@@ -43,16 +44,23 @@ export const processIncomingMessage = internalMutation({
     let conversationId: Id<"conversations">;
     const now = Date.now();
 
+    const customerRecordId = await ctx.runMutation(
+      internal.customers.getOrCreate,
+      { businessId, phone: customerPhone }
+    );
+
     if (existingConversation) {
       conversationId = existingConversation._id;
       await ctx.db.patch(conversationId, {
         lastCustomerMessageAt: timestamp,
+        customerRecordId,
         updatedAt: now,
       });
     } else {
       conversationId = await ctx.db.insert("conversations", {
         businessId,
         customerId: customerPhone,
+        customerRecordId,
         channel: "whatsapp",
         channelId,
         lastCustomerMessageAt: timestamp,

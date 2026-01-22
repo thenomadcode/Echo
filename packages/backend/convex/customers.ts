@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 export const get = query({
@@ -409,5 +409,44 @@ export const updateStats = mutation({
     await ctx.db.patch(args.customerId, updates);
 
     return args.customerId;
+  },
+});
+
+export const getOrCreate = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    phone: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingCustomer = await ctx.db
+      .query("customers")
+      .withIndex("by_business_phone", (q) =>
+        q.eq("businessId", args.businessId).eq("phone", args.phone)
+      )
+      .first();
+
+    if (existingCustomer) {
+      const now = Date.now();
+      await ctx.db.patch(existingCustomer._id, {
+        lastSeenAt: now,
+        updatedAt: now,
+      });
+      return existingCustomer._id;
+    }
+
+    const now = Date.now();
+    const customerId = await ctx.db.insert("customers", {
+      businessId: args.businessId,
+      phone: args.phone,
+      tier: "regular",
+      totalOrders: 0,
+      totalSpent: 0,
+      firstSeenAt: now,
+      lastSeenAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return customerId;
   },
 });
