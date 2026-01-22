@@ -24,6 +24,36 @@
 
 ---
 
+## 2026-01-22 09:57 - S07: Payment Method Routing
+
+**What was implemented:**
+- Payment method routing was already implemented in generatePaymentLink action:
+  - Checks for Shopify connection first (uses Shopify Draft Orders)
+  - Falls back to Stripe Checkout if no Shopify
+  - Throws error if neither configured: "No payment provider configured. Please connect Shopify or set up Stripe."
+- Added paymentProvider: "cash" assignment in setPaymentMethod mutation for cash orders
+- Schema already had paymentProvider field: 'stripe' | 'shopify' | 'cash'
+
+**Payment flow:**
+1. Cash: setPaymentMethod sets paymentMethod="cash", status="confirmed", paymentProvider="cash"
+2. Card with Shopify: generatePaymentLink -> shopify.createOrder -> sets paymentProvider="shopify"
+3. Card with Stripe: generatePaymentLink -> Stripe API -> sets paymentProvider="stripe"
+4. Card with neither: generatePaymentLink throws error, AI suggests cash payment
+
+**Files changed:**
+- packages/backend/convex/orders.ts (added paymentProvider="cash" in setPaymentMethod)
+
+**Verification:**
+- LSP diagnostics: no errors
+- web tsc --noEmit: passes
+
+**Learnings for future iterations:**
+- generatePaymentLink already implements provider routing pattern: check specialized first, then generic
+- AI response generator handles missing payment link by suggesting cash: "Apologize and suggest they try again or choose cash payment"
+- Cash on delivery always works - just sets status to "confirmed" without needing any external provider
+
+---
+
 ## 2026-01-22 09:50 - S06: Handle Shopify Payment Completion
 
 **What was implemented:**

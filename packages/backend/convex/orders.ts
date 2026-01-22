@@ -295,6 +295,7 @@ export const setPaymentMethod = mutation({
 
     if (args.paymentMethod === "cash") {
       updates.status = "confirmed";
+      updates.paymentProvider = "cash";
     }
 
     await ctx.db.patch(args.orderId, updates);
