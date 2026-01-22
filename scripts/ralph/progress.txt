@@ -24,6 +24,26 @@
 
 ---
 
+## 2026-01-22 21:07 - S14: save_customer_preference AI tool
+
+**What was implemented:**
+- Added `getExistingMemory` internalQuery for deduplication check (case-insensitive)
+- Added `insertMemory` internalMutation to create customerMemory records
+- Added `saveCustomerPreference` action with args: customerId, category, fact, conversationId
+- Category validated as allergy|restriction|preference|behavior
+- Sets source to 'ai_extracted', confidence to 0.9
+- Links extractedFrom to conversationId
+- Returns { status: "success" | "already_exists", memoryId? }
+
+**Files changed:**
+- packages/backend/convex/ai/customerHistory.ts (+95 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- Convex dev: compiles successfully
+
+---
+
 ## 2026-01-22 21:06 - S13: get_recent_orders AI tool
 
 **What was implemented:**

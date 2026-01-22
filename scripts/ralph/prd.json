@@ -220,7 +220,7 @@
       "id": "S14",
       "title": "save_customer_preference AI tool",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create action ai.saveCustomerPreference({ customerId, category, fact, conversationId }) in packages/backend/convex/ai/",
