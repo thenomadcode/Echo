@@ -24,6 +24,161 @@
 
 ---
 
+## 2026-01-22 22:30 - S26: Notes management UI
+
+**What was implemented:**
+- Rewrote NotesTab to query customerNotes.list directly (instead of from context)
+- Add Note button opens dialog with:
+  - Note text textarea
+  - Staff Only checkbox
+- Notes display with:
+  - Note text
+  - Timestamp (relative format)
+  - Lock icon for staff-only notes
+- Edit via dropdown menu on each note
+- Delete via dropdown menu with AlertDialog confirmation
+- All mutations refresh data via queryClient.invalidateQueries()
+- Success/error toasts for all operations
+- Notes sorted by createdAt desc (newest first)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (+120 lines)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-22 22:15 - S25: Preferences management UI
+
+**What was implemented:**
+- Rewrote PreferencesTab to query customerMemory.list directly (instead of from context)
+- Categories displayed with color coding:
+  - Allergies (red), Restrictions (orange), Preferences (blue), Behaviors (gray), Complaints (purple)
+- Each preference shows:
+  - Fact text
+  - Source badge (AI / Manual / Order)
+  - Confidence percentage if AI-extracted
+- Add Preference button with dialog containing:
+  - Category dropdown (allergy, restriction, preference, behavior)
+  - Fact text input
+- Edit via dropdown menu on each preference
+- Delete via dropdown menu with AlertDialog confirmation
+  - Extra warning for allergies: "This is safety-critical data..."
+- All mutations refresh data via queryClient.invalidateQueries()
+- Success/error toasts for all operations
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (+205 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-22 22:05 - S24: Address management UI
+
+**What was implemented:**
+- Created AddressesSection component in customer detail page Overview tab
+- Addresses queried directly via customerAddresses.list
+- Add Address button opens dialog with label and address inputs
+- Each address shows with dropdown menu (three dots) containing:
+  - Edit: opens edit dialog pre-filled with address data
+  - Set as Default: calls setDefault mutation (only shown for non-default)
+  - Delete: opens confirmation AlertDialog
+- Default addresses show badge indicator
+- Dropdown hidden until hover for cleaner UI
+- All mutations refresh data via queryClient.invalidateQueries()
+- Success/error toasts for all operations
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (+250 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-22 21:55 - S23: Customer profile editing
+
+**What was implemented:**
+- Added Edit button in customer detail page header (next to stats)
+- Created EditCustomerDialog component with form fields:
+  - Name input field
+  - Tier dropdown with Auto option (clears manualTier) plus all tier levels
+  - Preferred Language dropdown: English, Spanish, Portuguese
+- Dialog uses controlled state with form values
+- Save triggers customers.update mutation
+- Success shows toast and refreshes data via queryClient.invalidateQueries()
+- Cancel closes dialog without changes
+- Loading state with Loader2 spinner during submission
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (+180 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-22 21:48 - S22: Customer detail page
+
+**What was implemented:**
+- Full customer detail page at apps/web/src/routes/_authenticated/customers/$customerId.tsx
+- Header: customer avatar, name, phone, tier badge, total orders, lifetime spend
+- 5-tab navigation: Overview, Orders, Conversations, Preferences, Notes
+- Overview tab: quick stats (first/last seen, average order, language), saved addresses, allergies (red), preferences
+- Orders tab: clickable table with order number, items count, status badge, total, date
+- Conversations tab: cards with status badge, sentiment badge, summary preview, date
+- Preferences tab: grouped by category (allergies=red, restrictions=orange, preferences=blue, behaviors=gray)
+- Notes tab: list of notes with staff-only indicator
+- Back button returns to customer list
+- Added backend queries:
+  - orders.listByCustomer({ customerId })
+  - conversations.listByCustomer({ customerId })
+  - conversationSummaries.listByCustomer({ customerId })
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (rewritten, ~550 lines)
+- packages/backend/convex/orders.ts (+35 lines)
+- packages/backend/convex/conversations.ts (+35 lines)
+- packages/backend/convex/conversationSummaries.ts (+30 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
+## 2026-01-22 21:40 - S21: Customer list page
+
+**What was implemented:**
+- Created apps/web/src/routes/_authenticated/customers/index.tsx
+- Table displays all customers for current business with columns: Name, Phone, Tier (badge), Orders, Total Spent, Last Seen
+- TierBadge component with color-coded variants (regular=secondary, bronze=default, silver=info, gold=warning, vip=success)
+- VIP and Gold tiers show Star icon next to badge
+- Search input filters by name or phone substring (client-side)
+- Tier filter dropdown (All, Regular, Bronze, Silver, Gold, VIP)
+- Sort dropdown (Last Seen, Total Orders, Total Spent, Date Added)
+- Client-side pagination with 10 items per page, Previous/Next buttons
+- Row click navigates to customer detail page
+- Empty state with Users icon and helpful message
+- Also created stub for $customerId.tsx to enable type-safe navigation
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/customers/index.tsx (created, ~280 lines)
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (created, stub)
+- apps/web/src/routeTree.gen.ts (regenerated)
+
+**Verification:**
+- LSP diagnostics: no errors
+- bunx tsc --noEmit: passes
+
+---
+
 ## 2026-01-22 21:31 - S19: Memory fact extraction
 
 **What was implemented:**

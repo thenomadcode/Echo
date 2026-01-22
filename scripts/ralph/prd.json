@@ -336,7 +336,7 @@
       "id": "S21",
       "title": "Customer list page",
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create route apps/web/src/routes/customers/index.tsx",
@@ -358,7 +358,7 @@
       "id": "S22",
       "title": "Customer detail page",
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create route apps/web/src/routes/customers/$customerId.tsx",
@@ -377,7 +377,7 @@
       "id": "S23",
       "title": "Customer profile editing",
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add Edit button on customer detail page header",
@@ -396,7 +396,7 @@
       "id": "S24",
       "title": "Address management UI",
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Addresses section on customer detail Overview tab",
@@ -415,7 +415,7 @@
       "id": "S25",
       "title": "Preferences management UI",
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Preferences tab on customer detail page",
@@ -433,7 +433,7 @@
       "id": "S26",
       "title": "Notes management UI",
       "priority": 26,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Notes tab on customer detail page",

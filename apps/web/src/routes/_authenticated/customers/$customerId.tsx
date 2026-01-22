@@ -21,6 +21,7 @@ import {
   Plus,
   MoreVertical,
   Trash2,
+  Lock,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -833,50 +834,251 @@ interface NotesTabProps {
 }
 
 function NotesTab({ customerId, formatDate }: NotesTabProps) {
-  const notesQuery = useQuery(
-    convexQuery(api.customerNotes.list, { customerId })
-  );
+  const queryClient = useQueryClient();
+  const notesQuery = useQuery(convexQuery(api.customerNotes.list, { customerId }));
+  const addNote = useMutation(api.customerNotes.add);
+  const updateNote = useMutation(api.customerNotes.update);
+  const deleteNote = useMutation(api.customerNotes.deleteNote);
+
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingNote, setEditingNote] = useState<{ _id: Id<"customerNotes">; note: string; staffOnly: boolean } | null>(null);
+  const [deletingNoteId, setDeletingNoteId] = useState<Id<"customerNotes"> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [staffOnly, setStaffOnly] = useState(false);
 
   const notes = notesQuery.data ?? [];
+
+  const handleAdd = async () => {
+    if (!noteText.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await addNote({ customerId, note: noteText.trim(), staffOnly });
+      toast.success("Note added");
+      await queryClient.invalidateQueries();
+      setShowAddDialog(false);
+      setNoteText("");
+      setStaffOnly(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add note");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editingNote || !noteText.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await updateNote({ noteId: editingNote._id, note: noteText.trim(), staffOnly });
+      toast.success("Note updated");
+      await queryClient.invalidateQueries();
+      setEditingNote(null);
+      setNoteText("");
+      setStaffOnly(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update note");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingNoteId) return;
+    setIsSubmitting(true);
+    try {
+      await deleteNote({ noteId: deletingNoteId });
+      toast.success("Note deleted");
+      await queryClient.invalidateQueries();
+      setDeletingNoteId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete note");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEditDialog = (n: { _id: Id<"customerNotes">; note: string; staffOnly: boolean }) => {
+    setEditingNote(n);
+    setNoteText(n.note);
+    setStaffOnly(n.staffOnly);
+  };
+
+  const closeDialogs = () => {
+    setShowAddDialog(false);
+    setEditingNote(null);
+    setNoteText("");
+    setStaffOnly(false);
+  };
 
   if (notesQuery.isLoading) {
     return <div className="text-muted-foreground py-8 text-center">Loading notes...</div>;
   }
 
-  if (notes.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <StickyNote className="mb-4 h-10 w-10 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold">No notes yet</h3>
-          <p className="text-sm text-muted-foreground">
-            Add notes about this customer for your team
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      {notes.map((note) => (
-        <Card key={note._id}>
-          <CardContent className="py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-sm whitespace-pre-wrap">{note.note}</p>
-                {note.staffOnly && (
-                  <Badge variant="secondary" className="mt-2">Staff Only</Badge>
-                )}
-              </div>
-              <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
-                {formatDate(note.createdAt)}
-              </div>
-            </div>
+    <>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" size="sm" onClick={() => setShowAddDialog(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Note
+        </Button>
+      </div>
+
+      {notes.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <StickyNote className="mb-4 h-10 w-10 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">No notes yet</h3>
+            <p className="text-sm text-muted-foreground">
+              Add notes about this customer for your team
+            </p>
           </CardContent>
         </Card>
-      ))}
-    </div>
+      ) : (
+        <div className="space-y-3">
+          {notes.map((note) => (
+            <Card key={note._id} className="group">
+              <CardContent className="py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm whitespace-pre-wrap">{note.note}</p>
+                    {note.staffOnly && (
+                      <div className="flex items-center gap-1 mt-2 text-muted-foreground">
+                        <Lock className="h-3 w-3" />
+                        <span className="text-xs">Staff Only</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
+                      {formatDate(note.createdAt)}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded hover:bg-accent">
+                        <MoreVertical className="h-3 w-3" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditDialog(note)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setDeletingNoteId(note._id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) closeDialogs(); else setShowAddDialog(true); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Note</DialogTitle>
+            <DialogDescription>Add a note about this customer</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-note">Note</Label>
+              <textarea
+                id="add-note"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Enter note..."
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="add-staff-only"
+                checked={staffOnly}
+                onChange={(e) => setStaffOnly(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              <Label htmlFor="add-staff-only" className="text-sm font-normal flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Staff only (not shared with AI)
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialogs} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting || !noteText.trim()}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Note
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingNote} onOpenChange={(open) => { if (!open) closeDialogs(); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Note</DialogTitle>
+            <DialogDescription>Update note information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-note">Note</Label>
+              <textarea
+                id="edit-note"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Enter note..."
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit-staff-only"
+                checked={staffOnly}
+                onChange={(e) => setStaffOnly(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              <Label htmlFor="edit-staff-only" className="text-sm font-normal flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Staff only (not shared with AI)
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialogs} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={isSubmitting || !noteText.trim()}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deletingNoteId} onOpenChange={(open) => { if (!open) setDeletingNoteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Note</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this note? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isSubmitting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
