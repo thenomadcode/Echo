@@ -98,6 +98,8 @@ export default defineSchema({
   conversations: defineTable({
     businessId: v.id("businesses"),
     customerId: v.string(),
+    // Reference to customer record (optional for backward compatibility during migration)
+    customerRecordId: v.optional(v.id("customers")),
     channel: v.string(),
     channelId: v.string(),
     lastCustomerMessageAt: v.number(),
@@ -162,7 +164,8 @@ export default defineSchema({
     .index("by_business", ["businessId"])
     .index("by_channel", ["channelId", "businessId"])
     .index("by_business_status", ["businessId", "status"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_customer", ["customerRecordId"]),
 
   messages: defineTable({
     conversationId: v.id("conversations"),
@@ -211,6 +214,7 @@ export default defineSchema({
   orders: defineTable({
     businessId: v.id("businesses"),
     conversationId: v.id("conversations"),
+    customerId: v.optional(v.id("customers")),
     orderNumber: v.string(),
     status: v.union(
       v.literal("draft"),
@@ -264,7 +268,8 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_number", ["orderNumber"])
     .index("by_payment_session", ["stripeSessionId"])
-    .index("by_shopify_draft_order", ["shopifyDraftOrderId"]),
+    .index("by_shopify_draft_order", ["shopifyDraftOrderId"])
+    .index("by_customer", ["customerId"]),
 
   // Conversation Dashboard notifications
   notifications: defineTable({
