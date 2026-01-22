@@ -453,6 +453,43 @@ export const getOrCreate = internalMutation({
 
 // Internal query to load customer context for AI (no auth required)
 // Used by AI prompt generation to include customer history in context
+export const updateStatsInternal = internalMutation({
+  args: {
+    customerId: v.id("customers"),
+    orderTotal: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      return null;
+    }
+
+    const newTotalOrders = customer.totalOrders + 1;
+    const newTotalSpent = customer.totalSpent + args.orderTotal;
+    const newAverageOrderValue = Math.round(newTotalSpent / newTotalOrders);
+    const now = Date.now();
+
+    const updates: Record<string, unknown> = {
+      totalOrders: newTotalOrders,
+      totalSpent: newTotalSpent,
+      averageOrderValue: newAverageOrderValue,
+      lastOrderAt: now,
+      updatedAt: now,
+    };
+
+    if (!customer.manualTier) {
+      const calculatedTier = calculateTier(newTotalOrders, newTotalSpent);
+      if (calculatedTier !== customer.tier) {
+        updates.tier = calculatedTier;
+        updates.tierUpdatedAt = now;
+      }
+    }
+
+    await ctx.db.patch(args.customerId, updates);
+    return args.customerId;
+  },
+});
+
 export const getContextInternal = internalQuery({
   args: {
     customerId: v.id("customers"),

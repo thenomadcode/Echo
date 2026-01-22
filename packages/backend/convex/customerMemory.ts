@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 const categoryValidator = v.union(
@@ -182,5 +182,43 @@ export const deleteMemory = mutation({
     await ctx.db.delete(args.memoryId);
 
     return args.memoryId;
+  },
+});
+
+export const listByCustomerInternal = internalQuery({
+  args: {
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("customerMemory")
+      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+      .collect();
+  },
+});
+
+export const addInternal = internalMutation({
+  args: {
+    customerId: v.id("customers"),
+    category: categoryValidator,
+    fact: v.string(),
+    source: sourceValidator,
+    confidence: v.number(),
+    extractedFrom: v.optional(v.id("conversations")),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const memoryId = await ctx.db.insert("customerMemory", {
+      customerId: args.customerId,
+      category: args.category,
+      fact: args.fact,
+      source: args.source,
+      confidence: args.confidence,
+      extractedFrom: args.extractedFrom,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return memoryId;
   },
 });

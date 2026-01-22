@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 export const get = query({
@@ -110,6 +110,49 @@ export const create = mutation({
       throw new Error("Customer does not belong to the same business as conversation");
     }
 
+    const existing = await ctx.db
+      .query("conversationSummaries")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        summary: args.summary,
+        sentiment: args.sentiment ?? "neutral",
+        keyEvents: args.keyEvents ?? [],
+        orderIds: args.orderIds,
+      });
+      return existing._id;
+    }
+
+    const summaryId = await ctx.db.insert("conversationSummaries", {
+      conversationId: args.conversationId,
+      customerId: args.customerId,
+      summary: args.summary,
+      sentiment: args.sentiment ?? "neutral",
+      keyEvents: args.keyEvents ?? [],
+      orderIds: args.orderIds,
+      createdAt: Date.now(),
+    });
+
+    return summaryId;
+  },
+});
+
+export const createInternal = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    customerId: v.id("customers"),
+    summary: v.string(),
+    sentiment: v.optional(
+      v.union(v.literal("positive"), v.literal("neutral"), v.literal("negative"))
+    ),
+    keyEvents: v.optional(v.array(v.string())),
+    orderIds: v.optional(v.array(v.id("orders"))),
+  },
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("conversationSummaries")
       .withIndex("by_conversation", (q) =>

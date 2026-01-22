@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getWindowExpiresAt } from "./integrations/whatsapp/window";
 import { authComponent } from "./auth";
 
@@ -411,6 +412,10 @@ export const close = mutation({
       status: "closed",
       closedAt: Date.now(),
       updatedAt: Date.now(),
+    });
+
+    await ctx.scheduler.runAfter(0, internal.ai.summary.processConversationMemory, {
+      conversationId: args.conversationId,
     });
 
     return await ctx.db.get(args.conversationId);

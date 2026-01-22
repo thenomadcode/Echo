@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { action, internalQuery } from "../_generated/server";
+import { internalAction, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { createOpenAIProvider } from "./providers/openai";
 
 export const getConversationMessages = internalQuery({
@@ -39,6 +39,33 @@ export const getConversationMessages = internalQuery({
       businessName: business?.name ?? "Business",
       customer,
       orders,
+    };
+  },
+});
+
+export const getConversationForPipeline = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return null;
+    }
+
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+
+    const paidOrders = orders.filter(
+      (o) => o.status !== "draft" && o.status !== "cancelled"
+    );
+
+    return {
+      conversationId: args.conversationId,
+      customerId: conversation.customerRecordId,
+      orders: paidOrders,
     };
   },
 });
@@ -145,7 +172,7 @@ Respond in JSON format:
 Return an empty array if no relevant facts are found:
 {"facts": []}`;
 
-export const extractMemoryFacts = action({
+export const extractMemoryFacts = internalAction({
   args: {
     conversationId: v.id("conversations"),
   },
@@ -223,7 +250,7 @@ export const extractMemoryFacts = action({
   },
 });
 
-export const generateConversationSummary = action({
+export const generateConversationSummary = internalAction({
   args: {
     conversationId: v.id("conversations"),
   },
@@ -329,6 +356,241 @@ export const generateConversationSummary = action({
           : "Conversation summary generation failed.",
         sentiment: conversation.state === "escalated" ? "negative" : "neutral",
         keyEvents: conversation.state === "escalated" ? ["escalation"] : [],
+      };
+    }
+  },
+});
+
+interface ContradictionPair {
+  existing: string;
+  new: string;
+  category: string;
+}
+
+function detectContradictions(
+  existingFacts: Array<{ category: string; fact: string }>,
+  newFacts: Array<{ category: string; fact: string; confidence: number }>
+): ContradictionPair[] {
+  const contradictions: ContradictionPair[] = [];
+
+  const oppositePatterns: Array<{
+    pattern: RegExp;
+    opposite: RegExp;
+    category: string;
+  }> = [
+    { pattern: /\blikes?\s+spicy\b/i, opposite: /\bno\s+spicy\b|\bdoesn'?t\s+like\s+spicy\b|\bavoid\s+spicy\b/i, category: "preference" },
+    { pattern: /\bno\s+spicy\b|\bdoesn'?t\s+like\s+spicy\b/i, opposite: /\blikes?\s+spicy\b|\bextra\s+spicy\b/i, category: "preference" },
+    { pattern: /\bvegetarian\b/i, opposite: /\beats?\s+meat\b|\blikes?\s+meat\b/i, category: "restriction" },
+    { pattern: /\bvegan\b/i, opposite: /\beats?\s+(meat|dairy|cheese)\b|\blikes?\s+(meat|cheese)\b/i, category: "restriction" },
+    { pattern: /\bno\s+dairy\b|\blactose\s+intolerant\b/i, opposite: /\blikes?\s+(cheese|milk|dairy)\b/i, category: "allergy" },
+    { pattern: /\bno\s+gluten\b|\bgluten[\s-]?free\b/i, opposite: /\blikes?\s+(bread|pasta)\b/i, category: "restriction" },
+  ];
+
+  for (const newFact of newFacts) {
+    for (const existingFact of existingFacts) {
+      if (existingFact.category !== newFact.category) continue;
+
+      for (const { pattern, opposite, category } of oppositePatterns) {
+        if (category !== newFact.category) continue;
+
+        const existingMatchesPattern = pattern.test(existingFact.fact);
+        const newMatchesOpposite = opposite.test(newFact.fact);
+
+        const existingMatchesOpposite = opposite.test(existingFact.fact);
+        const newMatchesPattern = pattern.test(newFact.fact);
+
+        if (
+          (existingMatchesPattern && newMatchesOpposite) ||
+          (existingMatchesOpposite && newMatchesPattern)
+        ) {
+          contradictions.push({
+            existing: existingFact.fact,
+            new: newFact.fact,
+            category: newFact.category,
+          });
+        }
+      }
+    }
+  }
+
+  return contradictions;
+}
+
+function normalizeFactForComparison(fact: string): string {
+  return fact
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isDuplicateFact(
+  existingFacts: Array<{ fact: string; category: string }>,
+  newFact: { fact: string; category: string }
+): boolean {
+  const normalizedNew = normalizeFactForComparison(newFact.fact);
+
+  for (const existing of existingFacts) {
+    if (existing.category !== newFact.category) continue;
+
+    const normalizedExisting = normalizeFactForComparison(existing.fact);
+
+    if (normalizedNew === normalizedExisting) return true;
+
+    if (
+      normalizedNew.includes(normalizedExisting) ||
+      normalizedExisting.includes(normalizedNew)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+interface PipelineResult {
+  success: boolean;
+  reason?: string;
+  error?: string;
+  summary?: {
+    sentiment: "positive" | "neutral" | "negative";
+    keyEventsCount: number;
+  };
+  memory?: {
+    extracted: number;
+    added: number;
+    skippedDuplicates: number;
+    skippedContradictions: number;
+    contradictions: number;
+  };
+  orders?: {
+    processed: number;
+  };
+}
+
+export const processConversationMemory = internalAction({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<PipelineResult> => {
+    try {
+      const pipelineData = await ctx.runQuery(
+        internal.ai.summary.getConversationForPipeline,
+        { conversationId: args.conversationId }
+      );
+
+      if (!pipelineData || !pipelineData.customerId) {
+        console.log(
+          `Memory pipeline: No customer linked to conversation ${args.conversationId}`
+        );
+        return { success: false, reason: "no_customer" };
+      }
+
+      const customerId: Id<"customers"> = pipelineData.customerId;
+      const orderIds: Id<"orders">[] = pipelineData.orders.map((o: { _id: Id<"orders"> }) => o._id);
+
+      const summaryResult: SummaryResult = await ctx.runAction(
+        internal.ai.summary.generateConversationSummary,
+        { conversationId: args.conversationId }
+      );
+
+      await ctx.runMutation(internal.conversationSummaries.createInternal, {
+        conversationId: args.conversationId,
+        customerId,
+        summary: summaryResult.summary,
+        sentiment: summaryResult.sentiment,
+        keyEvents: summaryResult.keyEvents,
+        orderIds: orderIds.length > 0 ? orderIds : undefined,
+      });
+
+      const extractedFacts = await ctx.runAction(
+        internal.ai.summary.extractMemoryFacts,
+        { conversationId: args.conversationId }
+      );
+
+      const existingMemories = await ctx.runQuery(
+        internal.customerMemory.listByCustomerInternal,
+        { customerId }
+      );
+
+      const existingFacts = existingMemories.map((m) => ({
+        fact: m.fact,
+        category: m.category,
+      }));
+
+      const highConfidenceFacts = extractedFacts.filter((f) => f.confidence > 0.8);
+
+      const contradictions = detectContradictions(existingFacts, highConfidenceFacts);
+
+      if (contradictions.length > 0) {
+        console.log(
+          `Memory pipeline: Detected ${contradictions.length} contradiction(s) for customer ${customerId}:`,
+          contradictions.map((c) => `"${c.existing}" vs "${c.new}" (${c.category})`).join(", ")
+        );
+      }
+
+      const contradictedFacts = new Set(contradictions.map((c) => c.new));
+
+      let addedCount = 0;
+      let skippedDuplicates = 0;
+      let skippedContradictions = 0;
+
+      for (const fact of highConfidenceFacts) {
+        if (contradictedFacts.has(fact.fact)) {
+          skippedContradictions++;
+          continue;
+        }
+
+        if (isDuplicateFact(existingFacts, fact)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        await ctx.runMutation(internal.customerMemory.addInternal, {
+          customerId,
+          category: fact.category,
+          fact: fact.fact,
+          source: "ai_extracted",
+          confidence: fact.confidence,
+          extractedFrom: args.conversationId,
+        });
+
+        existingFacts.push({ fact: fact.fact, category: fact.category });
+        addedCount++;
+      }
+
+      if (pipelineData.orders.length > 0) {
+        for (const order of pipelineData.orders) {
+          await ctx.runMutation(internal.customers.updateStatsInternal, {
+            customerId,
+            orderTotal: order.total,
+          });
+        }
+      }
+
+      return {
+        success: true,
+        summary: {
+          sentiment: summaryResult.sentiment,
+          keyEventsCount: summaryResult.keyEvents.length,
+        },
+        memory: {
+          extracted: extractedFacts.length,
+          added: addedCount,
+          skippedDuplicates,
+          skippedContradictions,
+          contradictions: contradictions.length,
+        },
+        orders: {
+          processed: pipelineData.orders.length,
+        },
+      };
+    } catch (error) {
+      console.error("Memory pipeline failed:", error);
+      return {
+        success: false,
+        reason: "error",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   },
