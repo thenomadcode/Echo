@@ -93,3 +93,69 @@ export const searchCustomerHistory = action({
     };
   },
 });
+
+export const getOrdersByCustomer = internalQuery({
+  args: {
+    customerId: v.id("customers"),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+      .collect();
+
+    orders.sort((a, b) => b.createdAt - a.createdAt);
+
+    return orders.slice(0, args.limit);
+  },
+});
+
+export const getRecentOrders = action({
+  args: {
+    customerId: v.id("customers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args): Promise<{
+    orders: Array<{
+      orderNumber: string;
+      items: string[];
+      total: number;
+      status: string;
+      createdAt: number;
+    }>;
+    count: number;
+  }> => {
+    const limit = args.limit ?? 5;
+
+    const customerData = await ctx.runQuery(
+      internal.ai.customerHistory.getCustomerForHistory,
+      { customerId: args.customerId }
+    );
+
+    if (!customerData) {
+      return { orders: [], count: 0 };
+    }
+
+    const orders = await ctx.runQuery(
+      internal.ai.customerHistory.getOrdersByCustomer,
+      {
+        customerId: args.customerId,
+        limit,
+      }
+    );
+
+    const orderSummaries = orders.map((order: Doc<"orders">) => ({
+      orderNumber: order.orderNumber,
+      items: order.items.map((item) => `${item.quantity}x ${item.name}`),
+      total: order.total,
+      status: order.status,
+      createdAt: order.createdAt,
+    }));
+
+    return {
+      orders: orderSummaries,
+      count: orderSummaries.length,
+    };
+  },
+});
