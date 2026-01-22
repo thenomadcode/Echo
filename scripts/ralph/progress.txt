@@ -24,6 +24,46 @@
 
 ---
 
+## 2026-01-22 10:15 - S10: View Shopify Order in Dashboard
+
+**What was implemented:**
+- Updated order detail page (orders.$orderId.tsx) to show Shopify order information
+- Added payment provider badge with color-coded styling:
+  - Shopify: green badge with Store icon
+  - Stripe: purple badge with CreditCard icon
+  - Cash: gray badge
+- Shows Shopify order number (e.g., "#1001") when order paid via Shopify
+- Added "View in Shopify" link that opens the order in Shopify Admin:
+  - URL format: https://{shop}/admin/orders/{shopifyOrderId}
+  - Only shown when Shopify connection is active and order has shopifyOrderId
+- Fetches Shopify connection status to get shop domain for admin links
+- Improved payment section layout with all provider info consolidated
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (added Store icon, shopify query, payment provider badge, Shopify link)
+
+**Verification:**
+- LSP diagnostics: no errors
+- web tsc --noEmit: passes
+
+---
+
+## 2026-01-22 10:12 - S09: Disconnect Shopify
+
+**What was implemented:**
+- Updated disconnect warning message in Shopify settings page
+- Warning now clearly states: "Products will remain but won't sync. Future orders will use Stripe (if configured) or cash only."
+- Disconnect functionality was already implemented (AlertDialog, deleteConnectionAndClearProducts mutation)
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/settings_.integrations_.shopify.tsx (warning message text)
+
+**Verification:**
+- LSP diagnostics: no errors
+- web tsc --noEmit: passes
+
+---
+
 ## 2026-01-22 10:10 - S08: Handle Variants in Chat
 
 **What was implemented:**

@@ -5,7 +5,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { ArrowLeft, ExternalLink, MapPin, Phone, User, CreditCard, Truck, Package, Loader2, MessageSquare } from "lucide-react";
+import { ArrowLeft, ExternalLink, MapPin, Phone, User, CreditCard, Truck, Package, Loader2, MessageSquare, Store } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -49,6 +49,14 @@ function OrderDetailPage() {
   );
 
   const order = orderQuery.data;
+
+  const shopifyQuery = useQuery(
+    convexQuery(api.shopify.getConnectionStatus, { 
+      businessId: (order?.businessId ?? "placeholder") as Id<"businesses"> 
+    })
+  );
+
+  const shopifyConnection = order?.businessId ? shopifyQuery.data : null;
 
   const markPreparing = useMutation(api.orders.markPreparing);
   const markReady = useMutation(api.orders.markReady);
@@ -382,7 +390,39 @@ function OrderDetailPage() {
                     {order.paymentStatus}
                   </span>
                 </div>
-                {order.paymentMethod === "card" && order.paymentLinkUrl && (
+                {order.paymentProvider && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Provider</span>
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                      order.paymentProvider === "shopify" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                      order.paymentProvider === "stripe" && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+                      order.paymentProvider === "cash" && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    )}>
+                      {order.paymentProvider === "shopify" && <Store className="h-3 w-3" />}
+                      {order.paymentProvider === "stripe" && <CreditCard className="h-3 w-3" />}
+                      Paid via {order.paymentProvider === "shopify" ? "Shopify" : order.paymentProvider === "stripe" ? "Stripe" : "Cash"}
+                    </span>
+                  </div>
+                )}
+                {order.shopifyOrderNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shopify Order</span>
+                    <span className="font-medium">{order.shopifyOrderNumber}</span>
+                  </div>
+                )}
+                {order.shopifyOrderId && shopifyConnection?.connected && shopifyConnection.shop && (
+                  <a
+                    href={`https://${shopifyConnection.shop}/admin/orders/${order.shopifyOrderId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-primary hover:underline text-sm"
+                  >
+                    View in Shopify
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {order.paymentMethod === "card" && order.paymentLinkUrl && !order.shopifyOrderId && (
                   <a
                     href={order.paymentLinkUrl}
                     target="_blank"

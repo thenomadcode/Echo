@@ -146,7 +146,7 @@
       "id": "S09",
       "title": "Disconnect Shopify",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "'Disconnect' button with AlertDialog confirmation in Shopify settings",
@@ -165,7 +165,7 @@
       "id": "S10",
       "title": "View Shopify Order in Dashboard",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Order detail page shows Shopify order number if shopifyOrderNumber exists",
