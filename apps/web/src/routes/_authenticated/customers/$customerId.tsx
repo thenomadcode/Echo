@@ -105,6 +105,8 @@ function CustomerDetailPage() {
   const { customerId } = Route.useParams();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const customerQuery = useQuery(
     convexQuery(api.customers.get, { customerId: customerId as Id<"customers"> })
@@ -117,9 +119,25 @@ function CustomerDetailPage() {
   const customer = customerQuery.data;
   const context = contextQuery.data;
 
+  const deleteCustomer = useMutation(api.customers.deleteCustomer);
+
   const handleEditSuccess = async () => {
     await queryClient.invalidateQueries();
     setShowEditDialog(false);
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteCustomer({ customerId: customerId as Id<"customers"> });
+      toast.success("Customer deleted successfully");
+      navigate({ to: "/customers" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete customer");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   const formatCurrency = (amount: number, currency: string = "USD") => {
@@ -220,11 +238,14 @@ function CustomerDetailPage() {
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </Button>
+            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-b mb-6">
         <nav className="flex gap-6 overflow-x-auto" role="tablist">
           {TABS.map((tab) => {
@@ -273,6 +294,43 @@ function CustomerDetailPage() {
         customer={customer}
         onSuccess={handleEditSuccess}
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {customer.name || customer.phone}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-md bg-destructive/10 p-3 text-sm">
+              <p className="font-medium text-destructive mb-2">The following data will be permanently deleted:</p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Customer profile and contact information</li>
+                <li>All saved addresses</li>
+                <li>Preferences, allergies, and restrictions</li>
+                <li>Staff notes</li>
+                <li>Conversation summaries</li>
+              </ul>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Order history will be retained but anonymized (customer reference removed).
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Customer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

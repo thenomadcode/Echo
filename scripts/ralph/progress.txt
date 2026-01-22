@@ -24,6 +24,31 @@
 
 ---
 
+## 2026-01-22 23:00 - S28: Customer deletion workflow
+
+**What was implemented:**
+- Added `customers.deleteCustomer` mutation to backend
+  - Deletes: customer record, addresses, memories, notes, conversation summaries
+  - Anonymizes: orders (sets customerId to undefined), conversations (sets customerRecordId to undefined)
+  - Full auth check: verifies business ownership
+- Added Delete button (destructive variant) in customer detail page header
+- Added AlertDialog with comprehensive warning:
+  - Lists all data that will be deleted
+  - Notes that order history is retained but anonymized
+  - Destructive-styled confirm button with loading state
+- Redirects to customer list after successful deletion
+- Success/error toast notifications
+
+**Files changed:**
+- packages/backend/convex/customers.ts (+75 lines)
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (+50 lines)
+
+**Verification:**
+- bunx tsc --noEmit: passes
+- LSP diagnostics: no errors
+
+---
+
 ## 2026-01-22 22:45 - S27: Customer context panel in conversations
 
 **What was implemented:**

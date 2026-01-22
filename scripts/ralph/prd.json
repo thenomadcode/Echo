@@ -471,7 +471,7 @@
       "id": "S28",
       "title": "Customer deletion workflow",
       "priority": 28,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add Delete Customer button on customer detail page (danger zone)",

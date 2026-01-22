@@ -568,3 +568,75 @@ export const getContextInternal = internalQuery({
     };
   },
 });
+
+export const deleteCustomer = mutation({
+  args: {
+    customerId: v.id("customers"),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      throw new Error("Not authenticated");
+    }
+
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) {
+      throw new Error("Customer not found");
+    }
+
+    const business = await ctx.db.get(customer.businessId);
+    if (!business) {
+      throw new Error("Business not found");
+    }
+
+    if (business.ownerId !== authUser._id) {
+      throw new Error("Not authorized to delete this customer");
+    }
+
+    const [addresses, memories, notes, summaries, orders, conversations] = await Promise.all([
+      ctx.db
+        .query("customerAddresses")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerMemory")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("customerNotes")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("conversationSummaries")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("orders")
+        .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
+        .collect(),
+      ctx.db
+        .query("conversations")
+        .withIndex("by_customer", (q) => q.eq("customerRecordId", args.customerId))
+        .collect(),
+    ]);
+
+    await Promise.all([
+      ...addresses.map((a) => ctx.db.delete(a._id)),
+      ...memories.map((m) => ctx.db.delete(m._id)),
+      ...notes.map((n) => ctx.db.delete(n._id)),
+      ...summaries.map((s) => ctx.db.delete(s._id)),
+    ]);
+
+    await Promise.all(
+      orders.map((o) => ctx.db.patch(o._id, { customerId: undefined }))
+    );
+
+    await Promise.all(
+      conversations.map((c) => ctx.db.patch(c._id, { customerRecordId: undefined }))
+    );
+
+    await ctx.db.delete(args.customerId);
+
+    return { success: true };
+  },
+});
