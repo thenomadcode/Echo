@@ -1,5 +1,6 @@
 ---
 import { MobileMenu } from "./MobileMenu";
+import { ThemeToggle } from "./ThemeToggle";
 ---
 
 <header
@@ -109,6 +110,7 @@ import { MobileMenu } from "./MobileMenu";
 
       <!-- Right Side CTAs -->
       <div class="hidden sm:flex items-center gap-4">
+        <ThemeToggle client:load />
         <a
           href="https://app.echo.com"
           class="link-underline font-heading text-sm font-medium text-foreground hover:text-primary transition-colors"
