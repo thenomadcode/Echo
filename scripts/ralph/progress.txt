@@ -28,6 +28,29 @@
 
 ---
 
+## 2026-01-23 10:25 - S07: Create Orders documentation
+
+**What was implemented:**
+- Created orders.mdx with comprehensive order management documentation
+- Documented full order lifecycle (Draft → Confirmed → Paid → Preparing → Ready → Delivered)
+- Status descriptions table
+- Filtering and searching orders
+- Order detail view (items, customer info, payment, timeline)
+- Fulfillment actions (Mark Preparing, Mark Ready, Mark Delivered)
+- Cancelling orders with refund note
+- Payment methods (card and cash)
+- Delivery types (delivery vs pickup)
+- Shopify integration mention
+- Best practices section
+
+**Files changed:**
+- apps/fumadocs/content/docs/orders.mdx (rewritten, ~170 lines)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+---
+
 ## 2026-01-23 10:20 - S06: Create Categories documentation
 
 **What was implemented:**

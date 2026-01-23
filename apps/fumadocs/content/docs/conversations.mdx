@@ -4,4 +4,167 @@ description: Monitor and manage customer conversations
 icon: MessageCircle
 ---
 
-Conversations placeholder.
+The Conversations dashboard lets you monitor all customer interactions, see what the AI is doing, and take over when needed. Watch conversations in real-time and intervene when human touch is required.
+
+## Conversation List
+
+Navigate to **Conversations** from the sidebar to see all customer conversations. The list shows:
+
+- **Customer** — Phone number or name
+- **Status** — Current conversation status
+- **Last Message** — Preview of the most recent message
+- **Time** — When the last message was sent
+
+### Conversation Statuses
+
+| Status | Description | Indicator |
+|--------|-------------|-----------|
+| **Active** | AI is handling the conversation | Green |
+| **Escalated** | Flagged for human attention | Yellow |
+| **Closed** | Conversation has ended | Gray |
+
+### Filtering Conversations
+
+Use the **Status** dropdown to filter by:
+- **All** — Show all conversations
+- **Active** — Conversations the AI is handling
+- **Escalated** — Conversations needing human attention
+- **Closed** — Completed conversations
+
+### Searching Conversations
+
+Type in the search box to find conversations by customer phone number or name.
+
+## Conversation Detail View
+
+Click on any conversation to see the full message history and interact with it.
+
+### Message Display
+
+Messages are displayed in a chat-style interface:
+- **Customer messages** appear on the left
+- **AI responses** appear on the right with an AI indicator
+- **Human responses** appear on the right with a person indicator
+
+### Customer Context Panel
+
+When a conversation has a linked customer record, a collapsible panel shows:
+
+- **Customer name and phone**
+- **Order history** — Total orders and spend
+- **Default address** — For quick reference
+- **Allergies** — Prominently displayed in red (safety critical)
+- **Restrictions** — Dietary or delivery restrictions
+- **Preferences** — Known customer preferences
+- **Notes** — Business notes about the customer
+
+Click **View Full Profile** to see the complete customer record.
+
+## Taking Over a Conversation
+
+When you need to handle a conversation personally, click **Take Over**. This:
+
+1. Stops the AI from responding
+2. Marks the conversation as "Escalated"
+3. Enables the message input so you can reply
+
+{/* Screenshot: conversation-takeover.png showing Take Over / Hand Back buttons */}
+
+### When to Take Over
+
+- Customer is frustrated or confused
+- Complex question the AI can't answer
+- Sensitive situation requiring human judgment
+- Escalation keyword triggered
+- Customer explicitly asked for a human
+
+### Sending Messages
+
+After taking over:
+
+1. Type your message in the input field
+2. Press Enter or click Send
+3. Your message is sent via WhatsApp to the customer
+
+Messages you send are marked with your name in the conversation history.
+
+## Handing Back to AI
+
+When you're done helping, click **Hand Back**. This:
+
+1. Re-enables the AI to respond
+2. Changes status back to "Active"
+3. AI continues from where you left off
+
+**Tip:** Summarize what you resolved in a message before handing back. The AI can see the conversation history and continue naturally.
+
+## Closing Conversations
+
+Click **Close** to end a conversation. Closed conversations:
+
+- Stop receiving AI responses
+- Are marked as completed
+- Can be reopened later if the customer messages again
+
+### When to Close
+
+- Customer's issue is fully resolved
+- Order is complete and delivered
+- Customer explicitly says goodbye
+- No response after extended period
+
+### Reopening Conversations
+
+Click **Reopen** on a closed conversation to:
+- Resume the conversation
+- Re-enable AI responses
+- Mark as active again
+
+## Escalation
+
+Conversations can be escalated automatically or manually:
+
+### Automatic Escalation
+
+The AI escalates when:
+- Customer uses an escalation keyword (configured in Settings)
+- AI is uncertain how to respond
+- Customer expresses frustration
+- Request is outside AI capabilities
+
+### Escalation Keywords
+
+Configure escalation keywords in **Settings > AI & Automation > Escalation Rules**. Common examples:
+
+- "human"
+- "agent"
+- "manager"
+- "help me"
+- "not working"
+
+When a customer uses these phrases, the conversation is automatically escalated.
+
+### Handling Escalated Conversations
+
+1. Filter by "Escalated" status to see pending escalations
+2. Review the conversation history
+3. Take Over and respond to the customer
+4. Resolve the issue
+5. Hand Back or Close as appropriate
+
+## Best Practices
+
+### Monitor Regularly
+Check escalated conversations frequently. Customers waiting for human help expect quick responses.
+
+### Review AI Responses
+Occasionally review active conversations to ensure the AI is responding appropriately.
+
+### Use Customer Context
+Check the customer panel before responding. Knowing their order history and preferences helps personalize your response.
+
+### Document Resolutions
+Add notes to customer profiles after resolving complex issues. This helps the AI and future human agents.
+
+### Train Your AI
+If the AI frequently struggles with certain questions, update your product descriptions or AI personality instructions.

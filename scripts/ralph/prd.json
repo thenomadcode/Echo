@@ -97,7 +97,7 @@
       "id": "S07",
       "title": "Create Orders documentation",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create orders.mdx",
