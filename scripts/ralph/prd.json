@@ -65,7 +65,7 @@
       "id": "S05",
       "title": "Create Products documentation",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create products/index.mdx",
