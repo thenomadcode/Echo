@@ -1,5 +1,5 @@
 ---
-// Placeholder index page
+import "../styles/global.css";
 ---
 
 <!doctype html>
@@ -9,12 +9,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Echo - Coming Soon</title>
     <meta name="description" content="Echo - WhatsApp AI customer service platform for LATAM businesses" />
+    
+    <!-- Google Fonts preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap"
+      rel="stylesheet"
+    />
   </head>
-  <body>
-    <main>
-      <h1>Echo</h1>
-      <p>Coming Soon</p>
-      <p><a href="https://app.echo.com">Go to App</a></p>
+  <body class="min-h-screen flex items-center justify-center">
+    <main class="text-center">
+      <h1 class="font-heading text-4xl font-bold text-foreground mb-4">Echo</h1>
+      <p class="text-xl text-muted-foreground mb-8">Coming Soon</p>
+      <p>
+        <a href="https://app.echo.com" class="text-primary hover:underline">
+          Go to App
+        </a>
+      </p>
     </main>
   </body>
 </html>

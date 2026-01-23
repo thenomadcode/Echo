@@ -1,278 +1,132 @@
 {
-  "projectName": "user-documentation",
-  "branchName": "feature/user-documentation",
+  "projectName": "marketing-site-scaffold",
+  "branchName": "feature/marketing-site-scaffold",
   "userStories": [
     {
       "id": "S01",
-      "title": "Set up documentation structure and navigation",
+      "title": "Create Astro project scaffold",
       "priority": 1,
       "passes": true,
-      "ultrawork": false,
+      "ultrawork": true,
       "acceptanceCriteria": [
-        "Create folder structure: getting-started/, products/, integrations/, settings/",
-        "Create root meta.json with navigation order (index, getting-started, products, orders, conversations, customers, integrations, settings, faq)",
-        "Create meta.json for each subfolder with page order",
-        "Remove existing test content (test.mdx)",
-        "Sidebar navigation reflects the page hierarchy",
-        "BROWSER TEST: Navigate to /docs, verify sidebar shows expected sections"
+        "Create apps/marketing directory with Astro 6 beta (^6.0.0-beta.2)",
+        "Create package.json with name 'marketing', type 'module', correct scripts (dev, build, preview)",
+        "Install dependencies: astro, @astrojs/cloudflare, @astrojs/mdx, @astrojs/react, react, react-dom, clsx, tailwind-merge, class-variance-authority, lucide-react",
+        "Install devDependencies: @tailwindcss/vite, tailwindcss, @types/react, @types/react-dom, typescript",
+        "Create tsconfig.json matching monorepo standards (strict mode, ESNext, bundler resolution)",
+        "Create astro.config.mjs with Cloudflare adapter, React integration, MDX integration, Tailwind vite plugin",
+        "Create .gitignore for Astro-specific files (dist, .astro, node_modules)",
+        "Dev server configured to run on port 3003",
+        "Create public/robots.txt",
+        "Create public/images/.gitkeep"
       ]
     },
     {
       "id": "S02",
-      "title": "Create documentation landing page",
+      "title": "Configure Tailwind v4 with design system",
       "priority": 2,
       "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create index.mdx as Welcome to Echo page",
-        "Explain what Echo does in 2-3 sentences",
-        "Include dashboard screenshot for visual orientation",
-        "Link to Quick Start Guide as primary CTA",
-        "Use Cards component to link to main sections",
-        "BROWSER TEST: Navigate to /docs, verify landing page renders with heading and cards"
+        "Tailwind v4 configured via @tailwindcss/vite in astro.config.mjs",
+        "Create src/styles/global.css with @import 'tailwindcss'",
+        "Copy CSS variables from apps/web/src/index.css (colors, spacing, radii)",
+        "Copy dark mode variables (.dark class) from apps/web",
+        "Configure same font families: DM Sans (body), Plus Jakarta Sans (headings), JetBrains Mono (mono)",
+        "Add Google Fonts preconnect and stylesheet links",
+        "Create src/lib/utils.ts with cn() utility using clsx and tailwind-merge"
       ]
     },
     {
       "id": "S03",
-      "title": "Create Quick Start Guide",
+      "title": "Create base layouts and placeholder page",
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create getting-started/index.mdx",
-        "List 5-7 steps to go live with Echo",
-        "Use Steps component for numbered instructions",
-        "Each step links to detailed documentation",
-        "Show estimated time (~30 minutes)",
-        "BROWSER TEST: Navigate to /docs/getting-started, verify steps render correctly"
+        "Create src/layouts/BaseLayout.astro with HTML5 boilerplate",
+        "BaseLayout includes proper <head> with charset, viewport, title slot",
+        "BaseLayout imports global.css and configures fonts",
+        "Add theme script for dark mode persistence (check localStorage, system preference)",
+        "Create src/layouts/PageLayout.astro extending BaseLayout (for standard pages)",
+        "Create src/layouts/LegalLayout.astro extending BaseLayout (simpler, for legal pages)",
+        "Create src/pages/index.astro with placeholder content",
+        "Placeholder shows Echo logo, 'Coming Soon' text, link to main app",
+        "Create empty src/components/.gitkeep",
+        "BROWSER TEST: Navigate to http://localhost:3003, verify placeholder page renders",
+        "BROWSER TEST: Verify 'Coming Soon' or 'Echo' text is visible on the page",
+        "BROWSER TEST: Verify dark mode toggle works (if implemented) or dark class applies correctly"
       ]
     },
     {
       "id": "S04",
-      "title": "Create Business Setup documentation",
+      "title": "Configure shadcn/ui for Astro",
       "priority": 4,
-      "passes": true,
-      "ultrawork": false,
+      "passes": false,
+      "ultrawork": true,
       "acceptanceCriteria": [
-        "Create getting-started/business-setup.mdx",
-        "Document the 3-step onboarding wizard (Business Info, Branding, Confirmation)",
-        "Explain required vs optional fields",
-        "Document business types (restaurant, pharmacy, retail, other)",
-        "BROWSER TEST: Navigate to /docs/getting-started/business-setup, verify page renders"
+        "@astrojs/react integration installed and configured in astro.config.mjs",
+        "Create components.json matching apps/web style (baseColor neutral, cssVariables true)",
+        "Configure components.json aliases: components @/components, utils @/lib/utils, ui @/components/ui",
+        "Create src/components/ui/ directory",
+        "Add button.tsx component from shadcn/ui (copy from apps/web or use CLI)",
+        "Button component uses CVA for variants, cn() for class merging",
+        "Verify React components work with client:load directive in Astro",
+        "Install class-variance-authority for component variants"
       ]
     },
     {
       "id": "S05",
-      "title": "Create Products documentation",
+      "title": "Set up MDX content collections",
       "priority": 5,
-      "passes": true,
-      "ultrawork": false,
+      "passes": false,
+      "ultrawork": true,
       "acceptanceCriteria": [
-        "Create products/index.mdx",
-        "Document viewing, searching, filtering products",
-        "Explain adding a new product with all fields",
-        "Cover editing and deleting products",
-        "Document bulk operations with screenshot (select multiple, mark available/unavailable, delete)",
-        "Explain product availability toggle and its effects",
-        "Mention grid vs table view options",
-        "BROWSER TEST: Navigate to /docs/products, verify page renders with content"
+        "@astrojs/mdx integration installed and configured",
+        "Create src/content/config.ts with Zod schemas for all collections",
+        "Define 'pages' collection schema: title, description, draft, template",
+        "Define 'features' collection schema: title, description, icon, order, category",
+        "Define 'testimonials' collection schema: name, company, role, avatar, rating, featured",
+        "Define 'changelog' collection schema: version, date, title, tags",
+        "Define 'faq' collection schema: question, category, order",
+        "Define 'legal' collection schema: title, lastUpdated, slug",
+        "Define 'pricing' collection schema: name, price, currency, interval, popular, features, cta, ctaLink",
+        "Create directory structure: src/content/{pages,features,testimonials,changelog,faq,legal,pricing}/",
+        "Add .gitkeep placeholder in each content directory",
+        "Create src/pages/[...slug].astro for dynamic page routing from pages collection",
+        "Create src/pages/legal/[...slug].astro for legal pages routing",
+        "Create src/pages/changelog/[...slug].astro for changelog routing"
       ]
     },
     {
       "id": "S06",
-      "title": "Create Categories documentation",
+      "title": "Configure Cloudflare deployment via Alchemy",
       "priority": 6,
-      "passes": true,
-      "ultrawork": false,
+      "passes": false,
+      "ultrawork": true,
       "acceptanceCriteria": [
-        "Create products/categories.mdx",
-        "Explain purpose of categories for organization",
-        "Document creating, editing, deleting categories",
-        "Explain moving products between categories",
-        "Cover 'Uncategorized' products concept",
-        "BROWSER TEST: Navigate to /docs/products/categories, verify page renders"
+        "@astrojs/cloudflare adapter installed (^13.0.0-beta.1)",
+        "astro.config.mjs configured with output: 'server' or 'hybrid' for Cloudflare",
+        "Update packages/infra/alchemy.run.ts to include marketing site deployment",
+        "Add Astro site configuration in alchemy.run.ts with cwd pointing to apps/marketing",
+        "Marketing site deploys separately from web app (different Worker/Pages instance)",
+        "Console log outputs marketing site URL after deployment",
+        "Verify build outputs to correct directory for Cloudflare (dist/)"
       ]
     },
     {
       "id": "S07",
-      "title": "Create Orders documentation",
+      "title": "Integrate with Turborepo",
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create orders.mdx",
-        "Document order lifecycle (draft -> confirmed -> paid -> preparing -> ready -> delivered)",
-        "Explain cancelled orders",
-        "Cover filtering and searching orders",
-        "Document order detail view (items, customer, delivery, payment, timeline)",
-        "Explain fulfillment actions (Mark Preparing, Mark Ready, Mark Delivered)",
-        "Document cancelling orders",
-        "BROWSER TEST: Navigate to /docs/orders, verify page renders"
-      ]
-    },
-    {
-      "id": "S08",
-      "title": "Create Conversations documentation",
-      "priority": 8,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create conversations.mdx",
-        "Explain the list + detail view layout",
-        "Document conversation statuses (active, escalated, closed)",
-        "Cover filtering and searching conversations",
-        "Explain Take Over functionality with screenshot (when/why to use)",
-        "Document sending messages as a human",
-        "Explain Hand Back to AI",
-        "Cover closing and reopening conversations",
-        "Explain escalation reasons",
-        "BROWSER TEST: Navigate to /docs/conversations, verify page renders"
-      ]
-    },
-    {
-      "id": "S09",
-      "title": "Create Customers documentation",
-      "priority": 9,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create customers.mdx",
-        "Explain how customers are auto-created from WhatsApp",
-        "Document customer list with sorting options",
-        "Cover customer detail view (name, phone, orders, spend)",
-        "Document manually adding a customer",
-        "Explain phone number format (E.164 with country code)",
-        "BROWSER TEST: Navigate to /docs/customers, verify page renders"
-      ]
-    },
-    {
-      "id": "S10",
-      "title": "Create Integrations Overview",
-      "priority": 10,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create integrations/index.mdx",
-        "List available integrations (WhatsApp, Shopify)",
-        "Brief description of each integration's purpose",
-        "Use Cards to link to detailed setup pages",
-        "BROWSER TEST: Navigate to /docs/integrations, verify page renders with integration cards"
-      ]
-    },
-    {
-      "id": "S11",
-      "title": "Create WhatsApp integration documentation",
-      "priority": 11,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create integrations/whatsapp.mdx",
-        "Explain Twilio as the provider",
-        "Include links to create Twilio account and WhatsApp Sandbox",
-        "Document Account SID, Auth Token, Phone Number fields",
-        "Document webhook URL configuration with screenshot",
-        "Cover testing connection",
-        "Explain connection status indicators",
-        "Include troubleshooting section for common issues",
-        "Use Steps component for setup flow",
-        "BROWSER TEST: Navigate to /docs/integrations/whatsapp, verify page renders"
-      ]
-    },
-    {
-      "id": "S12",
-      "title": "Create Shopify integration documentation",
-      "priority": 12,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create integrations/shopify.mdx",
-        "Explain the integration benefits",
-        "Document connecting with store URL with screenshot (OAuth flow)",
-        "Explain initial product import",
-        "Document sync options (auto-sync, create orders, sync status)",
-        "Cover manual sync",
-        "Document disconnecting Shopify",
-        "Explain what happens to products after disconnect",
-        "BROWSER TEST: Navigate to /docs/integrations/shopify, verify page renders"
-      ]
-    },
-    {
-      "id": "S13",
-      "title": "Create Business Settings documentation",
-      "priority": 13,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create settings/index.mdx",
-        "Document Business Info (name, description, logo)",
-        "Cover Localization settings (language, timezone)",
-        "Explain Business Hours configuration",
-        "Document Data Retention / Privacy settings",
-        "Explain navigation between settings sections",
-        "BROWSER TEST: Navigate to /docs/settings, verify page renders"
-      ]
-    },
-    {
-      "id": "S14",
-      "title": "Create AI Configuration documentation",
-      "priority": 14,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create settings/ai-configuration.mdx",
-        "Explain how the AI works at a high level",
-        "Document greeting message customization",
-        "Explain personality instructions with examples",
-        "Document escalation keywords with examples",
-        "Mention language auto-detection",
-        "Include tips for effective AI customization",
-        "BROWSER TEST: Navigate to /docs/settings/ai-configuration, verify page renders"
-      ]
-    },
-    {
-      "id": "S15",
-      "title": "Create FAQ page",
-      "priority": 15,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create faq.mdx",
-        "Include 10-15 common questions",
-        "Group questions by topic (General, WhatsApp, AI, Orders)",
-        "Keep answers concise with links to detailed docs",
-        "Include troubleshooting questions",
-        "BROWSER TEST: Navigate to /docs/faq, verify page renders with questions"
-      ]
-    },
-    {
-      "id": "S16",
-      "title": "Capture screenshots for documentation",
-      "priority": 16,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create apps/fumadocs/public/images/docs/ directory",
-        "Capture dashboard.png (1200px width, light mode)",
-        "Capture whatsapp-webhook.png showing webhook URL section",
-        "Capture shopify-connect.png showing store URL input",
-        "Capture conversation-takeover.png showing Take Over / Hand Back buttons",
-        "Capture bulk-operations.png showing product selection toolbar",
-        "Update relevant MDX files to include screenshots with alt text"
-      ]
-    },
-    {
-      "id": "S17",
-      "title": "Add documentation link to app header",
-      "priority": 17,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add Documentation link to main app navigation/header",
-        "Link opens docs in new tab (target='_blank')",
-        "Link is visible on all authenticated pages",
-        "Use appropriate icon (BookOpen or similar)",
-        "BROWSER TEST: Navigate to /dashboard, verify Docs link exists in header",
-        "BROWSER TEST: Click Docs link, verify it opens documentation"
+        "Verify turbo.json recognizes apps/marketing automatically via apps/* glob",
+        "package.json scripts work with Turborepo: dev, build",
+        "Running 'bun run dev' from root starts marketing dev server alongside other apps",
+        "Running 'bun run build' from root builds marketing site",
+        "Add 'dev:marketing' script to root package.json: turbo -F marketing dev",
+        "Verify no conflicts with existing turbo tasks"
       ]
     }
   ]
