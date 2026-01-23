@@ -28,6 +28,47 @@
 
 ---
 
+## 2026-01-23 10:50 - S17: Add documentation link to app header
+
+**What was implemented:**
+- Added BookOpen icon import to AppHeader
+- Added Documentation link before theme toggle
+- Link opens /docs in new tab (target="_blank")
+- Styled with muted-foreground color, hover effects
+- Screen reader accessible with sr-only label
+
+**Files changed:**
+- apps/web/src/components/layout/AppHeader.tsx (+10 lines)
+
+**Verification:**
+- LSP diagnostics: no errors
+- tsc --noEmit: passes
+
+---
+
+## 2026-01-23 10:45 - S10-S15: Create documentation pages
+
+**What was implemented:**
+- S10: Integrations overview with Cards linking to WhatsApp and Shopify
+- S11: WhatsApp integration with setup steps, webhook config, troubleshooting
+- S12: Shopify integration with product import, sync, order handling
+- S13: Settings page covering all sections (General, AI, Integrations, Privacy)
+- S14: AI Configuration with greeting, personality, escalation keywords
+- S15: FAQ with 25+ questions grouped by topic
+
+**Files changed:**
+- apps/fumadocs/content/docs/integrations/index.mdx
+- apps/fumadocs/content/docs/integrations/whatsapp.mdx
+- apps/fumadocs/content/docs/integrations/shopify.mdx
+- apps/fumadocs/content/docs/settings/index.mdx
+- apps/fumadocs/content/docs/settings/ai-configuration.mdx
+- apps/fumadocs/content/docs/faq.mdx
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+---
+
 ## 2026-01-23 10:35 - S09: Create Customers documentation
 
 **What was implemented:**

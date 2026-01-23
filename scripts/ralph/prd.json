@@ -264,7 +264,7 @@
       "id": "S17",
       "title": "Add documentation link to app header",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add Documentation link to main app navigation/header",
