@@ -1,132 +1,391 @@
 {
-  "projectName": "marketing-site-scaffold",
-  "branchName": "feature/marketing-site-scaffold",
+  "projectName": "marketing-website",
+  "branchName": "feature/marketing-website",
   "userStories": [
     {
       "id": "S01",
-      "title": "Create Astro project scaffold",
+      "title": "Create Header component with navigation",
       "priority": 1,
-      "passes": true,
+      "passes": false,
       "ultrawork": true,
       "acceptanceCriteria": [
-        "Create apps/marketing directory with Astro 6 beta (^6.0.0-beta.2)",
-        "Create package.json with name 'marketing', type 'module', correct scripts (dev, build, preview)",
-        "Install dependencies: astro, @astrojs/cloudflare, @astrojs/mdx, @astrojs/react, react, react-dom, clsx, tailwind-merge, class-variance-authority, lucide-react",
-        "Install devDependencies: @tailwindcss/vite, tailwindcss, @types/react, @types/react-dom, typescript",
-        "Create tsconfig.json matching monorepo standards (strict mode, ESNext, bundler resolution)",
-        "Create astro.config.mjs with Cloudflare adapter, React integration, MDX integration, Tailwind vite plugin",
-        "Create .gitignore for Astro-specific files (dist, .astro, node_modules)",
-        "Dev server configured to run on port 3003",
-        "Create public/robots.txt",
-        "Create public/images/.gitkeep"
+        "Create apps/marketing/src/components/Header.astro",
+        "Echo logo on left side linking to home (/)",
+        "Nav links: Features (dropdown), Pricing (/pricing)",
+        "Features dropdown shows: AI Chat, Integrations, Shopify, Customer Memory with links to /features/*",
+        "Right side: 'Log in' text link (external to app), 'Start Free' orange button",
+        "Fixed/sticky header on scroll with subtle shadow when scrolled",
+        "Use Plus Jakarta Sans for nav text, warm black #1C1917 color",
+        "Orange button uses #EA580C background with white text",
+        "BROWSER TEST: Navigate to /, verify header renders with logo and nav links",
+        "BROWSER TEST: Click Features dropdown, verify 4 feature links appear",
+        "BROWSER TEST: Scroll down, verify header becomes sticky with shadow"
       ]
     },
     {
       "id": "S02",
-      "title": "Configure Tailwind v4 with design system",
+      "title": "Create MobileMenu React component",
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Tailwind v4 configured via @tailwindcss/vite in astro.config.mjs",
-        "Create src/styles/global.css with @import 'tailwindcss'",
-        "Copy CSS variables from apps/web/src/index.css (colors, spacing, radii)",
-        "Copy dark mode variables (.dark class) from apps/web",
-        "Configure same font families: DM Sans (body), Plus Jakarta Sans (headings), JetBrains Mono (mono)",
-        "Add Google Fonts preconnect and stylesheet links",
-        "Create src/lib/utils.ts with cn() utility using clsx and tailwind-merge"
+        "Create apps/marketing/src/components/MobileMenu.tsx",
+        "Hamburger icon button visible only on mobile (< 640px)",
+        "Opens slide-in menu with all nav links",
+        "Features section expandable/collapsible in mobile menu",
+        "Close button or tap outside to dismiss",
+        "Use client:load directive in Header.astro to hydrate",
+        "Smooth animation for open/close",
+        "BROWSER TEST: Set viewport to 375px width, verify hamburger menu appears",
+        "BROWSER TEST: Click hamburger, verify menu slides in with all links",
+        "BROWSER TEST: Click outside menu, verify it closes"
       ]
     },
     {
       "id": "S03",
-      "title": "Create base layouts and placeholder page",
+      "title": "Create Footer component",
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create src/layouts/BaseLayout.astro with HTML5 boilerplate",
-        "BaseLayout includes proper <head> with charset, viewport, title slot",
-        "BaseLayout imports global.css and configures fonts",
-        "Add theme script for dark mode persistence (check localStorage, system preference)",
-        "Create src/layouts/PageLayout.astro extending BaseLayout (for standard pages)",
-        "Create src/layouts/LegalLayout.astro extending BaseLayout (simpler, for legal pages)",
-        "Create src/pages/index.astro with placeholder content",
-        "Placeholder shows Echo logo, 'Coming Soon' text, link to main app",
-        "Create empty src/components/.gitkeep",
-        "BROWSER TEST: Navigate to http://localhost:3003, verify placeholder page renders",
-        "BROWSER TEST: Verify 'Coming Soon' or 'Echo' text is visible on the page",
-        "BROWSER TEST: Verify dark mode toggle works (if implemented) or dark class applies correctly"
+        "Create apps/marketing/src/components/Footer.astro",
+        "Echo logo and tagline 'AI for creators who sell'",
+        "4 link columns: Product (Features, Pricing, Integrations), Resources (Documentation), Company (About), Legal (Privacy Policy, Terms of Service)",
+        "Copyright notice with current year",
+        "Minimal clean design with warm gray background",
+        "Links use muted gray #78716C, hover to orange #EA580C",
+        "BROWSER TEST: Navigate to /, scroll to bottom, verify footer renders",
+        "BROWSER TEST: Verify all footer links are present and clickable",
+        "BROWSER TEST: Verify Privacy Policy link goes to /legal/privacy"
       ]
     },
     {
       "id": "S04",
-      "title": "Configure shadcn/ui for Astro",
+      "title": "Integrate base layout with SEO",
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "ultrawork": true,
       "acceptanceCriteria": [
-        "@astrojs/react integration installed and configured in astro.config.mjs",
-        "Create components.json matching apps/web style (baseColor neutral, cssVariables true)",
-        "Configure components.json aliases: components @/components, utils @/lib/utils, ui @/components/ui",
-        "Create src/components/ui/ directory",
-        "Add button.tsx component from shadcn/ui (copy from apps/web or use CLI)",
-        "Button component uses CVA for variants, cn() for class merging",
-        "Verify React components work with client:load directive in Astro",
-        "Install class-variance-authority for component variants"
+        "Update apps/marketing/src/layouts/BaseLayout.astro to include Header and Footer",
+        "Add SEO props: title, description, ogImage",
+        "Include Open Graph meta tags for social sharing",
+        "Add canonical URL meta tag",
+        "Include favicon link",
+        "Set default title template: '{page} | Echo'",
+        "Apply background color #FAFAF9 to body",
+        "Import and apply DM Sans and Plus Jakarta Sans fonts",
+        "BROWSER TEST: Navigate to /, verify page has correct title in browser tab",
+        "BROWSER TEST: View page source, verify og:title and og:description meta tags exist"
       ]
     },
     {
       "id": "S05",
-      "title": "Set up MDX content collections",
+      "title": "Create Hero section component",
       "priority": 5,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "@astrojs/mdx integration installed and configured",
-        "Create src/content/config.ts with Zod schemas for all collections",
-        "Define 'pages' collection schema: title, description, draft, template",
-        "Define 'features' collection schema: title, description, icon, order, category",
-        "Define 'testimonials' collection schema: name, company, role, avatar, rating, featured",
-        "Define 'changelog' collection schema: version, date, title, tags",
-        "Define 'faq' collection schema: question, category, order",
-        "Define 'legal' collection schema: title, lastUpdated, slug",
-        "Define 'pricing' collection schema: name, price, currency, interval, popular, features, cta, ctaLink",
-        "Create directory structure: src/content/{pages,features,testimonials,changelog,faq,legal,pricing}/",
-        "Add .gitkeep placeholder in each content directory",
-        "Create src/pages/[...slug].astro for dynamic page routing from pages collection",
-        "Create src/pages/legal/[...slug].astro for legal pages routing",
-        "Create src/pages/changelog/[...slug].astro for changelog routing"
+        "Create apps/marketing/src/components/Hero.astro",
+        "Eyebrow text: 'AI for creators who sell' in muted gray",
+        "Main headline: 'Your AI that sells while you sleep' in Plus Jakarta Sans bold, 48-64px",
+        "Subheadline: 'Echo answers customer questions, takes orders, and sounds just like you. Connect WhatsApp, add your products, and let AI handle the rest.'",
+        "Primary CTA button: 'Start Free' with orange background #EA580C",
+        "Secondary CTA: 'Watch Demo' as ghost button or text link",
+        "Trust text: 'No credit card required' below CTAs in small muted text",
+        "Placeholder for hero image/screenshot on right side",
+        "Responsive: stacks vertically on mobile",
+        "BROWSER TEST: Navigate to /, verify hero section renders with headline and CTAs",
+        "BROWSER TEST: Verify 'Start Free' button is orange and clickable",
+        "BROWSER TEST: Set viewport to 375px, verify layout stacks vertically"
       ]
     },
     {
       "id": "S06",
-      "title": "Configure Cloudflare deployment via Alchemy",
+      "title": "Create SocialProofBar component",
       "priority": 6,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "@astrojs/cloudflare adapter installed (^13.0.0-beta.1)",
-        "astro.config.mjs configured with output: 'server' or 'hybrid' for Cloudflare",
-        "Update packages/infra/alchemy.run.ts to include marketing site deployment",
-        "Add Astro site configuration in alchemy.run.ts with cwd pointing to apps/marketing",
-        "Marketing site deploys separately from web app (different Worker/Pages instance)",
-        "Console log outputs marketing site URL after deployment",
-        "Verify build outputs to correct directory for Cloudflare (dist/)"
+        "Create apps/marketing/src/components/SocialProofBar.astro",
+        "Display 3 stats with icons: '10,000+ messages handled', '98% customer satisfaction', '2 min average setup time'",
+        "Use Lucide icons for each stat (Mail, ThumbsUp, Zap or similar)",
+        "Subtle styling with muted colors, doesn't compete with hero",
+        "Horizontal layout on desktop, stacked on mobile",
+        "BROWSER TEST: Navigate to /, verify social proof bar appears below hero",
+        "BROWSER TEST: Verify 3 stats are visible with icons"
       ]
     },
     {
       "id": "S07",
-      "title": "Integrate with Turborepo",
+      "title": "Create FeatureCard component and Features section",
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Verify turbo.json recognizes apps/marketing automatically via apps/* glob",
-        "package.json scripts work with Turborepo: dev, build",
-        "Running 'bun run dev' from root starts marketing dev server alongside other apps",
-        "Running 'bun run build' from root builds marketing site",
-        "Add 'dev:marketing' script to root package.json: turbo -F marketing dev",
-        "Verify no conflicts with existing turbo tasks"
+        "Create apps/marketing/src/components/FeatureCard.astro accepting icon, title, description, link props",
+        "Create apps/marketing/src/components/FeaturesSection.astro with section heading 'Everything you need to sell on autopilot'",
+        "4 feature cards in 2x2 grid on desktop, stacked on mobile",
+        "Card 1: AI Chat icon, 'AI That Sounds Like You', links to /features/ai-chat",
+        "Card 2: Channels icon, 'Connect Your Channels', links to /features/integrations",
+        "Card 3: ShoppingBag icon, 'Shopify Sync', links to /features/shopify",
+        "Card 4: Brain icon, 'Remembers Your Customers', links to /features/customer-memory",
+        "Cards have subtle hover effect (lift + shadow)",
+        "Orange icons, warm black titles, muted gray descriptions",
+        "BROWSER TEST: Navigate to /, scroll to features section, verify 4 cards render",
+        "BROWSER TEST: Hover over a card, verify lift animation occurs",
+        "BROWSER TEST: Click 'AI That Sounds Like You' card, verify navigation to /features/ai-chat"
+      ]
+    },
+    {
+      "id": "S08",
+      "title": "Create HowItWorks section with StepIndicator",
+      "priority": 8,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/components/StepIndicator.astro accepting number, title, description props",
+        "Create apps/marketing/src/components/HowItWorks.astro with heading 'Get started in 3 steps'",
+        "Step 1: 'Connect' - 'Link your WhatsApp Business number'",
+        "Step 2: 'Add Products' - 'Import from Shopify or add manually'",
+        "Step 3: 'Let Echo Sell' - 'AI handles conversations, you handle fulfillment'",
+        "Numbers displayed in orange circles",
+        "Visual connection between steps (dotted line or arrows)",
+        "Horizontal on desktop, vertical on mobile",
+        "BROWSER TEST: Navigate to /, scroll to 'Get started in 3 steps', verify 3 steps render",
+        "BROWSER TEST: Verify step numbers are in orange circles"
+      ]
+    },
+    {
+      "id": "S09",
+      "title": "Create PricingCard and PricingTable components",
+      "priority": 9,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/components/PricingCard.astro accepting name, price, features array, cta, highlighted props",
+        "Create apps/marketing/src/components/PricingTable.astro with heading 'Simple pricing. Start free.'",
+        "Free plan: $0, 500 contacts, Basic AI, WhatsApp integration, 'Start Free' CTA",
+        "Growth plan: $49/mo, Unlimited contacts, Full AI, All integrations, Customer memory, 'Start Free' CTA, highlighted as 'Most Popular'",
+        "Scale plan: $99/mo, Everything in Growth + Multi-brand, Team seats, Priority support, 'Contact Us' CTA",
+        "Growth plan has orange border and 'Most Popular' badge",
+        "Features listed with checkmark icons",
+        "3 columns on desktop, stacked on mobile",
+        "BROWSER TEST: Navigate to /, scroll to pricing section, verify 3 plans render",
+        "BROWSER TEST: Verify Growth plan has 'Most Popular' badge and orange border",
+        "BROWSER TEST: Verify each plan has CTA button"
+      ]
+    },
+    {
+      "id": "S10",
+      "title": "Create Testimonial and TestimonialSection components",
+      "priority": 10,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/components/Testimonial.astro accepting quote, name, handle, avatar, followers props",
+        "Create apps/marketing/src/components/TestimonialSection.astro with heading 'What creators are saying'",
+        "Display 3 testimonial cards",
+        "Testimonial 1: Sarah Chen, @sarahcreates, 45K followers - 'Echo handles 80% of my DMs...'",
+        "Testimonial 2: Marcus Rodriguez, Founder of Urban Threads - 'Echo actually sounds like me...'",
+        "Testimonial 3: Priya Sharma, @priyamakes, Etsy Seller - 'Setup took literally 5 minutes...'",
+        "Cards have subtle shadow and rounded corners (10px)",
+        "Circular avatar placeholder, name, handle/business, quote",
+        "BROWSER TEST: Navigate to /, scroll to testimonials, verify 3 testimonial cards render",
+        "BROWSER TEST: Verify each card shows name, quote, and business info"
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "Create CTASection component",
+      "priority": 11,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/components/CTASection.astro",
+        "Full-width section with warm gray background",
+        "Centered layout",
+        "Headline: 'Ready to stop missing sales?'",
+        "Primary CTA button: 'Start Free — No credit card required' (orange)",
+        "Secondary text link: 'Questions? Chat with us'",
+        "BROWSER TEST: Navigate to /, scroll to bottom CTA section, verify headline and button render",
+        "BROWSER TEST: Verify CTA button is orange with correct text"
+      ]
+    },
+    {
+      "id": "S12",
+      "title": "Assemble homepage with all sections",
+      "priority": 12,
+      "passes": false,
+      "ultrawork": true,
+      "acceptanceCriteria": [
+        "Update apps/marketing/src/pages/index.astro to use BaseLayout",
+        "Include all homepage sections in order: Hero, SocialProofBar, FeaturesSection, HowItWorks, PricingTable, TestimonialSection, CTASection",
+        "Set page title 'Echo - AI That Sells While You Sleep'",
+        "Set meta description for SEO",
+        "Proper spacing between sections (py-16 or similar)",
+        "BROWSER TEST: Navigate to /, verify all 7 sections render in correct order",
+        "BROWSER TEST: Scroll through entire page, verify no layout issues",
+        "BROWSER TEST: Verify page title in browser tab is correct"
+      ]
+    },
+    {
+      "id": "S13",
+      "title": "Create FeaturePageLayout component",
+      "priority": 13,
+      "passes": false,
+      "ultrawork": true,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/layouts/FeaturePageLayout.astro",
+        "Extends BaseLayout with header and footer",
+        "Accepts props: title, subtitle, heroImage",
+        "Hero section with feature-specific headline and optional screenshot",
+        "Breadcrumb navigation: Home > Features > {Feature Name}",
+        "Slot for main content sections",
+        "CTA section at bottom: 'Ready to get started?' with 'Start Free' button",
+        "BROWSER TEST: Navigate to /features/ai-chat (placeholder), verify layout renders with breadcrumbs",
+        "BROWSER TEST: Verify CTA section appears at bottom of feature page"
+      ]
+    },
+    {
+      "id": "S14",
+      "title": "Create AI Chat feature page",
+      "priority": 14,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/pages/features/ai-chat.astro using FeaturePageLayout",
+        "Hero: 'AI that actually sounds human' with subtitle about 24/7 conversations",
+        "Section 1: 'Natural Conversations' - No robotic scripts, matches your style, handles typos",
+        "Section 2: 'Multi-Language Support' - Auto-detects language, supports EN/ES/PT",
+        "Section 3: 'Smart Intent Recognition' - Understands customer intent, not just keywords",
+        "Section 4: 'Human Handoff' - AI knows when to escalate, you stay in control",
+        "Each section has icon, heading, bullet points",
+        "BROWSER TEST: Navigate to /features/ai-chat, verify page renders with all 4 sections",
+        "BROWSER TEST: Verify breadcrumb shows 'Home > Features > AI Chat'"
+      ]
+    },
+    {
+      "id": "S15",
+      "title": "Create Integrations feature page",
+      "priority": 15,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/pages/features/integrations.astro using FeaturePageLayout",
+        "Create apps/marketing/src/components/Badge.astro for 'Coming Soon' labels",
+        "Hero: 'One inbox for all your conversations'",
+        "WhatsApp Business card: Available, Twilio integration, rich media support",
+        "Instagram DMs card: Coming Q2 2026 badge, auto-reply, comment-to-DM",
+        "Facebook Messenger card: Coming Q2 2026 badge, page messaging",
+        "Cards arranged in grid, 'Coming Soon' badges in muted style",
+        "BROWSER TEST: Navigate to /features/integrations, verify 3 channel cards render",
+        "BROWSER TEST: Verify Instagram and Messenger cards have 'Coming Soon' badges"
+      ]
+    },
+    {
+      "id": "S16",
+      "title": "Create Shopify feature page",
+      "priority": 16,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/pages/features/shopify.astro using FeaturePageLayout",
+        "Hero: 'Built for Shopify sellers' with Shopify logo",
+        "Section 1: 'One-Click Product Import' - entire catalog, variants supported",
+        "Section 2: 'Orders Created in Shopify' - draft orders, checkout links",
+        "Section 3: 'Real-Time Inventory' - stock levels accurate, no overselling",
+        "Include Shopify logo/icon prominently",
+        "BROWSER TEST: Navigate to /features/shopify, verify page renders with 3 sections",
+        "BROWSER TEST: Verify Shopify branding is visible"
+      ]
+    },
+    {
+      "id": "S17",
+      "title": "Create Customer Memory feature page",
+      "priority": 17,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/pages/features/customer-memory.astro using FeaturePageLayout",
+        "Hero: 'AI that remembers your customers'",
+        "Section 1: 'Customer Profiles' - automatic creation, order history, lifetime value",
+        "Section 2: 'Preferences & Restrictions' - allergies, dietary, AI warns about conflicts",
+        "Section 3: 'Saved Addresses' - delivery addresses remembered, one-tap reorder",
+        "Section 4: 'Privacy First' - GDPR/LGPD compliant, data deletion, encrypted",
+        "BROWSER TEST: Navigate to /features/customer-memory, verify page renders with 4 sections",
+        "BROWSER TEST: Verify Privacy First section mentions GDPR compliance"
+      ]
+    },
+    {
+      "id": "S18",
+      "title": "Create dedicated Pricing page with FAQ",
+      "priority": 18,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create apps/marketing/src/pages/pricing.astro using BaseLayout",
+        "Create apps/marketing/src/components/FAQ.tsx React component with Accordion",
+        "Reuse PricingTable component from homepage",
+        "Add feature comparison table below pricing cards",
+        "FAQ section with 5 questions: change plans, free limits, contracts, annual billing, payment methods",
+        "FAQ uses accordion pattern, one open at a time",
+        "Use client:load directive for FAQ component",
+        "BROWSER TEST: Navigate to /pricing, verify pricing table and FAQ render",
+        "BROWSER TEST: Click an FAQ question, verify answer expands",
+        "BROWSER TEST: Click another question, verify first one collapses"
+      ]
+    },
+    {
+      "id": "S19",
+      "title": "Create legal pages (Privacy and Terms)",
+      "priority": 19,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Update apps/marketing/src/layouts/LegalLayout.astro extending BaseLayout",
+        "Simple layout with centered content, max-width for readability",
+        "Create apps/marketing/src/pages/legal/privacy.astro with placeholder privacy policy content",
+        "Create apps/marketing/src/pages/legal/terms.astro with placeholder terms of service content",
+        "Both pages show 'Last updated: {date}' at top",
+        "Clean typography for legal text, proper heading hierarchy",
+        "BROWSER TEST: Navigate to /legal/privacy, verify page renders with 'Last updated' date",
+        "BROWSER TEST: Navigate to /legal/terms, verify page renders with legal content"
+      ]
+    },
+    {
+      "id": "S20",
+      "title": "Add animations and micro-interactions",
+      "priority": 20,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Add subtle floating animation to hero screenshot (2-3px bob)",
+        "Add fade-in + slide-up animation on scroll for feature cards",
+        "Add scale 1.02 + shadow on hover for CTA buttons",
+        "Add smooth transition for mobile menu open/close",
+        "Add underline animation on link hover",
+        "Use CSS animations or Tailwind animate utilities",
+        "Ensure animations are smooth (use transform, not layout properties)",
+        "BROWSER TEST: Navigate to /, scroll down, verify feature cards animate in",
+        "BROWSER TEST: Hover over 'Start Free' button, verify scale animation"
+      ]
+    },
+    {
+      "id": "S21",
+      "title": "SEO finalization (sitemap, robots, OG images)",
+      "priority": 21,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Generate sitemap.xml with all pages",
+        "Create robots.txt allowing all crawlers",
+        "Create OG image placeholder (1200x630px) in public/images/og-default.png",
+        "Ensure all pages have unique title and meta description",
+        "Add structured data (Organization schema) to homepage",
+        "Verify canonical URLs are set correctly",
+        "BROWSER TEST: Navigate to /sitemap.xml, verify it lists all pages",
+        "BROWSER TEST: Navigate to /robots.txt, verify it exists",
+        "BROWSER TEST: View page source of /, verify og:image meta tag exists"
       ]
     }
   ]
