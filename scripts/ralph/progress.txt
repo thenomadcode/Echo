@@ -1,3 +1,25 @@
+## 2026-01-23 22:16 - S07: Create FeatureCard component and Features section
+
+**What was implemented:**
+- Created apps/marketing/src/components/FeatureCard.astro with icon, title, description, href props
+- Created apps/marketing/src/components/FeaturesSection.astro with section heading
+- 4 feature cards in 2x2 grid (sm:grid-cols-2) on desktop, stacked on mobile
+- Card 1: AI Chat - "AI That Sounds Like You"
+- Card 2: Integrations - "Connect Your Channels"
+- Card 3: Shopify - "Shopify Sync"
+- Card 4: Customer Memory - "Remembers Your Customers"
+- Cards have hover effect: lift (-translate-y-1) + shadow-lg + border color change
+- Orange icons, warm black titles (hover to primary), muted gray descriptions
+
+**Files changed:**
+- apps/marketing/src/components/FeatureCard.astro (created, ~25 lines)
+- apps/marketing/src/components/FeaturesSection.astro (created, ~45 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:15 - S06: Create SocialProofBar component
 
 **What was implemented:**

@@ -119,7 +119,7 @@
       "id": "S07",
       "title": "Create FeatureCard component and Features section",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/FeatureCard.astro accepting icon, title, description, link props",
