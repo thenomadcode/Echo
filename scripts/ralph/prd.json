@@ -82,7 +82,7 @@
       "id": "S05",
       "title": "Create Hero section component",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/Hero.astro",

@@ -1,3 +1,24 @@
+## 2026-01-23 22:14 - S05: Create Hero section component
+
+**What was implemented:**
+- Created apps/marketing/src/components/Hero.astro
+- Eyebrow text: "AI for creators who sell" in muted gray uppercase
+- Main headline: "Your AI that sells while you sleep" in Plus Jakarta Sans bold, responsive 4xl/5xl/6xl
+- Subheadline describing Echo's value proposition
+- Primary CTA button: "Start Free" with orange background
+- Secondary CTA: "Watch Demo" ghost button with play icon
+- Trust text: "No credit card required" below CTAs
+- Placeholder for hero screenshot on right side with gradient background
+- Responsive: 2-column on desktop, stacked on mobile (text-center on mobile, text-left on desktop)
+
+**Files changed:**
+- apps/marketing/src/components/Hero.astro (created, ~70 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:12 - S04: Integrate base layout with SEO
 
 **What was implemented:**
