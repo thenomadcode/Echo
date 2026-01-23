@@ -1,3 +1,25 @@
+## 2026-01-23 22:30 - S13: Create FeaturePageLayout component
+
+**What was implemented:**
+- Created apps/marketing/src/layouts/FeaturePageLayout.astro
+- Extends BaseLayout with Header and Footer
+- Accepts props: title, subtitle, featureName, heroImage, description
+- Breadcrumb navigation: Home > Features > {featureName}
+- Hero section with feature headline, subtitle, and CTA button
+- Optional heroImage display (placeholder if not provided)
+- Slot for main content sections
+- CTA section at bottom: "Ready to get started?" with Start Free button and View Pricing link
+- Created placeholder apps/marketing/src/pages/features/ai-chat.astro to verify layout
+
+**Files changed:**
+- apps/marketing/src/layouts/FeaturePageLayout.astro (created, ~130 lines)
+- apps/marketing/src/pages/features/ai-chat.astro (created, placeholder, ~18 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:25 - S12: Assemble homepage with all sections
 
 **What was implemented:**

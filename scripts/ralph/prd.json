@@ -232,7 +232,7 @@
       "id": "S13",
       "title": "Create FeaturePageLayout component",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Create apps/marketing/src/layouts/FeaturePageLayout.astro",

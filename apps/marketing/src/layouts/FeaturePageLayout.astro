@@ -1,0 +1,128 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title: string;
+  subtitle: string;
+  featureName: string;
+  heroImage?: string;
+  description?: string;
+}
+
+const { title, subtitle, featureName, heroImage, description } = Astro.props;
+---
+
+<BaseLayout title={title} description={description ?? subtitle}>
+  <Header />
+  <main>
+    <!-- Breadcrumb -->
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <ol class="flex items-center gap-2 text-sm text-muted-foreground">
+        <li>
+          <a href="/" class="hover:text-primary transition-colors">Home</a>
+        </li>
+        <li>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </li>
+        <li>
+          <a href="/#features" class="hover:text-primary transition-colors">Features</a>
+        </li>
+        <li>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </li>
+        <li class="text-foreground font-medium">{featureName}</li>
+      </ol>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="py-12 lg:py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+          <div class="text-center lg:text-left">
+            <h1 class="font-heading font-bold text-4xl sm:text-5xl lg:text-6xl text-foreground mb-6">
+              {title}
+            </h1>
+            <p class="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
+              {subtitle}
+            </p>
+            <div class="mt-8">
+              <a
+                href="https://app.echo.com/signup"
+                class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors font-heading"
+              >
+                Start Free
+              </a>
+            </div>
+          </div>
+          
+          {heroImage ? (
+            <div class="relative">
+              <div class="aspect-video rounded-lg overflow-hidden shadow-2xl bg-gradient-to-br from-primary/10 to-primary/5">
+                <img 
+                  src={heroImage} 
+                  alt={`${featureName} screenshot`}
+                  class="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          ) : (
+            <div class="relative hidden lg:block">
+              <div class="aspect-video rounded-lg overflow-hidden shadow-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                <div class="text-center p-8">
+                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p class="text-muted-foreground text-sm">Feature preview</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Slot -->
+    <slot />
+
+    <!-- CTA Section -->
+    <section class="py-16 lg:py-24 bg-muted/50">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-6">
+          Ready to get started?
+        </h2>
+        
+        <p class="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+          Join thousands of creators who are already selling on autopilot with Echo.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a
+            href="https://app.echo.com/signup"
+            class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors font-heading"
+          >
+            Start Free
+          </a>
+          <a
+            href="/pricing"
+            class="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-base font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors font-heading"
+          >
+            View Pricing
+          </a>
+        </div>
+        
+        <p class="mt-6 text-sm text-muted-foreground">
+          No credit card required
+        </p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>
