@@ -1,12 +1,5 @@
 ---
-/**
- * Header component with navigation
- * - Echo logo on left linking to home
- * - Nav links: Features (dropdown), Pricing
- * - Features dropdown: AI Chat, Integrations, Shopify, Customer Memory
- * - Right side: Log in link, Start Free button
- * - Fixed/sticky with shadow on scroll
- */
+import { MobileMenu } from "./MobileMenu";
 ---
 
 <header
@@ -130,10 +123,7 @@
         </a>
       </div>
 
-      <!-- Mobile Menu Button (hamburger - handled by MobileMenu component) -->
-      <div class="sm:hidden">
-        <slot name="mobile-menu-button" />
-      </div>
+      <MobileMenu client:load />
     </div>
   </div>
 </header>

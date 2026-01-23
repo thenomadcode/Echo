@@ -11,9 +11,7 @@ const { title, description } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>
-  <Header>
-    <slot name="mobile-menu-button" slot="mobile-menu-button" />
-  </Header>
+  <Header />
   <main>
     <slot />
   </main>

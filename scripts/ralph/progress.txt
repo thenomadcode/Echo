@@ -1,3 +1,66 @@
+## 2026-01-23 22:07 - S02: Create MobileMenu React component
+
+**What was implemented:**
+- Created apps/marketing/src/components/MobileMenu.tsx React component
+- Hamburger icon button visible only on mobile (< 640px) using sm:hidden
+- Slide-in menu panel from right side with smooth transition (duration-300)
+- Overlay backdrop with blur effect, click to dismiss
+- Close button in menu header
+- Escape key closes menu
+- Body scroll lock when menu is open
+- Features section expandable/collapsible with chevron animation
+- All nav links: Features (4 sub-items), Pricing, Log in, Start Free CTA
+- Uses client:load directive in Header.astro for hydration
+- Removed unused mobile-menu-button slot from Header.astro and PageLayout.astro
+
+**Files changed:**
+- apps/marketing/src/components/MobileMenu.tsx (created, ~230 lines)
+- apps/marketing/src/components/Header.astro (updated to import and use MobileMenu with client:load)
+- apps/marketing/src/layouts/PageLayout.astro (removed mobile-menu-button slot forwarding)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+**Learnings for future iterations:**
+- Astro React components use `client:load` directive for immediate hydration
+- Body scroll lock via `document.body.style.overflow = "hidden"` with cleanup in useEffect
+- Use `max-h-0 opacity-0` → `max-h-[400px] opacity-100` for smooth expand/collapse animations
+
+---
+
+## 2026-01-23 22:05 - S01: Create Header component with navigation
+
+**What was implemented:**
+- Created apps/marketing/src/components/Header.astro
+- Echo logo on left (SVG chat bubble icon) linking to /
+- Desktop navigation with Features dropdown (AI Chat, Integrations, Shopify, Customer Memory)
+- Pricing link in nav
+- Right side: Log in text link (external to app), Start Free orange button
+- Fixed/sticky header with backdrop blur and bg-background/95 for subtle transparency
+- Shadow appears on scroll via JavaScript (adds shadow-sm, border-b on scrollY > 0)
+- Uses font-heading (Plus Jakarta Sans) for nav text, primary color for logo/buttons
+- CSS-only dropdown using group-hover for Features menu
+- Slot for mobile menu button (to be implemented in S02)
+- Spacer div (h-16) to prevent content from going under fixed header
+- Updated PageLayout.astro to use Header component
+- Updated index.astro to use PageLayout instead of BaseLayout directly
+
+**Files changed:**
+- apps/marketing/src/components/Header.astro (created, ~170 lines)
+- apps/marketing/src/layouts/PageLayout.astro (updated to use Header)
+- apps/marketing/src/pages/index.astro (updated to use PageLayout)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors, 43 pre-existing deprecation hints)
+- Note: Dev server has pre-existing Cloudflare miniflare issue unrelated to this change
+
+**Learnings for future iterations:**
+- CSS-only dropdowns work well with Tailwind: `group` class + `group-hover:opacity-100 group-hover:visible`
+- Astro components can use `<slot name="x">` for named slots, passed via `slot="x"` attribute
+- Fixed header needs spacer element to prevent content overlap
+
+---
+
 ## 2026-01-23 14:38 - S07: Integrate with Turborepo
 
 **What was implemented:**
