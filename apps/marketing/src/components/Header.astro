@@ -1,0 +1,161 @@
+---
+/**
+ * Header component with navigation
+ * - Echo logo on left linking to home
+ * - Nav links: Features (dropdown), Pricing
+ * - Features dropdown: AI Chat, Integrations, Shopify, Customer Memory
+ * - Right side: Log in link, Start Free button
+ * - Fixed/sticky with shadow on scroll
+ */
+---
+
+<header
+  id="main-header"
+  class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm transition-shadow duration-200"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2 group">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-8 h-8 text-primary"
+        >
+          <path
+            d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.5997 2.37562 15.1116 3.04346 16.4525C3.22094 16.8088 3.28001 17.2161 3.17712 17.6006L2.58151 19.8267C2.32295 20.793 3.20701 21.677 4.17335 21.4185L6.39939 20.8229C6.78393 20.72 7.19121 20.7791 7.54753 20.9565C8.88836 21.6244 10.4003 22 12 22Z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle cx="12" cy="12" r="1" fill="currentColor" />
+          <circle cx="16" cy="12" r="1" fill="currentColor" />
+          <circle cx="8" cy="12" r="1" fill="currentColor" />
+        </svg>
+        <span class="font-heading font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+          Echo
+        </span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden sm:flex items-center gap-8">
+        <!-- Features Dropdown -->
+        <div class="relative group">
+          <button
+            type="button"
+            class="flex items-center gap-1 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors py-2"
+            aria-expanded="false"
+            aria-haspopup="true"
+          >
+            Features
+            <svg
+              class="w-4 h-4 transition-transform group-hover:rotate-180"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          <!-- Dropdown Menu -->
+          <div
+            class="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+          >
+            <div class="bg-card border border-border rounded-lg shadow-lg py-2 min-w-[200px]">
+              <a
+                href="/features/ai-chat"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent hover:text-primary transition-colors"
+              >
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                AI Chat
+              </a>
+              <a
+                href="/features/integrations"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent hover:text-primary transition-colors"
+              >
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                Integrations
+              </a>
+              <a
+                href="/features/shopify"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent hover:text-primary transition-colors"
+              >
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                Shopify
+              </a>
+              <a
+                href="/features/customer-memory"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent hover:text-primary transition-colors"
+              >
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Customer Memory
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing Link -->
+        <a
+          href="/pricing"
+          class="font-heading text-sm font-medium text-foreground hover:text-primary transition-colors"
+        >
+          Pricing
+        </a>
+      </nav>
+
+      <!-- Right Side CTAs -->
+      <div class="hidden sm:flex items-center gap-4">
+        <a
+          href="https://app.echo.com"
+          class="font-heading text-sm font-medium text-foreground hover:text-primary transition-colors"
+        >
+          Log in
+        </a>
+        <a
+          href="https://app.echo.com/signup"
+          class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors font-heading"
+        >
+          Start Free
+        </a>
+      </div>
+
+      <!-- Mobile Menu Button (hamburger - handled by MobileMenu component) -->
+      <div class="sm:hidden">
+        <slot name="mobile-menu-button" />
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Spacer to prevent content from going under fixed header -->
+<div class="h-16"></div>
+
+<script>
+  // Add shadow on scroll
+  const header = document.getElementById('main-header');
+  
+  if (header) {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        header.classList.add('shadow-sm', 'border-b', 'border-border');
+      } else {
+        header.classList.remove('shadow-sm', 'border-b', 'border-border');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+  }
+</script>
