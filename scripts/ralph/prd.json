@@ -1,535 +1,278 @@
 {
-  "projectName": "customer-relationship-memory",
-  "branchName": "feature/customer-relationship-memory",
+  "projectName": "user-documentation",
+  "branchName": "feature/user-documentation",
   "userStories": [
     {
       "id": "S01",
-      "title": "Create customers table schema",
+      "title": "Set up documentation structure and navigation",
       "priority": 1,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "Create customers table in packages/backend/convex/schema.ts",
-        "Fields: businessId (Id<businesses>), phone (string), name (optional string), preferredLanguage (optional string)",
-        "Fields: tier (regular|bronze|silver|gold|vip), manualTier (optional), tierUpdatedAt (optional number)",
-        "Fields: totalOrders (number), totalSpent (number), averageOrderValue (optional number)",
-        "Fields: lastOrderAt (optional number), firstSeenAt (number), lastSeenAt (number)",
-        "Fields: createdAt (number), updatedAt (number)",
-        "Index by_business on [businessId]",
-        "Index by_business_phone on [businessId, phone] for unique lookup",
-        "Index by_business_tier on [businessId, tier]",
-        "Index by_business_last_seen on [businessId, lastSeenAt]",
-        "Run npx convex dev to verify schema compiles"
+        "Create folder structure: getting-started/, products/, integrations/, settings/",
+        "Create root meta.json with navigation order (index, getting-started, products, orders, conversations, customers, integrations, settings, faq)",
+        "Create meta.json for each subfolder with page order",
+        "Remove existing test content (test.mdx)",
+        "Sidebar navigation reflects the page hierarchy",
+        "BROWSER TEST: Navigate to /docs, verify sidebar shows expected sections"
       ]
     },
     {
       "id": "S02",
-      "title": "Create customer-related tables schema",
+      "title": "Create documentation landing page",
       "priority": 2,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "Create customerAddresses table: customerId, label, address, isDefault, lastUsedAt, createdAt",
-        "customerAddresses index by_customer on [customerId]",
-        "Create customerMemory table: customerId, category (allergy|restriction|preference|behavior|complaint), fact, confidence (0.0-1.0), source (ai_extracted|manual|order_history), extractedFrom (optional conversationId), createdAt, updatedAt",
-        "customerMemory index by_customer on [customerId]",
-        "customerMemory index by_customer_category on [customerId, category]",
-        "Create customerNotes table: customerId, note, addedBy (string), staffOnly (boolean), createdAt",
-        "customerNotes index by_customer on [customerId]",
-        "Create conversationSummaries table: conversationId, customerId, summary, sentiment (positive|neutral|negative), keyEvents (array), orderIds (optional array), createdAt",
-        "conversationSummaries index by_conversation on [conversationId]",
-        "conversationSummaries index by_customer on [customerId]",
-        "Run npx convex dev to verify all tables compile"
+        "Create index.mdx as Welcome to Echo page",
+        "Explain what Echo does in 2-3 sentences",
+        "Include dashboard screenshot for visual orientation",
+        "Link to Quick Start Guide as primary CTA",
+        "Use Cards component to link to main sections",
+        "BROWSER TEST: Navigate to /docs, verify landing page renders with heading and cards"
       ]
     },
     {
       "id": "S03",
-      "title": "Update conversations and orders to reference customers",
+      "title": "Create Quick Start Guide",
       "priority": 3,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "Add customerId field (optional Id<customers>) to conversations table",
-        "Add customerId field (optional Id<customers>) to orders table",
-        "Keep existing fields for backward compatibility during migration",
-        "Add index by_customer on conversations table for [customerId]",
-        "Add index by_customer on orders table for [customerId]",
-        "Schema compiles without breaking existing data"
+        "Create getting-started/index.mdx",
+        "List 5-7 steps to go live with Echo",
+        "Use Steps component for numbered instructions",
+        "Each step links to detailed documentation",
+        "Show estimated time (~30 minutes)",
+        "BROWSER TEST: Navigate to /docs/getting-started, verify steps render correctly"
       ]
     },
     {
       "id": "S04",
-      "title": "Customer CRUD operations",
+      "title": "Create Business Setup documentation",
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/customers.ts file",
-        "Query customers.get({ customerId }) returns customer by ID",
-        "Query customers.getByPhone({ businessId, phone }) returns customer or null",
-        "Query customers.list({ businessId, search?, tier?, sortBy?, cursor? }) with pagination",
-        "Search filters by name or phone substring",
-        "Mutation customers.create({ businessId, phone, name? }) creates new customer with defaults",
-        "Mutation customers.update({ customerId, name?, tier?, preferredLanguage? }) updates customer",
-        "Set tier to 'regular' as default, totalOrders/totalSpent to 0",
-        "Set firstSeenAt and lastSeenAt to Date.now() on create"
+        "Create getting-started/business-setup.mdx",
+        "Document the 3-step onboarding wizard (Business Info, Branding, Confirmation)",
+        "Explain required vs optional fields",
+        "Document business types (restaurant, pharmacy, retail, other)",
+        "BROWSER TEST: Navigate to /docs/getting-started/business-setup, verify page renders"
       ]
     },
     {
       "id": "S05",
-      "title": "Customer address operations",
+      "title": "Create Products documentation",
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/customerAddresses.ts file",
-        "Query customerAddresses.list({ customerId }) returns all addresses sorted by lastUsedAt desc",
-        "Mutation customerAddresses.add({ customerId, address, label, isDefault? }) creates address",
-        "If isDefault true, unset isDefault on other addresses for this customer",
-        "If first address for customer, automatically set isDefault true",
-        "Mutation customerAddresses.update({ addressId, address?, label?, isDefault? }) updates address",
-        "Mutation customerAddresses.delete({ addressId }) removes address",
-        "Mutation customerAddresses.setDefault({ addressId }) sets as default, unsets others"
+        "Create products/index.mdx",
+        "Document viewing, searching, filtering products",
+        "Explain adding a new product with all fields",
+        "Cover editing and deleting products",
+        "Document bulk operations with screenshot (select multiple, mark available/unavailable, delete)",
+        "Explain product availability toggle and its effects",
+        "Mention grid vs table view options",
+        "BROWSER TEST: Navigate to /docs/products, verify page renders with content"
       ]
     },
     {
       "id": "S06",
-      "title": "Customer memory operations",
+      "title": "Create Categories documentation",
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/customerMemory.ts file",
-        "Query customerMemory.list({ customerId, category? }) returns memories filtered by category",
-        "Mutation customerMemory.add({ customerId, category, fact, source, confidence?, extractedFrom? })",
-        "Confidence defaults to 1.0 for manual entries",
-        "Mutation customerMemory.update({ memoryId, fact?, confidence? }) updates memory",
-        "Mutation customerMemory.delete({ memoryId }) removes memory",
-        "Allergies cannot be deleted without explicit confirmation flag"
+        "Create products/categories.mdx",
+        "Explain purpose of categories for organization",
+        "Document creating, editing, deleting categories",
+        "Explain moving products between categories",
+        "Cover 'Uncategorized' products concept",
+        "BROWSER TEST: Navigate to /docs/products/categories, verify page renders"
       ]
     },
     {
       "id": "S07",
-      "title": "Customer notes operations",
+      "title": "Create Orders documentation",
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/customerNotes.ts file",
-        "Query customerNotes.list({ customerId }) returns all notes sorted by createdAt desc",
-        "Mutation customerNotes.add({ customerId, note, staffOnly? }) creates note",
-        "staffOnly defaults to false",
-        "addedBy populated from authenticated user ID",
-        "Mutation customerNotes.update({ noteId, note?, staffOnly? }) updates note",
-        "Mutation customerNotes.delete({ noteId }) removes note"
+        "Create orders.mdx",
+        "Document order lifecycle (draft -> confirmed -> paid -> preparing -> ready -> delivered)",
+        "Explain cancelled orders",
+        "Cover filtering and searching orders",
+        "Document order detail view (items, customer, delivery, payment, timeline)",
+        "Explain fulfillment actions (Mark Preparing, Mark Ready, Mark Delivered)",
+        "Document cancelling orders",
+        "BROWSER TEST: Navigate to /docs/orders, verify page renders"
       ]
     },
     {
       "id": "S08",
-      "title": "Conversation summary operations",
+      "title": "Create Conversations documentation",
       "priority": 8,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/conversationSummaries.ts file",
-        "Query conversationSummaries.get({ conversationId }) returns summary or null",
-        "Query conversationSummaries.search({ customerId, query, limit? }) searches summaries",
-        "Search matches query against summary text",
-        "Returns limit results (default 5) sorted by relevance/recency",
-        "Mutation conversationSummaries.create({ conversationId, customerId, summary, sentiment?, keyEvents?, orderIds? })"
+        "Create conversations.mdx",
+        "Explain the list + detail view layout",
+        "Document conversation statuses (active, escalated, closed)",
+        "Cover filtering and searching conversations",
+        "Explain Take Over functionality with screenshot (when/why to use)",
+        "Document sending messages as a human",
+        "Explain Hand Back to AI",
+        "Cover closing and reopening conversations",
+        "Explain escalation reasons",
+        "BROWSER TEST: Navigate to /docs/conversations, verify page renders"
       ]
     },
     {
       "id": "S09",
-      "title": "Customer context loading for AI",
+      "title": "Create Customers documentation",
       "priority": 9,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "Create query customers.getContext({ customerId }) that returns CustomerContext object",
-        "Returns profile: name, phone, tier, preferredLanguage, firstSeenAt, lastSeenAt, totalOrders, totalSpent",
-        "Returns addresses: array of {label, address, isDefault} sorted by lastUsedAt",
-        "Returns memory: { allergies[], restrictions[], preferences[], behaviors[] } from customerMemory",
-        "Returns businessNotes: concatenated notes where staffOnly=false",
-        "Allergies always loaded first (safety critical)",
-        "Total context should be ~600-1500 tokens max",
-        "Query is efficient: uses indexes, no N+1 queries"
+        "Create customers.mdx",
+        "Explain how customers are auto-created from WhatsApp",
+        "Document customer list with sorting options",
+        "Cover customer detail view (name, phone, orders, spend)",
+        "Document manually adding a customer",
+        "Explain phone number format (E.164 with country code)",
+        "BROWSER TEST: Navigate to /docs/customers, verify page renders"
       ]
     },
     {
       "id": "S10",
-      "title": "VIP tier calculation",
+      "title": "Create Integrations Overview",
       "priority": 10,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create helper function calculateTier(customer, thresholds) in customers.ts",
-        "Default thresholds: bronze (3 orders OR $50), silver (10 OR $200), gold (25 OR $500), vip (50 OR $1000)",
-        "manualTier overrides calculated tier if set",
-        "Create mutation customers.updateStats({ customerId, orderTotal }) called after order completion",
-        "Updates totalOrders, totalSpent, averageOrderValue, lastOrderAt",
-        "Calls checkAndUpdateTier which recalculates and updates tier if changed",
-        "Sets tierUpdatedAt when tier changes"
+        "Create integrations/index.mdx",
+        "List available integrations (WhatsApp, Shopify)",
+        "Brief description of each integration's purpose",
+        "Use Cards to link to detailed setup pages",
+        "BROWSER TEST: Navigate to /docs/integrations, verify page renders with integration cards"
       ]
     },
     {
       "id": "S11",
-      "title": "Auto-create customer on conversation start",
+      "title": "Create WhatsApp integration documentation",
       "priority": 11,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create mutation customers.getOrCreate({ businessId, phone }) that returns existing or creates new",
-        "Uses getByPhone first, creates if not found",
-        "Returns customerId for linking to conversation",
-        "Update conversation creation flow to call getOrCreate",
-        "Link customerId to conversation record",
-        "Update lastSeenAt on existing customer when conversation starts"
+        "Create integrations/whatsapp.mdx",
+        "Explain Twilio as the provider",
+        "Include links to create Twilio account and WhatsApp Sandbox",
+        "Document Account SID, Auth Token, Phone Number fields",
+        "Document webhook URL configuration with screenshot",
+        "Cover testing connection",
+        "Explain connection status indicators",
+        "Include troubleshooting section for common issues",
+        "Use Steps component for setup flow",
+        "BROWSER TEST: Navigate to /docs/integrations/whatsapp, verify page renders"
       ]
     },
     {
       "id": "S12",
-      "title": "search_customer_history AI tool",
+      "title": "Create Shopify integration documentation",
       "priority": 12,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create action ai.searchCustomerHistory({ customerId, query, limit? }) in packages/backend/convex/ai/",
-        "Searches conversationSummaries by customerId",
-        "Matches query against summary text",
-        "Returns array of { summary, sentiment, keyEvents, createdAt } limited by limit (default 3)",
-        "Token-efficient: only returns needed excerpts",
-        "Scoped to current customer only (security)"
+        "Create integrations/shopify.mdx",
+        "Explain the integration benefits",
+        "Document connecting with store URL with screenshot (OAuth flow)",
+        "Explain initial product import",
+        "Document sync options (auto-sync, create orders, sync status)",
+        "Cover manual sync",
+        "Document disconnecting Shopify",
+        "Explain what happens to products after disconnect",
+        "BROWSER TEST: Navigate to /docs/integrations/shopify, verify page renders"
       ]
     },
     {
       "id": "S13",
-      "title": "get_recent_orders AI tool",
+      "title": "Create Business Settings documentation",
       "priority": 13,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create action ai.getRecentOrders({ customerId, limit? }) in packages/backend/convex/ai/",
-        "Queries orders by customerId sorted by createdAt desc",
-        "Returns array of order summaries: orderNumber, items, total, status, createdAt",
-        "Limit defaults to 5",
-        "Items summarized as string array of product names with quantities"
+        "Create settings/index.mdx",
+        "Document Business Info (name, description, logo)",
+        "Cover Localization settings (language, timezone)",
+        "Explain Business Hours configuration",
+        "Document Data Retention / Privacy settings",
+        "Explain navigation between settings sections",
+        "BROWSER TEST: Navigate to /docs/settings, verify page renders"
       ]
     },
     {
       "id": "S14",
-      "title": "save_customer_preference AI tool",
+      "title": "Create AI Configuration documentation",
       "priority": 14,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create action ai.saveCustomerPreference({ customerId, category, fact, conversationId }) in packages/backend/convex/ai/",
-        "Category is allergy|restriction|preference|behavior",
-        "Checks for duplicate facts before inserting (deduplication)",
-        "Sets source to 'ai_extracted', confidence to 0.9",
-        "Links extractedFrom to conversationId",
-        "Returns success/already_exists status"
+        "Create settings/ai-configuration.mdx",
+        "Explain how the AI works at a high level",
+        "Document greeting message customization",
+        "Explain personality instructions with examples",
+        "Document escalation keywords with examples",
+        "Mention language auto-detection",
+        "Include tips for effective AI customization",
+        "BROWSER TEST: Navigate to /docs/settings/ai-configuration, verify page renders"
       ]
     },
     {
       "id": "S15",
-      "title": "update_customer_address AI tool",
+      "title": "Create FAQ page",
       "priority": 15,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create action ai.updateCustomerAddress({ customerId, address, label, setAsDefault? }) in packages/backend/convex/ai/",
-        "Checks if address already exists for customer (fuzzy match)",
-        "If exists: updates lastUsedAt, optionally setAsDefault",
-        "If new: creates address with AI-generated label if not provided",
-        "Label generation: 'home', 'work', or descriptive based on address content",
-        "Returns addressId and whether new or updated"
+        "Create faq.mdx",
+        "Include 10-15 common questions",
+        "Group questions by topic (General, WhatsApp, AI, Orders)",
+        "Keep answers concise with links to detailed docs",
+        "Include troubleshooting questions",
+        "BROWSER TEST: Navigate to /docs/faq, verify page renders with questions"
       ]
     },
     {
       "id": "S16",
-      "title": "Customer context in AI system prompt",
+      "title": "Capture screenshots for documentation",
       "priority": 16,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "Modify AI system prompt generation to include customer context",
-        "Load customer context via customers.getContext when generating prompt",
-        "Include customer name, tier, totalOrders in context section",
-        "Include all allergies prominently with warning: 'ALLERGIES (SAFETY CRITICAL): ...'",
-        "Include restrictions and preferences",
-        "Include default address for quick suggestions",
-        "Include business notes (non-staff-only)",
-        "Context section added before conversation starts"
+        "Create apps/fumadocs/public/images/docs/ directory",
+        "Capture dashboard.png (1200px width, light mode)",
+        "Capture whatsapp-webhook.png showing webhook URL section",
+        "Capture shopify-connect.png showing store URL input",
+        "Capture conversation-takeover.png showing Take Over / Hand Back buttons",
+        "Capture bulk-operations.png showing product selection toolbar",
+        "Update relevant MDX files to include screenshots with alt text"
       ]
     },
     {
       "id": "S17",
-      "title": "VIP-aware AI responses",
+      "title": "Add documentation link to app header",
       "priority": 17,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create function getVIPPromptSection(customer) that returns tier-specific instructions",
-        "Regular tier: no special instructions",
-        "Bronze: 'Use customer name, be friendly'",
-        "Silver: 'Acknowledge loyalty subtly, be warm and personalized'",
-        "Gold: 'Very personal, thank for loyalty, offer best service'",
-        "VIP: 'White-glove service, apologize profusely for any issue, use name naturally'",
-        "Include tier instructions in system prompt",
-        "Returning customer greeting includes name if known"
-      ]
-    },
-    {
-      "id": "S18",
-      "title": "Conversation summary generation",
-      "priority": 18,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create action generateConversationSummary({ conversationId }) in packages/backend/convex/ai/",
-        "Loads all messages from conversation",
-        "Uses OpenAI to generate 100-200 word summary",
-        "Summary captures: what was ordered, any issues, preferences mentioned, sentiment",
-        "Extracts sentiment as positive/neutral/negative",
-        "Extracts keyEvents array: complaint, refund, compliment, etc",
-        "Returns { summary, sentiment, keyEvents }",
-        "Uses gpt-5-nano model for efficiency"
-      ]
-    },
-    {
-      "id": "S19",
-      "title": "Memory fact extraction",
-      "priority": 19,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create action extractMemoryFacts({ conversationId }) in packages/backend/convex/ai/",
-        "Analyzes conversation messages for facts about customer",
-        "Returns array of { category, fact, confidence }",
-        "Categories: allergy, restriction, preference, behavior, complaint",
-        "Confidence 0.0-1.0 based on how explicit the mention was",
-        "Allergy mentions get higher confidence (0.95+)",
-        "Preferences like 'extra spicy' get medium confidence (0.8)",
-        "Uses gpt-5-nano model with structured output"
-      ]
-    },
-    {
-      "id": "S20",
-      "title": "Memory processing pipeline on conversation close",
-      "priority": 20,
-      "passes": true,
-      "ultrawork": true,
-      "acceptanceCriteria": [
-        "Create action processConversationMemory({ conversationId }) that orchestrates memory extraction",
-        "Step 1: Generate summary via generateConversationSummary, store in conversationSummaries",
-        "Step 2: Extract facts via extractMemoryFacts",
-        "Step 3: For facts with confidence > 0.8, check for duplicates then store in customerMemory",
-        "Step 4: Detect contradictions (e.g., 'likes spicy' vs 'no spicy') and flag for review",
-        "Step 5: Update customer stats if orders were placed",
-        "Step 6: Check and update tier",
-        "Pipeline runs async (scheduler) so it doesn't block conversation close",
-        "Handle errors gracefully - log but don't fail conversation close"
-      ]
-    },
-    {
-      "id": "S21",
-      "title": "Customer list page",
-      "priority": 21,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create route apps/web/src/routes/customers/index.tsx",
-        "Display table of all customers for current business",
-        "Columns: Name, Phone, Tier (with badge), Orders, Total Spent, Last Seen",
-        "VIP/Gold customers show star icon",
-        "Search input filters by name or phone",
-        "Tier filter dropdown (All, Regular, Bronze, Silver, Gold, VIP)",
-        "Sort options: Last seen, Total orders, Total spent",
-        "Pagination with cursor-based navigation",
-        "Click row navigates to customer detail page",
-        "BROWSER TEST: Navigate to /customers, verify table renders",
-        "BROWSER TEST: Search for customer name, verify filter works",
-        "BROWSER TEST: Change tier filter, verify list updates",
-        "BROWSER TEST: Click customer row, verify navigation to detail page"
-      ]
-    },
-    {
-      "id": "S22",
-      "title": "Customer detail page",
-      "priority": 22,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create route apps/web/src/routes/customers/$customerId.tsx",
-        "Header: Customer name, phone, tier badge, total orders, lifetime spend",
-        "Tabs: Overview, Orders, Conversations, Preferences, Notes",
-        "Overview tab: Quick stats, saved addresses, key preferences summary",
-        "Orders tab: List of customer's orders with status",
-        "Conversations tab: List of past conversations with summaries",
-        "Back button returns to customer list",
-        "BROWSER TEST: Navigate to /customers/[id], verify header shows customer info",
-        "BROWSER TEST: Click through tabs, verify each renders content",
-        "BROWSER TEST: Verify orders and conversations load"
-      ]
-    },
-    {
-      "id": "S23",
-      "title": "Customer profile editing",
-      "priority": 23,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add Edit button on customer detail page header",
-        "Dialog opens with form for name, tier (manual override), preferred language",
-        "Tier dropdown includes all tiers plus 'Auto' option (clears manualTier)",
-        "Language dropdown: English, Spanish, Portuguese",
-        "Save updates customer record",
-        "Cancel closes dialog without changes",
-        "Success toast on save",
-        "BROWSER TEST: Click Edit button, verify dialog opens",
-        "BROWSER TEST: Change customer name, save, verify update persists",
-        "BROWSER TEST: Change tier to Gold, verify badge updates"
-      ]
-    },
-    {
-      "id": "S24",
-      "title": "Address management UI",
-      "priority": 24,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Addresses section on customer detail Overview tab",
-        "List all addresses with label, full address, default indicator",
-        "Add Address button opens dialog with label and address fields",
-        "Edit button on each address opens edit dialog",
-        "Delete button with confirmation removes address",
-        "Set Default button (or radio) sets address as default",
-        "BROWSER TEST: Navigate to customer detail, verify addresses display",
-        "BROWSER TEST: Click Add Address, fill form, save, verify appears in list",
-        "BROWSER TEST: Edit existing address, verify changes persist",
-        "BROWSER TEST: Set different address as default, verify indicator moves"
-      ]
-    },
-    {
-      "id": "S25",
-      "title": "Preferences management UI",
-      "priority": 25,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Preferences tab on customer detail page",
-        "Group by category: Allergies (red), Restrictions (orange), Preferences (blue), Behaviors (gray)",
-        "Each item shows fact text, source badge (AI extracted / Manual), confidence if AI",
-        "Add Preference button opens dialog with category dropdown and fact text",
-        "Edit button opens edit dialog",
-        "Delete button with confirmation (extra warning for allergies)",
-        "BROWSER TEST: Navigate to Preferences tab, verify categories display",
-        "BROWSER TEST: Add new preference, verify appears in correct category",
-        "BROWSER TEST: Delete preference, verify removal"
-      ]
-    },
-    {
-      "id": "S26",
-      "title": "Notes management UI",
-      "priority": 26,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Notes tab on customer detail page",
-        "List all notes with text, added by, timestamp",
-        "Staff-only notes marked with lock icon",
-        "Add Note button opens dialog with note text and staffOnly checkbox",
-        "Edit button opens edit dialog",
-        "Delete button with confirmation",
-        "Notes sorted by createdAt desc (newest first)",
-        "BROWSER TEST: Navigate to Notes tab, verify notes display",
-        "BROWSER TEST: Add note, verify appears at top of list",
-        "BROWSER TEST: Toggle staffOnly, verify lock icon appears"
-      ]
-    },
-    {
-      "id": "S27",
-      "title": "Customer context panel in conversations",
-      "priority": 27,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add collapsible side panel to conversation view page",
-        "Panel header: Customer name, tier badge",
-        "Shows: Default address, allergies (highlighted), key preferences",
-        "Shows: Staff notes (non-staff-only)",
-        "Shows: Order count and last order summary",
-        "Link to View Full Profile opens customer detail page",
-        "Panel remembers collapsed/expanded state",
-        "BROWSER TEST: Open conversation with linked customer, verify panel shows",
-        "BROWSER TEST: Verify allergies display prominently",
-        "BROWSER TEST: Click View Full Profile, verify navigation"
-      ]
-    },
-    {
-      "id": "S28",
-      "title": "Customer deletion workflow",
-      "priority": 28,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add Delete Customer button on customer detail page (danger zone)",
-        "AlertDialog confirms with warning about data loss",
-        "Warning lists what will be deleted: profile, addresses, preferences, notes, conversation summaries",
-        "Mutation customers.delete({ customerId }) removes customer and related data",
-        "Orders retained but customerId set to null (anonymized)",
-        "Redirects to customer list after deletion",
-        "BROWSER TEST: Click Delete Customer, verify AlertDialog shows warnings",
-        "BROWSER TEST: Confirm deletion, verify redirect to list",
-        "BROWSER TEST: Verify customer no longer in list"
-      ]
-    },
-    {
-      "id": "S29",
-      "title": "Customer anonymization",
-      "priority": 29,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Mutation customers.anonymize({ customerId }) keeps orders but removes PII",
-        "Clears: name, phone (set to 'anonymized-{id}'), addresses, preferences, notes",
-        "Sets: tier to 'regular', all stats to 0",
-        "Keeps: order records with anonymized reference",
-        "Marks customer as anonymized (add isAnonymized boolean field)",
-        "Anonymized customers hidden from customer list by default"
-      ]
-    },
-    {
-      "id": "S30",
-      "title": "Forget me chat command",
-      "priority": 30,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "AI recognizes 'forget me', 'delete my data', 'LGPD deletion' intents",
-        "AI confirms: 'Are you sure you want to delete your data? This cannot be undone.'",
-        "On confirmation, AI creates deletion request notification for business",
-        "Business sees pending deletion request in dashboard",
-        "Business can approve or deny (with reason)",
-        "If approved: customer.delete is called",
-        "If denied: customer notified with reason"
-      ]
-    },
-    {
-      "id": "S31",
-      "title": "Data retention configuration",
-      "priority": 31,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add dataRetentionDays field to businesses table (optional number)",
-        "Default: null (no auto-deletion)",
-        "Options: 30, 60, 90, 180, 365 days",
-        "Settings UI to configure retention period",
-        "Scheduled job checks for inactive customers (lastSeenAt older than retention)",
-        "Inactive customers automatically anonymized (not deleted)",
-        "Business notified before anonymization (7 days warning)"
+        "Add Documentation link to main app navigation/header",
+        "Link opens docs in new tab (target='_blank')",
+        "Link is visible on all authenticated pages",
+        "Use appropriate icon (BookOpen or similar)",
+        "BROWSER TEST: Navigate to /dashboard, verify Docs link exists in header",
+        "BROWSER TEST: Click Docs link, verify it opens documentation"
       ]
     }
   ]
