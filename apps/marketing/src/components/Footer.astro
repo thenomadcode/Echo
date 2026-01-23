@@ -1,0 +1,126 @@
+---
+const currentYear = new Date().getFullYear();
+
+const productLinks = [
+  { href: "/features/ai-chat", label: "Features" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/features/integrations", label: "Integrations" },
+];
+
+const resourceLinks = [
+  { href: "/docs", label: "Documentation" },
+];
+
+const companyLinks = [
+  { href: "/about", label: "About" },
+];
+
+const legalLinks = [
+  { href: "/legal/privacy", label: "Privacy Policy" },
+  { href: "/legal/terms", label: "Terms of Service" },
+];
+---
+
+<footer class="bg-muted/50 border-t border-border">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-8">
+      <div class="col-span-2 md:col-span-1">
+        <a href="/" class="flex items-center gap-2 group">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-8 h-8 text-primary"
+          >
+            <path
+              d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.5997 2.37562 15.1116 3.04346 16.4525C3.22094 16.8088 3.28001 17.2161 3.17712 17.6006L2.58151 19.8267C2.32295 20.793 3.20701 21.677 4.17335 21.4185L6.39939 20.8229C6.78393 20.72 7.19121 20.7791 7.54753 20.9565C8.88836 21.6244 10.4003 22 12 22Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle cx="12" cy="12" r="1" fill="currentColor" />
+            <circle cx="16" cy="12" r="1" fill="currentColor" />
+            <circle cx="8" cy="12" r="1" fill="currentColor" />
+          </svg>
+          <span class="font-heading font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+            Echo
+          </span>
+        </a>
+        <p class="mt-4 text-sm text-muted-foreground">
+          AI for creators who sell
+        </p>
+      </div>
+
+      <div>
+        <h3 class="font-heading font-semibold text-sm text-foreground mb-4">Product</h3>
+        <ul class="space-y-3">
+          {productLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-heading font-semibold text-sm text-foreground mb-4">Resources</h3>
+        <ul class="space-y-3">
+          {resourceLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-heading font-semibold text-sm text-foreground mb-4">Company</h3>
+        <ul class="space-y-3">
+          {companyLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-heading font-semibold text-sm text-foreground mb-4">Legal</h3>
+        <ul class="space-y-3">
+          {legalLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-8 border-t border-border">
+      <p class="text-sm text-muted-foreground text-center">
+        &copy; {currentYear} Echo. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>

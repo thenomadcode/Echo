@@ -1,3 +1,24 @@
+## 2026-01-23 22:10 - S03: Create Footer component
+
+**What was implemented:**
+- Created apps/marketing/src/components/Footer.astro
+- Echo logo and tagline "AI for creators who sell"
+- 4 link columns: Product (Features, Pricing, Integrations), Resources (Documentation), Company (About), Legal (Privacy Policy, Terms of Service)
+- Copyright notice with dynamic current year
+- Minimal clean design with bg-muted/50 background
+- Links use text-muted-foreground color, hover to text-primary
+- Responsive grid: 2 columns on mobile, 5 columns on desktop
+- Updated PageLayout.astro to use Footer component instead of inline footer
+
+**Files changed:**
+- apps/marketing/src/components/Footer.astro (created, ~115 lines)
+- apps/marketing/src/layouts/PageLayout.astro (updated to import and use Footer)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:07 - S02: Create MobileMenu React component
 
 **What was implemented:**

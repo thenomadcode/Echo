@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
 import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
 
 interface Props {
   title?: string;
@@ -15,9 +16,5 @@ const { title, description } = Astro.props;
   <main>
     <slot />
   </main>
-  <footer class="border-t border-border py-8 mt-16">
-    <div class="container mx-auto px-4 text-center text-muted-foreground">
-      <p>&copy; {new Date().getFullYear()} Echo. All rights reserved.</p>
-    </div>
-  </footer>
+  <Footer />
 </BaseLayout>

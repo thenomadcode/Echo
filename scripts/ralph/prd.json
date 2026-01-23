@@ -45,7 +45,7 @@
       "id": "S03",
       "title": "Create Footer component",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/Footer.astro",
