@@ -179,7 +179,7 @@
       "id": "S10",
       "title": "Create Testimonial and TestimonialSection components",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/Testimonial.astro accepting quote, name, handle, avatar, followers props",

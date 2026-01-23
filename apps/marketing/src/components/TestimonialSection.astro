@@ -1,0 +1,48 @@
+---
+import Testimonial from "./Testimonial.astro";
+
+const testimonials = [
+  {
+    quote: "Echo handles 80% of my DMs now. I went from spending 3 hours a day answering questions to actually creating content. Game changer.",
+    name: "Sarah Chen",
+    handle: "@sarahcreates",
+    followers: "45K",
+  },
+  {
+    quote: "Echo actually sounds like me. Customers can't tell the difference. One even thanked me for responding so fast at 3am—I was asleep!",
+    name: "Marcus Rodriguez",
+    company: "Founder, Urban Threads",
+  },
+  {
+    quote: "Setup took literally 5 minutes. Connected my Shopify store and Echo was answering product questions within the hour. So simple.",
+    name: "Priya Sharma",
+    handle: "@priyamakes",
+    company: "Etsy Seller",
+  },
+];
+---
+
+<section class="py-16 lg:py-24 bg-muted/30">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+      <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+        What creators are saying
+      </h2>
+      <p class="text-lg text-muted-foreground">
+        Join thousands of creators who've automated their customer conversations.
+      </p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
+      {testimonials.map((testimonial) => (
+        <Testimonial
+          quote={testimonial.quote}
+          name={testimonial.name}
+          handle={testimonial.handle}
+          company={testimonial.company}
+          followers={testimonial.followers}
+        />
+      ))}
+    </div>
+  </div>
+</section>

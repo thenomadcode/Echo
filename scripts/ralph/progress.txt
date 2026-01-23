@@ -1,3 +1,25 @@
+## 2026-01-23 22:19 - S10: Create Testimonial and TestimonialSection components
+
+**What was implemented:**
+- Created apps/marketing/src/components/Testimonial.astro with quote, name, handle, company, avatar, followers props
+- Created apps/marketing/src/components/TestimonialSection.astro with section heading
+- 3 testimonial cards with subtle shadow and rounded-[10px] corners:
+  - Sarah Chen, @sarahcreates, 45K followers
+  - Marcus Rodriguez, Founder of Urban Threads
+  - Priya Sharma, @priyamakes, Etsy Seller
+- Circular avatar placeholder (initials) with bg-muted
+- Muted background (bg-muted/30) section
+- Responsive: 3 columns on desktop (md:grid-cols-3), stacked on mobile
+
+**Files changed:**
+- apps/marketing/src/components/Testimonial.astro (created, ~45 lines)
+- apps/marketing/src/components/TestimonialSection.astro (created, ~45 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:18 - S09: Create PricingCard and PricingTable components
 
 **What was implemented:**

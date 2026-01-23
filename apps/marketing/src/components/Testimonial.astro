@@ -1,0 +1,43 @@
+---
+interface Props {
+  quote: string;
+  name: string;
+  handle?: string;
+  company?: string;
+  followers?: string;
+  avatar?: string;
+}
+
+const { quote, name, handle, company, followers, avatar } = Astro.props;
+---
+
+<div class="bg-card border border-border rounded-[10px] p-6 shadow-sm">
+  <p class="text-foreground text-sm leading-relaxed mb-4">
+    "{quote}"
+  </p>
+  
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+      {avatar ? (
+        <img src={avatar} alt={name} class="w-full h-full object-cover" />
+      ) : (
+        <span class="text-muted-foreground text-sm font-medium">
+          {name.split(' ').map(n => n[0]).join('')}
+        </span>
+      )}
+    </div>
+    <div class="min-w-0">
+      <p class="font-heading font-semibold text-sm text-foreground truncate">{name}</p>
+      <div class="flex items-center gap-2 text-xs text-muted-foreground">
+        {handle && <span>{handle}</span>}
+        {company && !handle && <span>{company}</span>}
+        {followers && (
+          <>
+            <span class="text-border">•</span>
+            <span>{followers} followers</span>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
