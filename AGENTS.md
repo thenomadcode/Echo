@@ -8,11 +8,11 @@ Echo is a Turborepo monorepo using the Better-T-Stack: TanStack Start + Convex +
 
 ### What is Echo?
 
-Echo is a **WhatsApp AI customer service platform** for small-medium businesses in Latin America. It automates customer interactions so business owners don't have to manually respond to every message.
+Echo is an **AI-powered sales assistant** for creators, influencers, and online sellers. It automates customer conversations so you can sell 24/7 without being glued to your inbox.
 
-**Target customers**: Restaurants, pharmacies, retail stores in LATAM (Colombia, Brazil, Mexico)
+**Target customers**: Instagram influencers, content creators, e-commerce sellers, coaches, service providers - anyone selling products or services through messaging.
 
-**Core value proposition**: Business owners connect their WhatsApp Business number, add their product catalog, and Echo's AI handles customer inquiries and orders 24/7.
+**Core value proposition**: Connect your messaging channels, add your products/services, and Echo's AI handles customer inquiries, answers questions, and closes sales around the clock.
 
 ### Key Business Domains
 
@@ -37,8 +37,8 @@ Customer (WhatsApp) → Echo AI → Response
 ### Supported Languages
 
 - **English** (en) - Primary, default
-- **Spanish** (es) - LATAM market
-- **Portuguese** (pt) - Brazil market
+- **Spanish** (es) - Global Spanish speakers
+- **Portuguese** (pt) - Brazilian market
 
 AI auto-detects language from customer's first message and responds in same language.
 

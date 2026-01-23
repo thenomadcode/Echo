@@ -290,13 +290,13 @@ All content is MDX with typed frontmatter. The body of each `.mdx` file contains
 ```mdx
 ---
 title: "About Echo"
-description: "Learn about Echo's mission to empower LATAM businesses"
+description: "Learn about Echo - the AI sales assistant for creators and online sellers"
 template: "centered"
 ---
 
 # About Echo
 
-Echo was founded to help small businesses in Latin America...
+Echo was founded to help creators and online sellers automate their sales...
 
 <FeatureGrid>
   <Feature icon="clock" title="24/7 Support" />
