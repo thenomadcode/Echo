@@ -268,7 +268,7 @@
       "id": "S15",
       "title": "Create Integrations feature page",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/pages/features/integrations.astro using FeaturePageLayout",

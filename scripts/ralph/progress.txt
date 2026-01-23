@@ -1,3 +1,25 @@
+## 2026-01-23 22:40 - S15: Create Integrations feature page
+
+**What was implemented:**
+- Created apps/marketing/src/components/Badge.astro with variants: default, secondary, outline, coming-soon
+- Created apps/marketing/src/pages/features/integrations.astro using FeaturePageLayout
+- Hero: "One inbox for all your conversations"
+- 3 channel cards in grid layout:
+  - WhatsApp Business: green border, "Available Now" badge, Twilio/360dialog, rich media, templates
+  - Instagram DMs: "Coming Q2 2026" badge (muted style), auto-reply, comment-to-DM, story mentions
+  - Facebook Messenger: "Coming Q2 2026" badge, page messaging, quick replies, persistent menu
+- Coming soon cards have muted opacity and disabled buttons
+- Unified Inbox section with mockup showing conversations from all channels
+
+**Files changed:**
+- apps/marketing/src/components/Badge.astro (created, ~25 lines)
+- apps/marketing/src/pages/features/integrations.astro (created, ~230 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:35 - S14: Create AI Chat feature page
 
 **What was implemented:**
