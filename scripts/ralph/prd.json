@@ -320,7 +320,7 @@
       "id": "S18",
       "title": "Create dedicated Pricing page with FAQ",
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/pages/pricing.astro using BaseLayout",

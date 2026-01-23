@@ -1,0 +1,214 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+import PricingTable from "../components/PricingTable.astro";
+import FAQ from "../components/FAQ.tsx";
+---
+
+<PageLayout
+  title="Pricing"
+  description="Simple, transparent pricing for Echo. Start free, upgrade as you grow. No contracts, cancel anytime."
+>
+  <!-- Hero -->
+  <section class="py-16 lg:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="font-heading font-bold text-4xl sm:text-5xl lg:text-6xl text-foreground mb-6">
+        Simple pricing.<br class="hidden sm:block" /> Start free.
+      </h1>
+      <p class="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+        No hidden fees, no surprises. Pay only for what you need, and upgrade as your business grows.
+      </p>
+    </div>
+  </section>
+
+  <!-- Pricing Table -->
+  <PricingTable />
+
+  <!-- Feature Comparison Table -->
+  <section class="py-16 lg:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="font-heading font-bold text-3xl text-foreground text-center mb-12">
+        Compare all features
+      </h2>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left p-4 font-heading font-semibold text-foreground">Feature</th>
+              <th class="text-center p-4 font-heading font-semibold text-foreground">Free</th>
+              <th class="text-center p-4 font-heading font-semibold text-primary">Growth</th>
+              <th class="text-center p-4 font-heading font-semibold text-foreground">Scale</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <!-- Contacts -->
+            <tr>
+              <td class="p-4 text-foreground">Contacts</td>
+              <td class="p-4 text-center text-muted-foreground">500</td>
+              <td class="p-4 text-center text-foreground font-medium">Unlimited</td>
+              <td class="p-4 text-center text-foreground font-medium">Unlimited</td>
+            </tr>
+            <!-- AI Messages -->
+            <tr>
+              <td class="p-4 text-foreground">AI Messages</td>
+              <td class="p-4 text-center text-muted-foreground">1,000/mo</td>
+              <td class="p-4 text-center text-foreground font-medium">Unlimited</td>
+              <td class="p-4 text-center text-foreground font-medium">Unlimited</td>
+            </tr>
+            <!-- WhatsApp -->
+            <tr>
+              <td class="p-4 text-foreground">WhatsApp Integration</td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+            </tr>
+            <!-- Shopify -->
+            <tr>
+              <td class="p-4 text-foreground">Shopify Integration</td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-muted-foreground mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+            </tr>
+            <!-- Customer Memory -->
+            <tr>
+              <td class="p-4 text-foreground">Customer Memory</td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-muted-foreground mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+            </tr>
+            <!-- Multi-brand -->
+            <tr>
+              <td class="p-4 text-foreground">Multi-brand Support</td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-muted-foreground mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-muted-foreground mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+            </tr>
+            <!-- Team Seats -->
+            <tr>
+              <td class="p-4 text-foreground">Team Seats</td>
+              <td class="p-4 text-center text-muted-foreground">1</td>
+              <td class="p-4 text-center text-muted-foreground">3</td>
+              <td class="p-4 text-center text-foreground font-medium">Unlimited</td>
+            </tr>
+            <!-- Support -->
+            <tr>
+              <td class="p-4 text-foreground">Support</td>
+              <td class="p-4 text-center text-muted-foreground">Email</td>
+              <td class="p-4 text-center text-muted-foreground">Email + Chat</td>
+              <td class="p-4 text-center text-foreground font-medium">Priority</td>
+            </tr>
+            <!-- Analytics -->
+            <tr>
+              <td class="p-4 text-foreground">Analytics</td>
+              <td class="p-4 text-center text-muted-foreground">Basic</td>
+              <td class="p-4 text-center text-muted-foreground">Advanced</td>
+              <td class="p-4 text-center text-foreground font-medium">Custom Reports</td>
+            </tr>
+            <!-- API Access -->
+            <tr>
+              <td class="p-4 text-foreground">API Access</td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-muted-foreground mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-muted-foreground mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </td>
+              <td class="p-4 text-center">
+                <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="py-16 lg:py-24 bg-muted/30">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="font-heading font-bold text-3xl text-foreground text-center mb-12">
+        Frequently asked questions
+      </h2>
+      <FAQ client:load />
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 lg:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-6">
+        Ready to start selling smarter?
+      </h2>
+      <p class="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+        Join thousands of creators and sellers who are already using Echo to handle customer conversations 24/7.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a
+          href="https://app.echo.com/signup"
+          class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors font-heading"
+        >
+          Start Free — No credit card required
+        </a>
+      </div>
+      <p class="mt-6 text-sm text-muted-foreground">
+        <a href="mailto:sales@echo.com" class="hover:text-primary transition-colors underline underline-offset-4">
+          Contact sales for enterprise pricing
+        </a>
+      </p>
+    </div>
+  </section>
+</PageLayout>

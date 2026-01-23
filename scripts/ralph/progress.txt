@@ -1,3 +1,27 @@
+## 2026-01-23 22:55 - S18: Create dedicated Pricing page with FAQ
+
+**What was implemented:**
+- Created apps/marketing/src/components/FAQ.tsx React component
+  - Uses useState for accordion state
+  - 5 FAQ questions: change plans, free limits, contracts, annual billing, payment methods
+  - Only one accordion item open at a time
+  - Smooth open/close animations with max-h and opacity transitions
+- Created apps/marketing/src/pages/pricing.astro
+  - Hero section with title "Simple pricing. Start free."
+  - Reuses PricingTable component from homepage
+  - Feature comparison table with 10 rows comparing Free/Growth/Scale
+  - FAQ section using client:load directive for React hydration
+  - CTA section at bottom with "Contact sales" link
+
+**Files changed:**
+- apps/marketing/src/components/FAQ.tsx (created, ~85 lines)
+- apps/marketing/src/pages/pricing.astro (created, ~200 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:50 - S17: Create Customer Memory feature page
 
 **What was implemented:**
