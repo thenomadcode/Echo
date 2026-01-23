@@ -114,7 +114,7 @@
       "id": "S08",
       "title": "Create Conversations documentation",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create conversations.mdx",

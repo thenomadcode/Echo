@@ -28,6 +28,30 @@
 
 ---
 
+## 2026-01-23 10:30 - S08: Create Conversations documentation
+
+**What was implemented:**
+- Created conversations.mdx with comprehensive conversation management docs
+- Conversation list and statuses (active, escalated, closed)
+- Filtering and searching conversations
+- Conversation detail view with message display
+- Customer context panel documentation
+- Take Over functionality with when to use guidance
+- Sending messages as human
+- Hand Back to AI
+- Closing and reopening conversations
+- Escalation (automatic and manual)
+- Escalation keywords examples
+- Best practices section
+
+**Files changed:**
+- apps/fumadocs/content/docs/conversations.mdx (rewritten, ~180 lines)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+---
+
 ## 2026-01-23 10:25 - S07: Create Orders documentation
 
 **What was implemented:**

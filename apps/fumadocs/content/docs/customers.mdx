@@ -4,4 +4,188 @@ description: View customer profiles and history
 icon: Users
 ---
 
-Customers placeholder.
+Echo automatically creates customer records when people message your WhatsApp. Track order history, preferences, and build lasting relationships with your customers.
+
+## How Customers Are Created
+
+Customers are **automatically created** when they first message your business on WhatsApp. You don't need to add them manually.
+
+When a new customer messages:
+1. Echo extracts their phone number
+2. Creates a customer record
+3. Links all their conversations and orders
+4. Begins learning their preferences
+
+## Customer List
+
+Navigate to **Customers** from the sidebar to see all your customers. The table shows:
+
+| Column | Description |
+|--------|-------------|
+| **Name** | Customer name (if known) or "Unknown" |
+| **Phone** | WhatsApp phone number |
+| **Tier** | VIP status based on order history |
+| **Orders** | Total number of orders placed |
+| **Total Spent** | Lifetime spend with your business |
+| **Last Seen** | When they last messaged |
+
+### Sorting Options
+
+Use the **Sort by** dropdown to order customers by:
+
+- **Last Seen** — Most recently active first
+- **Total Orders** — Most frequent buyers first
+- **Total Spent** — Highest spenders first
+- **Date Added** — Newest customers first
+
+### Searching Customers
+
+Type in the search box to find customers by:
+- Name
+- Phone number (any part of the number works)
+
+## Customer Tiers
+
+Customers are automatically assigned tiers based on their order history:
+
+| Tier | Criteria |
+|------|----------|
+| **Regular** | New or infrequent customers |
+| **Bronze** | 3+ orders OR $50+ spent |
+| **Silver** | 10+ orders OR $200+ spent |
+| **Gold** | 25+ orders OR $500+ spent |
+| **VIP** | 50+ orders OR $1,000+ spent |
+
+Tiers are calculated automatically, but you can manually override them in the customer profile.
+
+### VIP Benefits
+
+Higher-tier customers receive:
+- More personalized AI responses
+- Name recognition in greetings
+- Priority attention for their requests
+
+## Customer Detail View
+
+Click on any customer to see their full profile:
+
+### Profile Header
+- Customer name and phone number
+- Current tier (with manual override option)
+- Total orders and lifetime spend
+- Edit button to update profile
+
+### Tabs
+
+#### Overview
+- Quick stats (first seen, last seen, average order, language)
+- Saved addresses with default indicator
+- Allergies (prominently displayed)
+- Preferences and restrictions
+
+#### Orders
+Clickable table of all orders placed by this customer:
+- Order number
+- Items count
+- Status
+- Total
+- Date
+
+#### Conversations
+All WhatsApp conversations with this customer:
+- Status (active, escalated, closed)
+- Sentiment (positive, neutral, negative)
+- Summary preview
+- Date
+
+#### Preferences
+Customer preferences extracted by AI or added manually:
+- **Allergies** (red) — Safety-critical, always shown to AI
+- **Restrictions** (orange) — Dietary or delivery restrictions
+- **Preferences** (blue) — Likes and dislikes
+- **Behaviors** (gray) — Ordering patterns
+
+#### Notes
+Internal notes about the customer:
+- Add, edit, and delete notes
+- Mark notes as "Staff Only" to hide from AI
+
+## Editing Customer Profiles
+
+Click **Edit** on a customer profile to update:
+
+- **Name** — Customer's name
+- **Tier** — Manually set tier (overrides auto-calculation)
+- **Preferred Language** — English, Spanish, or Portuguese
+
+### Managing Addresses
+
+In the Overview tab, you can:
+- Add new addresses with labels (Home, Work, etc.)
+- Set a default address for quick suggestions
+- Edit or delete existing addresses
+
+### Managing Preferences
+
+In the Preferences tab, you can:
+- Add allergies, restrictions, or preferences manually
+- Edit AI-extracted preferences for accuracy
+- Delete incorrect preferences
+
+**Warning:** Deleting allergies requires explicit confirmation as this is safety-critical data.
+
+### Adding Notes
+
+In the Notes tab, you can:
+- Add notes about the customer
+- Mark notes as "Staff Only" (hidden from AI)
+- Edit or delete existing notes
+
+## Adding Customers Manually
+
+While customers are usually created automatically, you can add them manually:
+
+1. Click **Add Customer** on the Customers page
+2. Enter their phone number (E.164 format with country code)
+3. Optionally enter their name
+4. Click **Add Customer**
+
+### Phone Number Format
+
+Phone numbers must be in E.164 format with country code:
+- ✅ +1234567890
+- ✅ +573001234567 (Colombia)
+- ✅ +5511987654321 (Brazil)
+- ❌ 1234567890 (missing +)
+- ❌ (123) 456-7890 (formatting not allowed)
+
+## Deleting Customers
+
+To delete a customer and their data:
+
+1. Open the customer profile
+2. Click **Delete** in the header
+3. Confirm the deletion
+
+**What gets deleted:**
+- Customer record
+- Saved addresses
+- Preferences and memories
+- Notes
+
+**What gets anonymized (not deleted):**
+- Order history (customer ID removed)
+- Conversation history (customer ID removed)
+
+This allows you to maintain business records while respecting data deletion requests.
+
+## Data Privacy
+
+Echo supports GDPR and LGPD data deletion requests:
+
+- Customers can request deletion by saying "forget me" or "delete my data"
+- The AI confirms and submits the request
+- You can approve or deny in the dashboard
+- Approved requests anonymize all customer data
+
+See [Settings > Privacy](/docs/settings) for data retention configuration.
