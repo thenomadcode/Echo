@@ -140,7 +140,7 @@
       "id": "S08",
       "title": "Create HowItWorks section with StepIndicator",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/StepIndicator.astro accepting number, title, description props",

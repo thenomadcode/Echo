@@ -1,3 +1,23 @@
+## 2026-01-23 22:17 - S08: Create HowItWorks section with StepIndicator
+
+**What was implemented:**
+- Created apps/marketing/src/components/StepIndicator.astro with number, title, description props
+- Created apps/marketing/src/components/HowItWorks.astro with section heading
+- 3 steps: Connect, Add Products, Let Echo Sell
+- Numbers displayed in orange circles (bg-primary, rounded-full)
+- Visual connection between steps on desktop (horizontal line with dots)
+- 3-column layout on desktop (lg:grid-cols-3), stacked on mobile
+- Muted background (bg-muted/30) to differentiate section
+
+**Files changed:**
+- apps/marketing/src/components/StepIndicator.astro (created, ~25 lines)
+- apps/marketing/src/components/HowItWorks.astro (created, ~50 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:16 - S07: Create FeatureCard component and Features section
 
 **What was implemented:**
