@@ -1,3 +1,35 @@
+## 2026-01-23 10:22 - S16: Capture screenshots for documentation
+
+**What was implemented:**
+- Captured all required screenshots using Playwright MCP:
+  - dashboard.png (1200px width, light mode)
+  - whatsapp-webhook.png (webhook URL section)
+  - shopify-connect.png (store URL input)
+  - conversation-takeover.png (Take Over / Hand Back buttons)
+  - bulk-operations.png (product selection toolbar with 2 items selected)
+- Updated MDX files to include screenshots with proper alt text:
+  - whatsapp.mdx: WhatsApp webhook URL configuration
+  - shopify.mdx: Shopify store URL input
+  - conversations.mdx: Conversation with Take Over and Hand Back buttons
+  - products/index.mdx: Bulk operations toolbar
+
+**Files changed:**
+- apps/fumadocs/public/images/docs/whatsapp-webhook.png (created)
+- apps/fumadocs/public/images/docs/shopify-connect.png (created)
+- apps/fumadocs/public/images/docs/conversation-takeover.png (created)
+- apps/fumadocs/public/images/docs/bulk-operations.png (created)
+- apps/fumadocs/content/docs/integrations/whatsapp.mdx (added screenshot)
+- apps/fumadocs/content/docs/integrations/shopify.mdx (added screenshot)
+- apps/fumadocs/content/docs/conversations.mdx (added screenshot)
+- apps/fumadocs/content/docs/products/index.mdx (added screenshot)
+- scripts/ralph/prd.json (marked S16 passes: true)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+- All 5 screenshots captured and saved to public/images/docs/
+
+---
+
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
 - Fumadocs: meta.json in each folder defines navigation order via `pages` array

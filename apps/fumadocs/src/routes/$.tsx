@@ -9,10 +9,10 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import { baseOptions } from "@/lib/layout.shared";
 import { source } from "@/lib/source";
 
-export const Route = createFileRoute("/docs/$")({
+export const Route = createFileRoute("/$")({
   component: Page,
   loader: async ({ params }) => {
-    const slugs = params._splat?.split("/") ?? [];
+    const slugs = params._splat?.split("/").filter(Boolean) ?? [];
     const data = await serverLoader({ data: slugs });
     await clientLoader.preload(data.path);
     return data;
@@ -36,7 +36,6 @@ const serverLoader = createServerFn({
 const clientLoader = browserCollections.docs.createClientLoader({
   component(
     { toc, frontmatter, default: MDX },
-    // you can define props for the component
     props: {
       className?: string;
     },

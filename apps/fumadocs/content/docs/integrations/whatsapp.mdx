@@ -11,7 +11,7 @@ Connect your WhatsApp Business number to Echo using Twilio. This allows customer
 Before setting up, you'll need:
 
 1. A [Twilio account](https://www.twilio.com/try-twilio) (free trial available)
-2. A WhatsApp-enabled Twilio phone number or [WhatsApp Sandbox](https://www.twilio.com/docs/whatsapp/sandbox)
+2. A WhatsApp-enabled Twilio phone number or [WhatsApp Sandbox](https://www.twilio.com/whatsapp/sandbox)
 3. Your Twilio Account SID and Auth Token
 
 ## Setup Steps
@@ -32,7 +32,7 @@ For testing, use Twilio's WhatsApp Sandbox:
 2. Follow the instructions to join your sandbox
 3. Note your sandbox phone number
 
-For production, you'll need to [apply for a WhatsApp Business number](https://www.twilio.com/docs/whatsapp/api#requesting-access-for-your-own-number).
+For production, you'll need to [apply for a WhatsApp Business number](https://www.twilio.com/whatsapp/api#requesting-access-for-your-own-number).
 
 ### Get Your Twilio Credentials
 
@@ -66,7 +66,7 @@ This is the most important step. Twilio needs to know where to send incoming mes
 5. Make sure the method is set to **POST**
 6. Save your changes
 
-{/* Screenshot: whatsapp-webhook.png showing webhook URL section */}
+![WhatsApp webhook URL configuration](/images/whatsapp-webhook.png)
 
 ### Test the Connection
 
@@ -105,7 +105,7 @@ The WhatsApp settings page shows your current connection status:
 
 ### Messages Delayed
 
-WhatsApp has [rate limits](https://www.twilio.com/docs/whatsapp/rate-limits). If you're sending many messages:
+WhatsApp has [rate limits](https://www.twilio.com/whatsapp/rate-limits). If you're sending many messages:
 - Messages may be queued
 - Consider upgrading your Twilio plan
 
@@ -121,7 +121,7 @@ For production use, get a WhatsApp Business number.
 
 For a production WhatsApp Business account:
 
-1. [Apply for WhatsApp Business API access](https://www.twilio.com/docs/whatsapp/api#requesting-access-for-your-own-number)
+1. [Apply for WhatsApp Business API access](https://www.twilio.com/whatsapp/api#requesting-access-for-your-own-number)
 2. Verify your business with Facebook/Meta
 3. Wait for approval (typically 1-2 weeks)
 4. Configure your production number in Twilio

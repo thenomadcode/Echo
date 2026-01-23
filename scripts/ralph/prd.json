@@ -248,7 +248,7 @@
       "id": "S16",
       "title": "Capture screenshots for documentation",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/fumadocs/public/images/docs/ directory",
