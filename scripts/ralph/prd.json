@@ -103,7 +103,7 @@
       "id": "S06",
       "title": "Create SocialProofBar component",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/SocialProofBar.astro",
