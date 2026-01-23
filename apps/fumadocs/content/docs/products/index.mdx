@@ -4,4 +4,125 @@ description: Manage your product catalog
 icon: Package
 ---
 
-Products placeholder.
+Your product catalog is central to Echo. The AI uses your products to answer customer questions about pricing, availability, and to help customers place orders.
+
+## Viewing Products
+
+Navigate to **Products** from the sidebar to see your full catalog. You can switch between two views:
+
+- **Grid View** — Visual cards showing product images, names, and prices
+- **Table View** — Compact list with more products visible at once
+
+Toggle between views using the icons in the top-right corner.
+
+## Searching and Filtering
+
+### Search
+
+Type in the search box to find products by name or description. Results filter as you type.
+
+### Category Filter
+
+Use the **Category** dropdown to show only products in a specific category, or select **Uncategorized** to find products without a category.
+
+### Availability Filter
+
+Use the **Availability** dropdown to filter by:
+
+- **All Products** — Show everything
+- **Available Only** — Products currently in stock
+- **Unavailable Only** — Products marked as out of stock
+
+## Adding a New Product
+
+Click **Add Product** to create a new product. Fill in the following fields:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| **Product Name** | Yes | The name customers will see when ordering |
+| **Description** | No | Details about the product (ingredients, size, etc.) |
+| **Price** | Yes | Product price in your business currency |
+| **Category** | No | Group products for easier organization |
+| **Product Image** | No | Photo of the product (upload from your device) |
+
+After saving, the product is immediately available for customers to order.
+
+### Creating Categories Inline
+
+While adding a product, you can create a new category by clicking the **+** button next to the category dropdown. Enter the category name and it will be created and selected automatically.
+
+## Editing Products
+
+Click on any product to open its detail page. Here you can:
+
+- Update the name, description, and price
+- Change the category
+- Upload a new image
+- Toggle availability
+
+Click **Save Changes** when done.
+
+## Deleting Products
+
+From the product detail page, click **Delete** to remove a product. This action cannot be undone.
+
+**Note:** Deleting a product does not affect past orders that included it.
+
+## Product Availability
+
+Each product has an availability toggle that controls whether customers can order it:
+
+- **Available** — Product can be ordered and appears in AI responses
+- **Unavailable** — Product is hidden from customers and cannot be ordered
+
+Use this feature for:
+- Temporarily out-of-stock items
+- Seasonal products
+- Items you're discontinuing
+
+The AI will not suggest unavailable products to customers.
+
+## Bulk Operations
+
+Select multiple products to perform bulk actions. Click the checkbox on each product card or use the table view's "Select All" option.
+
+When products are selected, a toolbar appears at the bottom with these actions:
+
+| Action | Description |
+|--------|-------------|
+| **Mark Available** | Set all selected products as available |
+| **Mark Unavailable** | Set all selected products as unavailable |
+| **Delete** | Delete all selected products (with confirmation) |
+| **Move to...** | Change the category for all selected products |
+
+{/* Screenshot: bulk-operations.png showing selection toolbar */}
+
+### Example: Seasonal Menu Update
+
+1. Filter by category (e.g., "Summer Drinks")
+2. Select all products in that category
+3. Click **Mark Unavailable** to hide them all at once
+4. Later, select and **Mark Available** when the season returns
+
+## Shopify Product Import
+
+If you use Shopify, you can import your entire product catalog automatically. See [Shopify Integration](/docs/integrations/shopify) for setup instructions.
+
+Imported products are linked to Shopify and will sync availability when configured.
+
+## Best Practices
+
+### Clear Product Names
+Use names customers would naturally say. "Large Coffee" is better than "BVRG-LG-001".
+
+### Helpful Descriptions
+Include details the AI can use to answer questions:
+- Ingredients and allergens
+- Size/weight
+- Preparation time
+
+### Consistent Pricing
+Store prices include all fees. The price shown is what customers pay.
+
+### Organized Categories
+Group related products so customers can browse. Categories like "Appetizers", "Main Dishes", "Desserts" help both customers and the AI.

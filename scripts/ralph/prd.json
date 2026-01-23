@@ -51,7 +51,7 @@
       "id": "S04",
       "title": "Create Business Setup documentation",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create getting-started/business-setup.mdx",

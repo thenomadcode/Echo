@@ -28,6 +28,24 @@
 
 ---
 
+## 2026-01-23 10:10 - S04: Create Business Setup documentation
+
+**What was implemented:**
+- Created getting-started/business-setup.mdx with comprehensive onboarding wizard documentation
+- Documented 3-step wizard: Business Info, Branding, Review & Create
+- Used fd-steps for numbered step styling
+- Tables documenting required vs optional fields for each step
+- Business types section with AI behavior descriptions
+- Covered editing business later and multiple businesses feature
+
+**Files changed:**
+- apps/fumadocs/content/docs/getting-started/business-setup.mdx (rewritten, ~95 lines)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+---
+
 ## 2026-01-23 10:05 - S03: Create Quick Start Guide
 
 **What was implemented:**
