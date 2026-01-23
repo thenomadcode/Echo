@@ -28,6 +28,27 @@
 
 ---
 
+## 2026-01-23 10:35 - S09: Create Customers documentation
+
+**What was implemented:**
+- Created customers.mdx with comprehensive customer management docs
+- How customers are auto-created from WhatsApp
+- Customer list with sorting options
+- Customer tiers (Regular, Bronze, Silver, Gold, VIP)
+- Customer detail view with all 5 tabs
+- Editing profiles, addresses, preferences, notes
+- Manually adding customers with E.164 phone format
+- Deleting customers with data handling explanation
+- Data privacy (GDPR/LGPD) mention
+
+**Files changed:**
+- apps/fumadocs/content/docs/customers.mdx (rewritten, ~200 lines)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+---
+
 ## 2026-01-23 10:30 - S08: Create Conversations documentation
 
 **What was implemented:**

@@ -4,4 +4,170 @@ description: Sync products from your Shopify store
 icon: ShoppingBag
 ---
 
-Shopify integration placeholder.
+If you already sell on Shopify, you can import your product catalog directly into Echo. This saves time and keeps your inventory in sync.
+
+## Benefits
+
+- **Automatic Import** — Import all products with one click
+- **Variant Support** — Each Shopify variant becomes a separate Echo product
+- **Inventory Sync** — Keep availability in sync with Shopify
+- **Payment Integration** — Customers can pay via Shopify checkout
+
+## Connecting Shopify
+
+<div className="fd-steps [&_h3]:fd-step">
+
+### Navigate to Shopify Settings
+
+Go to **Settings > Integrations > Shopify** in Echo.
+
+### Enter Your Store URL
+
+Enter your Shopify store URL:
+- Use the format: `your-store.myshopify.com`
+- Don't include `https://` or trailing slashes
+
+{/* Screenshot: shopify-connect.png showing store URL input */}
+
+### Authorize the Connection
+
+1. Click **Connect Shopify**
+2. You'll be redirected to Shopify
+3. Review the permissions Echo is requesting
+4. Click **Install app** to authorize
+
+You'll be redirected back to Echo with a success message.
+
+### Import Your Products
+
+After connecting, click **Import Products** to bring your catalog into Echo:
+
+- All active products are imported
+- Draft and archived products are skipped
+- Each variant becomes a separate product
+- Prices are converted to your business currency
+
+The import shows:
+- Number of products imported
+- Number of products skipped
+- Any errors that occurred
+
+</div>
+
+## Product Import Details
+
+### What Gets Imported
+
+| Shopify Field | Echo Field |
+|---------------|------------|
+| Product Title | Name |
+| Description (HTML stripped) | Description |
+| Variant Price | Price |
+| Variant Title | Added to product name |
+| Product Images | Image (first image) |
+| Inventory | Availability |
+
+### Handling Variants
+
+Shopify products with variants (size, color, etc.) become multiple Echo products:
+
+- **Shopify:** "T-Shirt" with Small, Medium, Large variants
+- **Echo:** "T-Shirt - Small", "T-Shirt - Medium", "T-Shirt - Large"
+
+Each variant has its own price and availability in Echo.
+
+### Out of Stock Products
+
+Products with zero inventory are imported but marked as **unavailable**. The AI won't suggest them to customers.
+
+## Syncing Products
+
+After the initial import, you can sync to pull in changes:
+
+1. Click **Sync Products**
+2. Echo fetches the latest data from Shopify
+3. Products are updated, added, or removed as needed
+
+### Sync Results
+
+The sync shows:
+- **Updated** — Products with changed data
+- **Added** — New products in Shopify
+- **Removed** — Products deleted from Shopify
+
+### When to Sync
+
+Sync manually after:
+- Adding new products in Shopify
+- Changing prices
+- Updating descriptions
+- Archiving products
+
+**Note:** Automatic sync is not yet available. Run sync manually when needed.
+
+## Order Integration
+
+When Shopify is connected, payment links use Shopify Checkout instead of Stripe:
+
+1. Customer confirms order via WhatsApp
+2. AI generates a Shopify checkout link
+3. Customer completes payment on Shopify
+4. Order appears in both Echo and Shopify
+
+Orders paid through Shopify show:
+- **Payment Provider:** Shopify
+- **Shopify Order Number:** e.g., #1001
+- **View in Shopify:** Link to the order in Shopify Admin
+
+## Disconnecting Shopify
+
+To disconnect your Shopify store:
+
+1. Go to **Settings > Integrations > Shopify**
+2. Click **Disconnect**
+3. Confirm the disconnection
+
+### What Happens After Disconnect
+
+- **Products remain** — Products stay in Echo but won't sync
+- **Orders remain** — Existing orders are not affected
+- **New payments** — Will use Stripe (if configured) or cash
+
+Products imported from Shopify can still be edited manually in Echo.
+
+## Troubleshooting
+
+### Connection Failed
+
+1. **Check your store URL** — Must be `store.myshopify.com` format
+2. **Browser popups** — Allow popups for the authorization redirect
+3. **Try again** — Sometimes OAuth flows timeout
+
+### Import Shows Errors
+
+1. **Invalid products** — Products without titles are skipped
+2. **Missing prices** — Variants without prices are skipped
+3. **Rate limits** — If you have many products, wait and try again
+
+### Products Not Syncing
+
+1. Make sure you're connected (check status shows "Connected")
+2. Click **Sync Products** to manually trigger sync
+3. Check for errors in the sync result
+
+### Payment Links Not Working
+
+1. Verify Shopify is connected
+2. Check that you have payment methods enabled in Shopify
+3. Test checkout with a small order
+
+## Best Practices
+
+### Keep Shopify as Source of Truth
+Make product changes in Shopify and sync to Echo, rather than editing in both places.
+
+### Sync After Major Changes
+After adding many products or changing prices, run a sync to keep Echo current.
+
+### Test Before Going Live
+Place a test order through the full flow to ensure Shopify checkout works correctly.

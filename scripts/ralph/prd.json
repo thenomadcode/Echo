@@ -133,7 +133,7 @@
       "id": "S09",
       "title": "Create Customers documentation",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create customers.mdx",
