@@ -82,7 +82,7 @@
       "id": "S06",
       "title": "Create Categories documentation",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create products/categories.mdx",

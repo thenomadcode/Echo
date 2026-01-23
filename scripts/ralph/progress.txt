@@ -28,6 +28,24 @@
 
 ---
 
+## 2026-01-23 10:20 - S06: Create Categories documentation
+
+**What was implemented:**
+- Created products/categories.mdx explaining category management
+- Why use categories (organization, AI context, filtering, bulk actions)
+- Creating, editing, deleting categories
+- Uncategorized products concept
+- Moving products between categories (single and bulk)
+- Best practices section with examples by business type
+
+**Files changed:**
+- apps/fumadocs/content/docs/products/categories.mdx (rewritten, ~95 lines)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+---
+
 ## 2026-01-23 10:15 - S05: Create Products documentation
 
 **What was implemented:**

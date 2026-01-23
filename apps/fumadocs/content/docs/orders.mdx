@@ -4,4 +4,159 @@ description: View and manage customer orders
 icon: ShoppingCart
 ---
 
-Orders placeholder.
+When customers place orders through WhatsApp, they appear in the Orders dashboard. Track orders from creation to delivery, update their status, and manage fulfillment.
+
+## Order Lifecycle
+
+Orders follow a specific lifecycle from creation to completion:
+
+```
+Draft → Confirmed → Paid → Preparing → Ready → Delivered
+                                             ↓
+                                        (Cancelled)
+```
+
+### Order Statuses
+
+| Status | Description |
+|--------|-------------|
+| **Draft** | Order created but not yet confirmed by customer |
+| **Confirmed** | Customer confirmed the order, awaiting payment |
+| **Paid** | Payment received (card or cash marked as paid) |
+| **Preparing** | Order is being prepared |
+| **Ready** | Order is ready for pickup or delivery |
+| **Delivered** | Order has been delivered to customer |
+| **Cancelled** | Order was cancelled |
+
+## Viewing Orders
+
+Navigate to **Orders** from the sidebar to see all orders. The list shows:
+
+- **Order Number** — Unique identifier (e.g., ORD-001)
+- **Status** — Current order status with color-coded badge
+- **Items** — Number of items in the order
+- **Total** — Order total in your business currency
+- **Date** — When the order was placed
+
+### Filtering Orders
+
+Use the **Status** dropdown to filter orders by their current status. This helps you quickly find:
+
+- Orders waiting for payment (Confirmed)
+- Orders to prepare (Paid)
+- Orders ready for pickup (Ready)
+
+### Searching Orders
+
+Type in the search box to find orders by:
+
+- Order number
+- Customer phone number
+
+## Order Detail View
+
+Click on any order to see its full details:
+
+### Order Items
+A table showing each item in the order with:
+- Product name
+- Quantity ordered
+- Unit price
+- Line total
+
+### Customer Information
+- Customer name (if provided)
+- Phone number
+- Delivery address (for delivery orders)
+- Delivery notes (special instructions)
+
+### Payment Information
+- Payment method (Card or Cash)
+- Payment status (Pending, Paid, Failed, Refunded)
+- Payment provider (Stripe, Shopify, or Cash)
+- For Shopify orders: Link to view in Shopify Admin
+
+### Order Timeline
+Shows when key events occurred:
+- Order created
+- Order confirmed
+- Payment received
+- Order cancelled (if applicable)
+
+## Fulfillment Actions
+
+When viewing an order, you can update its status using the action buttons:
+
+### Mark as Preparing
+Available when: Order is **Paid**
+
+Click when you start preparing the order. This helps track which orders are in progress.
+
+### Mark as Ready
+Available when: Order is **Preparing**
+
+Click when the order is ready for pickup or delivery. If the customer has WhatsApp notifications enabled, they'll be notified.
+
+### Mark as Delivered
+Available when: Order is **Ready**
+
+Click when the order has been picked up or delivered to the customer. This completes the order lifecycle.
+
+## Cancelling Orders
+
+You can cancel an order at any stage except after delivery.
+
+1. Open the order detail page
+2. Click **Cancel Order**
+3. Confirm the cancellation
+
+**Note:** For card payments, cancellation doesn't automatically refund. You'll need to process refunds through your payment provider (Stripe or Shopify).
+
+## Payment Methods
+
+Orders support two payment methods:
+
+### Card Payment
+Customer pays online via Stripe or Shopify checkout:
+- AI generates a payment link
+- Customer clicks to pay
+- Order automatically moves to "Paid" status
+
+### Cash Payment
+Customer pays on delivery or pickup:
+- Order moves to "Confirmed" status
+- Mark as "Paid" manually after receiving cash
+
+## Delivery Types
+
+### Delivery
+Order is delivered to customer's address. The order includes:
+- Delivery address
+- Optional delivery notes
+- Delivery fee (if configured)
+
+### Pickup
+Customer picks up the order at your location. No delivery address is required.
+
+## Shopify Integration
+
+If you use Shopify, orders placed through Echo can be synced to your Shopify store:
+
+- Orders appear in your Shopify Admin
+- Inventory is updated automatically
+- Payment flows through Shopify Checkout
+
+A "View in Shopify" link appears on orders paid through Shopify.
+
+See [Shopify Integration](/docs/integrations/shopify) for setup details.
+
+## Best Practices
+
+### Regular Status Updates
+Keep order statuses current. Customers with WhatsApp notifications rely on accurate status updates.
+
+### Check for Special Instructions
+Always read delivery notes before preparing an order. Customers may include allergy information or special requests.
+
+### Handle Cancellations Promptly
+If you need to cancel an order (out of stock, can't deliver to area), do it quickly so customers can reorder elsewhere.
