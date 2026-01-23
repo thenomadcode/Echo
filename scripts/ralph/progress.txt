@@ -1,3 +1,157 @@
+## 2026-01-23 14:38 - S07: Integrate with Turborepo
+
+**What was implemented:**
+- Verified turbo.json automatically recognizes apps/marketing via apps/* workspace glob
+- Verified `bun run dev` runs marketing dev server alongside other apps
+- Verified `bun run build` builds marketing site (outputs to dist/)
+- `dev:marketing` script already existed in root package.json: `turbo -F marketing dev`
+- Marketing package properly listed in `turbo ls` output
+- No conflicts with existing turbo tasks
+
+**Files changed:**
+- (No changes needed - integration was automatic)
+
+**Verification:**
+- `turbo ls` shows marketing package
+- `turbo run dev --dry-run` includes marketing#dev
+- `turbo run build --dry-run` includes marketing#build with outputs: dist/**
+
+---
+
+## 2026-01-23 14:35 - S06: Configure Cloudflare deployment via Alchemy
+
+**What was implemented:**
+- Discovered Alchemy has native `Astro` primitive in `alchemy/cloudflare`
+- Updated packages/infra/alchemy.run.ts to add marketing site deployment
+- Configured with: cwd, output: "server", entrypoint: "dist/_worker.js/entry.mjs"
+- Added console log for marketing site URL
+- Verified build outputs to dist/ with correct structure (_worker.js/entry.mjs, client/)
+
+**Files changed:**
+- packages/infra/alchemy.run.ts (+8 lines)
+- scripts/ralph/prd.json (marked S06 passes: true)
+
+**Learnings for future iterations:**
+- Alchemy Astro primitive defaults to entrypoint: "dist/_worker.js/index.js" but Astro Cloudflare adapter produces "dist/_worker.js/entry.mjs"
+- Must explicitly set entrypoint for Astro SSR deployments
+- Astro Cloudflare adapter auto-generates wrangler.json in dist/_worker.js/
+
+**Verification:**
+- `bun run check-types`: passes
+- `cd apps/marketing && bun run build`: succeeds
+- dist/ structure verified
+
+---
+
+## 2026-01-23 14:26 - S05: Set up MDX content collections
+
+**What was implemented:**
+- @astrojs/mdx already installed (^5.0.0-beta.1) and configured
+- Created src/content.config.ts (Astro 6 new location) with Zod schemas for all collections:
+  - pages: title, description, draft, template
+  - features: title, description, icon, order, category
+  - testimonials: name, company, role, avatar, rating, featured
+  - changelog: version, date, title, tags
+  - faq: question, category, order
+  - legal: title, lastUpdated, slug
+  - pricing: name, price, currency, interval, popular, features, cta, ctaLink
+- Created content directory structure with placeholder MDX files
+- Created dynamic routes:
+  - src/pages/[...slug].astro for pages collection (filters draft pages)
+  - src/pages/legal/[...slug].astro for legal pages
+  - src/pages/changelog/[...slug].astro for changelog entries
+- Updated tsconfig.json to include .astro/types.d.ts
+
+**Files changed:**
+- apps/marketing/src/content.config.ts (created, ~80 lines)
+- apps/marketing/src/content/*/_placeholder.mdx (placeholder content files)
+- apps/marketing/src/content/pricing/_placeholder.json
+- apps/marketing/src/pages/[...slug].astro (created)
+- apps/marketing/src/pages/legal/[...slug].astro (created)
+- apps/marketing/src/pages/changelog/[...slug].astro (created)
+- apps/marketing/tsconfig.json (added .astro types)
+- scripts/ralph/prd.json (marked S05 passes: true)
+
+**Learnings for future iterations:**
+- Astro 6 requires content config at src/content.config.ts (not src/content/config.ts)
+- Collections need loaders: `loader: glob({ pattern: "**/*.mdx", base: "./src/content/pages" })`
+- Use `render(entry)` from astro:content instead of `entry.render()`
+- Empty collections cause TypeScript `never` types - need placeholder content
+- z from astro:content is deprecated in favor of astro/zod (warning only, still works)
+
+---
+
+## 2026-01-23 14:22 - S04: Configure shadcn/ui for Astro
+
+**What was implemented:**
+- @astrojs/react already installed and configured in astro.config.mjs
+- Created components.json with shadcn/ui configuration (baseColor neutral, cssVariables true)
+- Configured aliases: components @/components, utils @/lib/utils, ui @/components/ui
+- Created src/components/ui/ directory
+- Created button.tsx with CVA variants (adapted from apps/web without base-ui dependency)
+- class-variance-authority already installed (^0.7.1)
+
+**Files changed:**
+- apps/marketing/components.json (created, 20 lines)
+- apps/marketing/src/components/ui/button.tsx (created, ~55 lines)
+- apps/marketing/src/components/.gitkeep (deleted)
+- scripts/ralph/prd.json (marked S04 passes: true)
+
+**Verification:**
+- bun run check-types: passes
+
+---
+
+## 2026-01-23 14:20 - S03: Create base layouts and placeholder page
+
+**What was implemented:**
+- Created BaseLayout.astro with HTML5 boilerplate, proper head section, Google Fonts
+- Added inline theme script for dark mode persistence (checks localStorage 'echo-theme' and system preference)
+- Created PageLayout.astro extending BaseLayout with header, footer, and nav slot
+- Created LegalLayout.astro extending BaseLayout for simpler legal pages
+- Updated index.astro with Echo logo SVG, 'Coming Soon' text, link to app
+- Created src/components/.gitkeep placeholder
+
+**Files changed:**
+- apps/marketing/src/layouts/BaseLayout.astro (created, ~45 lines)
+- apps/marketing/src/layouts/PageLayout.astro (created, ~30 lines)
+- apps/marketing/src/layouts/LegalLayout.astro (created, ~30 lines)
+- apps/marketing/src/pages/index.astro (updated with layout and styling)
+- apps/marketing/src/components/.gitkeep (created)
+- scripts/ralph/prd.json (marked S03 passes: true)
+
+**Browser tests verified:**
+- Page renders at http://localhost:3003
+- 'Echo' and 'Coming Soon' text visible
+- Dark mode class applies correctly (dark background when .dark class added)
+
+**Verification:**
+- bun run check-types: passes
+
+---
+
+## 2026-01-23 14:16 - S02: Configure Tailwind v4 with design system
+
+**What was implemented:**
+- Created src/styles/global.css with Tailwind v4 import and design system
+- Copied all CSS variables from apps/web/src/index.css (colors, spacing, radii)
+- Copied dark mode variables (.dark class) from apps/web
+- Configured font families in @theme inline block: DM Sans, Plus Jakarta Sans, JetBrains Mono
+- Added Google Fonts preconnect and stylesheet links in index.astro
+- Created src/lib/utils.ts with cn() utility using clsx and tailwind-merge
+- Updated index.astro to import global.css and use Tailwind classes
+
+**Files changed:**
+- apps/marketing/src/styles/global.css (created, ~160 lines)
+- apps/marketing/src/lib/utils.ts (created, 6 lines)
+- apps/marketing/src/pages/index.astro (updated with imports and styling)
+- scripts/ralph/prd.json (marked S02 passes: true)
+
+**Verification:**
+- bun run check-types: passes (marketing package)
+
+---
+
 ## 2026-01-23 10:22 - S16: Capture screenshots for documentation
 
 **What was implemented:**
@@ -4112,5 +4266,44 @@
 - Fumadocs Cards/Card components are auto-registered via defaultMdxComponents
 - Card props: href (required), title (required), children for description
 - Image paths in MDX must resolve at build time - use placeholders or ensure file exists
+
+---
+
+## 2026-01-23 14:13 - S01: Create Astro project scaffold
+
+**What was implemented:**
+- Created apps/marketing directory with Astro 6 beta (^6.0.0-beta.2)
+- package.json with name 'marketing', type 'module', scripts (dev, build, preview, check-types)
+- Dependencies: astro, @astrojs/cloudflare, @astrojs/mdx, @astrojs/react, react, react-dom, clsx, tailwind-merge, class-variance-authority, lucide-react
+- DevDependencies: @tailwindcss/vite, tailwindcss, @types/react, @types/react-dom, typescript, @astrojs/check
+- tsconfig.json with strict mode, ESNext target, bundler resolution, path aliases (@/*)
+- astro.config.mjs with Cloudflare adapter, React integration, MDX integration, Tailwind vite plugin
+- .gitignore for Astro-specific files (dist/, .astro/, node_modules/)
+- Dev server configured on port 3003
+- public/robots.txt and public/images/.gitkeep created
+- Added dev:marketing script to root package.json
+- Minimal placeholder index.astro showing "Echo - Coming Soon"
+
+**Files changed:**
+- apps/marketing/package.json (created)
+- apps/marketing/tsconfig.json (created)
+- apps/marketing/astro.config.mjs (created)
+- apps/marketing/.gitignore (created)
+- apps/marketing/public/robots.txt (created)
+- apps/marketing/public/images/.gitkeep (created)
+- apps/marketing/src/pages/index.astro (created)
+- package.json (added dev:marketing script)
+- bun.lock (updated)
+
+**Verification:**
+- bun install: 224 packages installed
+- Dev server starts on port 3003: verified with curl
+- bun run check-types: passes (0 errors, 0 warnings)
+
+**Learnings for future iterations:**
+- Astro 6 beta uses `astro/tsconfigs/strict` as base tsconfig
+- Astro check requires @astrojs/check devDependency
+- Cloudflare adapter auto-enables KV sessions with "SESSION" binding
+- Turborepo auto-discovers apps/marketing via apps/* glob
 
 ---

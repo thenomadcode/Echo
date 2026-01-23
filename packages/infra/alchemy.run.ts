@@ -1,5 +1,5 @@
 import alchemy from "alchemy";
-import { TanStackStart } from "alchemy/cloudflare";
+import { Astro, TanStackStart } from "alchemy/cloudflare";
 import { config } from "dotenv";
 
 config({ path: "./.env" });
@@ -15,6 +15,13 @@ export const web = await TanStackStart("web", {
   },
 });
 
-console.log(`Web    -> ${web.url}`);
+export const marketing = await Astro("marketing", {
+  cwd: "../../apps/marketing",
+  output: "server",
+  entrypoint: "dist/_worker.js/entry.mjs",
+});
+
+console.log(`Web       -> ${web.url}`);
+console.log(`Marketing -> ${marketing.url}`);
 
 await app.finalize();
