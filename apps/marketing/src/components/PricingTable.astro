@@ -1,0 +1,73 @@
+---
+import PricingCard from "./PricingCard.astro";
+
+const plans = [
+  {
+    name: "Free",
+    price: "$0",
+    features: [
+      "500 contacts",
+      "Basic AI conversations",
+      "WhatsApp integration",
+      "Email support",
+    ],
+    cta: "Start Free",
+    ctaHref: "https://app.echo.com/signup",
+    highlighted: false,
+  },
+  {
+    name: "Growth",
+    price: "$49",
+    features: [
+      "Unlimited contacts",
+      "Full AI capabilities",
+      "All integrations",
+      "Customer memory",
+      "Priority support",
+    ],
+    cta: "Start Free",
+    ctaHref: "https://app.echo.com/signup?plan=growth",
+    highlighted: true,
+  },
+  {
+    name: "Scale",
+    price: "$99",
+    features: [
+      "Everything in Growth",
+      "Multi-brand support",
+      "Team seats",
+      "Priority support",
+      "Custom integrations",
+    ],
+    cta: "Contact Us",
+    ctaHref: "mailto:sales@echo.com",
+    highlighted: false,
+  },
+];
+---
+
+<section class="py-16 lg:py-24">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+      <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+        Simple pricing. Start free.
+      </h2>
+      <p class="text-lg text-muted-foreground">
+        No hidden fees. Upgrade or cancel anytime.
+      </p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      {plans.map((plan) => (
+        <PricingCard
+          name={plan.name}
+          price={plan.price}
+          features={plan.features}
+          cta={plan.cta}
+          ctaHref={plan.ctaHref}
+          highlighted={plan.highlighted}
+        />
+      ))}
+    </div>
+  </div>
+</section>

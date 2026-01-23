@@ -1,3 +1,25 @@
+## 2026-01-23 22:18 - S09: Create PricingCard and PricingTable components
+
+**What was implemented:**
+- Created apps/marketing/src/components/PricingCard.astro with name, price, features array, cta, ctaHref, highlighted props
+- Created apps/marketing/src/components/PricingTable.astro with section heading
+- 3 pricing plans in md:grid-cols-3 layout:
+  - Free: $0, 500 contacts, basic AI, WhatsApp, email support
+  - Growth: $49/mo, unlimited contacts, full AI, all integrations, customer memory - highlighted as "Most Popular"
+  - Scale: $99/mo, everything in Growth + multi-brand, team seats, priority support, custom integrations
+- Growth plan has orange border (border-2 border-primary) and "Most Popular" badge
+- Features listed with checkmark icons
+- Responsive: 3 columns on desktop, stacked on mobile
+
+**Files changed:**
+- apps/marketing/src/components/PricingCard.astro (created, ~65 lines)
+- apps/marketing/src/components/PricingTable.astro (created, ~55 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:17 - S08: Create HowItWorks section with StepIndicator
 
 **What was implemented:**

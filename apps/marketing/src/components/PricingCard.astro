@@ -1,0 +1,63 @@
+---
+interface Props {
+  name: string;
+  price: string;
+  interval?: string;
+  features: string[];
+  cta: string;
+  ctaHref: string;
+  highlighted?: boolean;
+}
+
+const { name, price, interval = "/mo", features, cta, ctaHref, highlighted = false } = Astro.props;
+---
+
+<div
+  class:list={[
+    "relative rounded-xl p-6 lg:p-8 flex flex-col",
+    highlighted
+      ? "border-2 border-primary bg-card shadow-xl"
+      : "border border-border bg-card",
+  ]}
+>
+  {highlighted && (
+    <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+      <span class="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+        Most Popular
+      </span>
+    </div>
+  )}
+  
+  <div class="mb-6">
+    <h3 class="font-heading font-semibold text-lg text-foreground mb-2">{name}</h3>
+    <div class="flex items-baseline gap-1">
+      <span class="font-heading font-bold text-4xl text-foreground">{price}</span>
+      {price !== "$0" && (
+        <span class="text-muted-foreground text-sm">{interval}</span>
+      )}
+    </div>
+  </div>
+  
+  <ul class="space-y-3 mb-8 flex-grow">
+    {features.map((feature) => (
+      <li class="flex items-start gap-3 text-sm text-muted-foreground">
+        <svg class="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        {feature}
+      </li>
+    ))}
+  </ul>
+  
+  <a
+    href={ctaHref}
+    class:list={[
+      "inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium transition-colors font-heading",
+      highlighted
+        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+        : "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+    ]}
+  >
+    {cta}
+  </a>
+</div>

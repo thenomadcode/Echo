@@ -159,7 +159,7 @@
       "id": "S09",
       "title": "Create PricingCard and PricingTable components",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/PricingCard.astro accepting name, price, features array, cta, highlighted props",
