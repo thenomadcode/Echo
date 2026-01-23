@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://echo.com/sitemap.xml
+Sitemap: https://echo.com/sitemap-index.xml

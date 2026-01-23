@@ -1,0 +1,14 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#FAFAF9"/>
+  <rect x="40" y="40" width="1120" height="550" rx="20" fill="white" stroke="#E7E5E4" stroke-width="2"/>
+  <circle cx="200" cy="315" r="80" fill="#EA580C" fill-opacity="0.1"/>
+  <path d="M200 355C222.091 355 240 337.091 240 315C240 292.909 222.091 275 200 275C177.909 275 160 292.909 160 315C160 321.997 161.877 328.556 165.217 334.226C165.989 335.519 166.29 337.039 165.987 338.5L163.29 351.413C162.418 355.569 166.431 359.582 170.587 358.71L183.5 356.013C184.961 355.71 186.481 356.011 187.774 356.783C193.444 360.123 200.003 362 207 362" stroke="#EA580C" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="185" cy="315" r="6" fill="#EA580C"/>
+  <circle cx="200" cy="315" r="6" fill="#EA580C"/>
+  <circle cx="215" cy="315" r="6" fill="#EA580C"/>
+  <text x="320" y="290" font-family="Plus Jakarta Sans, system-ui, sans-serif" font-size="72" font-weight="700" fill="#1C1917">Echo</text>
+  <text x="320" y="360" font-family="DM Sans, system-ui, sans-serif" font-size="32" fill="#78716C">AI That Sells While You Sleep</text>
+  <text x="320" y="420" font-family="DM Sans, system-ui, sans-serif" font-size="24" fill="#A8A29E">WhatsApp AI for creators and sellers</text>
+  <rect x="320" y="480" width="180" height="50" rx="8" fill="#EA580C"/>
+  <text x="410" y="514" font-family="Plus Jakarta Sans, system-ui, sans-serif" font-size="20" font-weight="600" fill="white" text-anchor="middle">Start Free</text>
+</svg>

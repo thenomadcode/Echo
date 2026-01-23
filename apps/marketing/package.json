@@ -9,16 +9,17 @@
     "check-types": "astro check && tsc --noEmit"
   },
   "dependencies": {
-    "astro": "^6.0.0-beta.2",
     "@astrojs/cloudflare": "^13.0.0-beta.1",
     "@astrojs/mdx": "^5.0.0-beta.1",
     "@astrojs/react": "^4.2.0",
+    "@astrojs/sitemap": "^3.7.0",
+    "astro": "^6.0.0-beta.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.525.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^3.3.1",
-    "class-variance-authority": "^0.7.1",
-    "lucide-react": "^0.525.0"
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.6",

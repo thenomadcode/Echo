@@ -1,3 +1,35 @@
+## 2026-01-23 23:10 - S21: SEO finalization (sitemap, robots, OG images)
+
+**What was implemented:**
+- Installed @astrojs/sitemap integration
+- Updated astro.config.mjs to include sitemap() integration
+- Updated public/robots.txt to reference sitemap-index.xml (Astro sitemap format)
+- Created public/images/og-default.svg (1200x630 SVG with Echo branding):
+  - Logo, tagline, CTA button design
+  - Orange primary color scheme
+  - Professional marketing card layout
+- Updated BaseLayout.astro:
+  - Changed default ogImage to og-default.svg
+  - Added isHomepage detection
+  - Added Organization structured data (JSON-LD) on homepage only:
+    - @type: Organization
+    - name, url, logo, description
+    - contactPoint with email
+- All pages already have unique title and description via props
+- Canonical URLs already set via Astro.url.pathname
+
+**Files changed:**
+- apps/marketing/astro.config.mjs (added sitemap import and integration)
+- apps/marketing/public/robots.txt (updated sitemap URL)
+- apps/marketing/public/images/og-default.svg (created, ~20 lines SVG)
+- apps/marketing/src/layouts/BaseLayout.astro (added structured data)
+- apps/marketing/package.json (added @astrojs/sitemap dependency)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 23:05 - S20: Add animations and micro-interactions
 
 **What was implemented:**

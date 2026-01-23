@@ -374,7 +374,7 @@
       "id": "S21",
       "title": "SEO finalization (sitemap, robots, OG images)",
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Generate sitemap.xml with all pages",
