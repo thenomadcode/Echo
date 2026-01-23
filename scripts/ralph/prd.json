@@ -62,7 +62,7 @@
       "id": "S04",
       "title": "Configure shadcn/ui for Astro",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "@astrojs/react integration installed and configured in astro.config.mjs",
