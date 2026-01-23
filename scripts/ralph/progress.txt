@@ -1,3 +1,27 @@
+## 2026-01-23 22:12 - S04: Integrate base layout with SEO
+
+**What was implemented:**
+- Updated BaseLayout.astro with comprehensive SEO props: title, description, ogImage, canonicalUrl
+- Added Open Graph meta tags: og:type, og:url, og:title, og:description, og:image, og:site_name
+- Added Twitter card meta tags for social sharing
+- Added canonical URL meta tag using Astro.url.pathname
+- Added favicon.svg link (plus favicon.png fallback)
+- Set default title template: "{page} | Echo" or "Echo - AI That Sells While You Sleep"
+- Body already has bg-background which maps to #FAFAF9 warm stone white
+- Header and Footer are already integrated via PageLayout.astro
+- Created public/favicon.svg with orange Echo chat bubble icon
+- Added site: "https://echo.com" to astro.config.mjs for canonical URL generation
+
+**Files changed:**
+- apps/marketing/src/layouts/BaseLayout.astro (updated with SEO meta tags)
+- apps/marketing/public/favicon.svg (created)
+- apps/marketing/astro.config.mjs (added site URL)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:10 - S03: Create Footer component
 
 **What was implemented:**

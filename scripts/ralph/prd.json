@@ -63,7 +63,7 @@
       "id": "S04",
       "title": "Integrate base layout with SEO",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Update apps/marketing/src/layouts/BaseLayout.astro to include Header and Footer",

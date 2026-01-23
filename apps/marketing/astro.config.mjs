@@ -5,6 +5,7 @@ import mdx from "@astrojs/mdx";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  site: "https://echo.com",
   output: "server",
   adapter: cloudflare(),
   integrations: [react(), mdx()],
