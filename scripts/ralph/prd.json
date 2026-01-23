@@ -41,7 +41,7 @@
       "id": "S03",
       "title": "Create base layouts and placeholder page",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create src/layouts/BaseLayout.astro with HTML5 boilerplate",

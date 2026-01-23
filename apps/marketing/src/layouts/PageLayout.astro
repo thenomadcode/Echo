@@ -1,0 +1,29 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <header class="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="/" class="font-heading text-xl font-bold text-primary">Echo</a>
+      <nav class="flex items-center gap-4">
+        <slot name="nav" />
+      </nav>
+    </div>
+  </header>
+  <main class="pt-16">
+    <slot />
+  </main>
+  <footer class="border-t border-border py-8 mt-16">
+    <div class="container mx-auto px-4 text-center text-muted-foreground">
+      <p>&copy; {new Date().getFullYear()} Echo. All rights reserved.</p>
+    </div>
+  </footer>
+</BaseLayout>
