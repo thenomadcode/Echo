@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
 
 import BusinessSwitcher from "@/components/business-switcher";
 import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
@@ -32,6 +32,16 @@ export function AppHeader() {
         </div>
 
         <div className="flex items-center gap-2">
+          <a
+            href="/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            title="Documentation"
+          >
+            <BookOpen className="h-5 w-5" />
+            <span className="sr-only">Documentation</span>
+          </a>
           <ThemeToggle />
           <NotificationBell />
           <UserMenu />

@@ -200,7 +200,7 @@
       "id": "S13",
       "title": "Create Business Settings documentation",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create settings/index.mdx",
@@ -216,7 +216,7 @@
       "id": "S14",
       "title": "Create AI Configuration documentation",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create settings/ai-configuration.mdx",
@@ -233,7 +233,7 @@
       "id": "S15",
       "title": "Create FAQ page",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create faq.mdx",
