@@ -32,6 +32,7 @@ import type * as customerMemory from "../customerMemory.js";
 import type * as customerNotes from "../customerNotes.js";
 import type * as customers from "../customers.js";
 import type * as dashboard from "../dashboard.js";
+import type * as deletionRequests from "../deletionRequests.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
@@ -80,6 +81,7 @@ declare const fullApi: ApiFromModules<{
   customerNotes: typeof customerNotes;
   customers: typeof customers;
   dashboard: typeof dashboard;
+  deletionRequests: typeof deletionRequests;
   healthCheck: typeof healthCheck;
   http: typeof http;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;

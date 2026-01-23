@@ -180,8 +180,8 @@ export interface FileRoutesByFullPath {
   '/settings/integrations': typeof AuthenticatedSettingsIntegrationsRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/customers/': typeof AuthenticatedCustomersIndexRoute
-  '/products/': typeof AuthenticatedProductsIndexRoute
+  '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/products': typeof AuthenticatedProductsIndexRoute
   '/settings/integrations/shopify': typeof AuthenticatedSettingsIntegrationsShopifyRoute
 }
 export interface FileRoutesByTo {
@@ -256,8 +256,8 @@ export interface FileRouteTypes {
     | '/settings/integrations'
     | '/settings/whatsapp'
     | '/api/auth/$'
-    | '/customers/'
-    | '/products/'
+    | '/customers'
+    | '/products'
     | '/settings/integrations/shopify'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -353,7 +353,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
-      fullPath: '/'
+      fullPath: ''
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -395,14 +395,14 @@ declare module '@tanstack/react-router' {
     '/_authenticated/products/': {
       id: '/_authenticated/products/'
       path: '/products'
-      fullPath: '/products/'
+      fullPath: '/products'
       preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/customers'
-      fullPath: '/customers/'
+      fullPath: '/customers'
       preLoaderRoute: typeof AuthenticatedCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
@@ -564,3 +564,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

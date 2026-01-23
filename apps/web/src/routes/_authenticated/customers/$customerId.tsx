@@ -68,28 +68,7 @@ export const Route = createFileRoute("/_authenticated/customers/$customerId")({
   component: CustomerDetailPage,
 });
 
-type CustomerTier = "regular" | "bronze" | "silver" | "gold" | "vip";
 type TabId = "overview" | "orders" | "conversations" | "preferences" | "notes";
-
-const TIER_CONFIG: Record<CustomerTier, { label: string; variant: "default" | "secondary" | "warning" | "info" | "success" }> = {
-  regular: { label: "Regular", variant: "secondary" },
-  bronze: { label: "Bronze", variant: "default" },
-  silver: { label: "Silver", variant: "info" },
-  gold: { label: "Gold", variant: "warning" },
-  vip: { label: "VIP", variant: "success" },
-};
-
-function TierBadge({ tier }: { tier: CustomerTier }) {
-  const config = TIER_CONFIG[tier] ?? TIER_CONFIG.regular;
-  const showStar = tier === "gold" || tier === "vip";
-
-  return (
-    <Badge variant={config.variant} className="gap-1">
-      {showStar && <Star className="h-3 w-3 fill-current" />}
-      {config.label}
-    </Badge>
-  );
-}
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Overview", icon: User },
@@ -215,7 +194,6 @@ function CustomerDetailPage() {
                 <h1 className="text-2xl font-bold font-heading">
                   {customer.name || "Unknown Customer"}
                 </h1>
-                <TierBadge tier={customer.tier as CustomerTier} />
               </div>
               <div className="flex items-center gap-2 text-muted-foreground mt-1">
                 <Phone className="h-4 w-4" />
@@ -339,7 +317,6 @@ interface CustomerContext {
   profile: {
     name?: string;
     phone: string;
-    tier: string;
     preferredLanguage?: string;
     firstSeenAt: number;
     lastSeenAt: number;
@@ -361,7 +338,6 @@ interface OverviewTabProps {
     _id: Id<"customers">;
     name?: string;
     phone: string;
-    tier: string;
     totalOrders: number;
     totalSpent: number;
     firstSeenAt: number;
@@ -1146,7 +1122,6 @@ interface EditCustomerDialogProps {
   customer: {
     _id: Id<"customers">;
     name?: string;
-    tier: string;
     preferredLanguage?: string;
   };
   onSuccess: () => void;
@@ -1162,7 +1137,6 @@ function EditCustomerDialog({ open, onOpenChange, customer, onSuccess }: EditCus
   const updateCustomer = useMutation(api.customers.update);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState(customer.name ?? "");
-  const [tier, setTier] = useState<CustomerTier | "auto">(customer.tier as CustomerTier);
   const [language, setLanguage] = useState(customer.preferredLanguage ?? "en");
 
   const handleSubmit = async () => {
@@ -1171,7 +1145,6 @@ function EditCustomerDialog({ open, onOpenChange, customer, onSuccess }: EditCus
       const updates: {
         customerId: Id<"customers">;
         name?: string;
-        tier?: CustomerTier;
         preferredLanguage?: string;
       } = {
         customerId: customer._id,
@@ -1179,10 +1152,6 @@ function EditCustomerDialog({ open, onOpenChange, customer, onSuccess }: EditCus
 
       if (name !== customer.name) {
         updates.name = name || undefined;
-      }
-
-      if (tier !== "auto" && tier !== customer.tier) {
-        updates.tier = tier;
       }
 
       if (language !== customer.preferredLanguage) {
@@ -1218,26 +1187,6 @@ function EditCustomerDialog({ open, onOpenChange, customer, onSuccess }: EditCus
               onChange={(e) => setName(e.target.value)}
               placeholder="Customer name"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tier">Tier</Label>
-            <Select value={tier} onValueChange={(v) => setTier(v as CustomerTier | "auto")}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select tier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Auto (based on orders)</SelectItem>
-                <SelectItem value="regular">Regular</SelectItem>
-                <SelectItem value="bronze">Bronze</SelectItem>
-                <SelectItem value="silver">Silver</SelectItem>
-                <SelectItem value="gold">Gold</SelectItem>
-                <SelectItem value="vip">VIP</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Select Auto to let the system calculate tier based on order history
-            </p>
           </div>
 
           <div className="space-y-2">

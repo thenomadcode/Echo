@@ -3,7 +3,7 @@ import { action, internalMutation, internalQuery } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import { OpenAIProvider } from "./providers/openai";
-import { ORDER_TOOLS } from "./tools";
+import { ORDER_TOOLS, CUSTOMER_TOOLS } from "./tools";
 import type {
   ToolCall,
   UpdateOrderArgs,
@@ -12,6 +12,9 @@ import type {
   CancelOrderArgs,
   EscalateArgs,
   CreateDeletionRequestArgs,
+  SaveCustomerPreferenceArgs,
+  SaveCustomerAddressArgs,
+  AddCustomerNoteArgs,
 } from "./tools";
 import { buildAgentPrompt } from "./agentPrompt";
 import type { OrderState, OrderItem, LanguageCode, CustomerContext } from "./agentPrompt";
@@ -95,7 +98,6 @@ export const loadAgentContext = internalQuery({
           profile: {
             name: customer.name,
             phone: customer.phone,
-            tier: customer.tier,
             preferredLanguage: customer.preferredLanguage,
             firstSeenAt: customer.firstSeenAt,
             lastSeenAt: customer.lastSeenAt,
@@ -332,7 +334,7 @@ export const processWithAgent = action({
     const result = await provider.completeWithTools({
       messages: conversationHistory,
       systemPrompt,
-      tools: ORDER_TOOLS,
+      tools: [...ORDER_TOOLS, ...CUSTOMER_TOOLS],
       temperature: 0.7,
     });
 
@@ -452,6 +454,24 @@ async function executeToolCall(
       return executeCreateDeletionRequest(
         ctx,
         toolCall.arguments as unknown as CreateDeletionRequestArgs,
+        conversation
+      );
+    case "save_customer_preference":
+      return executeSaveCustomerPreference(
+        ctx,
+        toolCall.arguments as unknown as SaveCustomerPreferenceArgs,
+        conversation
+      );
+    case "save_customer_address":
+      return executeSaveCustomerAddress(
+        ctx,
+        toolCall.arguments as unknown as SaveCustomerAddressArgs,
+        conversation
+      );
+    case "add_customer_note":
+      return executeAddCustomerNote(
+        ctx,
+        toolCall.arguments as unknown as AddCustomerNoteArgs,
         conversation
       );
     default:
@@ -731,6 +751,99 @@ async function executeCreateDeletionRequest(
     {
       customerId: conversation.customerRecordId,
       conversationId: conversation._id,
+    }
+  );
+
+  return { 
+    success: result.success, 
+    message: result.message 
+  };
+}
+
+async function executeSaveCustomerPreference(
+  ctx: ActionContext,
+  args: SaveCustomerPreferenceArgs,
+  conversation: Doc<"conversations">
+): Promise<ToolExecutionResult> {
+  if (!conversation.customerRecordId) {
+    return { 
+      success: false, 
+      message: "No customer record linked to this conversation" 
+    };
+  }
+
+  const result = await ctx.runAction(
+    api.ai.customerHistory.saveCustomerPreference,
+    {
+      customerId: conversation.customerRecordId as Id<"customers">,
+      category: args.category,
+      fact: args.fact,
+      conversationId: conversation._id as Id<"conversations">,
+    }
+  );
+
+  if (result.status === "already_exists") {
+    return { 
+      success: true, 
+      message: `This ${args.category} was already recorded` 
+    };
+  }
+
+  return { 
+    success: true, 
+    message: `Saved ${args.category}: ${args.fact}` 
+  };
+}
+
+async function executeSaveCustomerAddress(
+  ctx: ActionContext,
+  args: SaveCustomerAddressArgs,
+  conversation: Doc<"conversations">
+): Promise<ToolExecutionResult> {
+  if (!conversation.customerRecordId) {
+    return { 
+      success: false, 
+      message: "No customer record linked to this conversation" 
+    };
+  }
+
+  const result = await ctx.runAction(
+    api.ai.customerHistory.updateCustomerAddress,
+    {
+      customerId: conversation.customerRecordId as Id<"customers">,
+      address: args.address,
+      label: args.label,
+      setAsDefault: args.set_as_default,
+      conversationId: conversation._id as Id<"conversations">,
+    }
+  );
+
+  return { 
+    success: true, 
+    message: result.isNew 
+      ? `Saved new address: ${args.address}`
+      : `Updated existing address: ${args.address}`
+  };
+}
+
+async function executeAddCustomerNote(
+  ctx: ActionContext,
+  args: AddCustomerNoteArgs,
+  conversation: Doc<"conversations">
+): Promise<ToolExecutionResult> {
+  if (!conversation.customerRecordId) {
+    return { 
+      success: false, 
+      message: "No customer record linked to this conversation" 
+    };
+  }
+
+  const result = await ctx.runAction(
+    api.ai.customerHistory.addCustomerNote,
+    {
+      customerId: conversation.customerRecordId as Id<"customers">,
+      note: args.note,
+      conversationId: conversation._id as Id<"conversations">,
     }
   );
 

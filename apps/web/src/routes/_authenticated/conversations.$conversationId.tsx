@@ -14,7 +14,6 @@ import {
   MapPin, 
   MessageSquare, 
   ShoppingCart, 
-  Star, 
   User, 
   Loader2, 
   StickyNote 
@@ -44,19 +43,6 @@ export const Route = createFileRoute("/_authenticated/conversations/$conversatio
 });
 
 const PANEL_COLLAPSED_KEY = "echo-customer-panel-collapsed";
-
-function getTierVariant(tier: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (tier) {
-    case "vip":
-    case "gold":
-      return "default";
-    case "silver":
-    case "bronze":
-      return "secondary";
-    default:
-      return "outline";
-  }
-}
 
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -138,12 +124,6 @@ function CustomerContextPanel({
               <h3 className="font-semibold truncate">
                 {context.profile.name || context.profile.phone}
               </h3>
-              <Badge variant={getTierVariant(context.profile.tier)} className="flex-shrink-0">
-                {context.profile.tier === "vip" || context.profile.tier === "gold" ? (
-                  <Star className="h-3 w-3 mr-1 fill-current" />
-                ) : null}
-                {context.profile.tier.charAt(0).toUpperCase() + context.profile.tier.slice(1)}
-              </Badge>
             </div>
             {context.profile.name && (
               <p className="text-sm text-muted-foreground">{context.profile.phone}</p>

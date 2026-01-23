@@ -18,7 +18,6 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - Persistent customer profiles linked by phone number (WhatsApp ID)
 - Saved addresses with smart suggestions ("Deliver to your usual?")
 - AI memory of preferences, restrictions, and behavior patterns
-- VIP/tier system with personalized AI treatment
 - Business notes visible to AI for context
 - Token-efficient retrieval (don't blow context window)
 - Conversation history accessible via search tool (not always loaded)
@@ -44,7 +43,6 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 **Acceptance Criteria:**
 - [ ] First message from known phone triggers customer lookup
 - [ ] If found: AI greeting includes name (if known): "Hola Maria! Bueno verte de nuevo"
-- [ ] If VIP: AI adjusts tone to be more personal/appreciative
 - [ ] Customer profile loaded into AI context automatically
 - [ ] If new customer: create profile record, proceed normally
 - [ ] Works across conversations (memory persists after conversation ends)
@@ -91,25 +89,7 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - [ ] Never "forgets" allergies (requires explicit removal)
 - [ ] Business dashboard shows customer allergies prominently
 
-### Story 5: VIP Customer Treatment
-**As a** business owner  
-**I want** loyal customers treated specially  
-**So that** they feel appreciated and keep coming back
-
-**Acceptance Criteria:**
-- [ ] Customers have tier: regular | bronze | silver | gold | vip
-- [ ] Auto-tier based on: order count, total spend, frequency
-- [ ] Manual override: business can promote/demote customers
-- [ ] AI tone adapts to tier:
-  - Regular: Professional, helpful
-  - Bronze: Slightly warmer, use name
-  - Silver: Acknowledge loyalty, personalized greetings
-  - Gold: Very personal, proactive suggestions, thank for loyalty
-  - VIP: White-glove service, apologize profusely for any issue
-- [ ] VIP customers flagged in conversation dashboard
-- [ ] Configurable tier thresholds per business
-
-### Story 6: Business Notes on Customers
+### Story 5: Business Notes on Customers
 **As a** business owner/staff  
 **I want** to add notes about customers  
 **So that** the AI has context I know
@@ -122,7 +102,7 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - [ ] AI uses notes naturally (doesn't say "my notes say...")
 - [ ] Sensitive notes can be marked "staff only" (not shown to AI)
 
-### Story 7: Order History Context
+### Story 6: Order History Context
 **As a** returning customer  
 **I want** to reference past orders  
 **So that** reordering is easy
@@ -135,7 +115,7 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - [ ] AI can reference: "Last time you got the burger combo - want that again?"
 - [ ] Works across multiple conversations
 
-### Story 8: Conversation History Search
+### Story 7: Conversation History Search
 **As an** AI assistant  
 **I want** to search past conversations  
 **So that** I can recall specific interactions when relevant
@@ -149,7 +129,7 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - [ ] Search scoped to current customer only
 - [ ] Relevance-ranked results
 
-### Story 9: Conversation Summaries
+### Story 8: Conversation Summaries
 **As a** system  
 **I want** to summarize conversations when they end  
 **So that** memory is token-efficient
@@ -162,7 +142,7 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - [ ] Summary generation is async (doesn't block conversation close)
 - [ ] Summary ~100-200 words max (token efficient)
 
-### Story 10: Memory Fact Extraction
+### Story 9: Memory Fact Extraction
 **As a** system  
 **I want** to extract structured facts from conversations  
 **So that** memory is actionable
@@ -177,7 +157,7 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 - [ ] Deduplication: don't store "no onions" twice
 - [ ] Contradictions detected: "likes spicy" vs "no spicy" → flag for resolution
 
-### Story 11: Customer Profile Dashboard
+### Story 10: Customer Profile Dashboard
 **As a** business owner/staff  
 **I want** to view and manage customer profiles  
 **So that** I understand my customers
@@ -185,14 +165,14 @@ For LATAM businesses where personal relationships drive loyalty, this is a criti
 **Acceptance Criteria:**
 - [ ] `/customers` page - list all customers
 - [ ] Searchable by name, phone
-- [ ] Filterable by tier, last order date
+- [ ] Filterable by last order date
 - [ ] Sortable by total orders, total spend, last seen
 - [ ] `/customers/[id]` - customer detail page
 - [ ] Shows: profile info, addresses, preferences, notes, order history, conversation history
 - [ ] Edit: name, tier (manual), addresses, preferences, notes
 - [ ] Delete customer (with data retention warning)
 
-### Story 12: Privacy & Data Management
+### Story 11: Privacy & Data Management
 **As a** customer (implied via business)  
 **I want** my data handled responsibly  
 **So that** my privacy is respected

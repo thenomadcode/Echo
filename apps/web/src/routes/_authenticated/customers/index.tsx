@@ -2,15 +2,23 @@ import type { Id } from "@echo/backend/convex/_generated/dataModel";
 
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery as useConvexQuery } from "convex/react";
+import { useMutation, useQuery as useConvexQuery } from "convex/react";
 import { useEffect, useMemo, useState } from "react";
-import { Users, Search, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Users, Search, ChevronLeft, ChevronRight, Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,28 +41,7 @@ export const Route = createFileRoute("/_authenticated/customers/")({
   component: CustomersPage,
 });
 
-type CustomerTier = "regular" | "bronze" | "silver" | "gold" | "vip";
 type SortBy = "lastSeenAt" | "totalOrders" | "totalSpent" | "createdAt";
-
-const TIER_CONFIG: Record<CustomerTier, { label: string; variant: "default" | "secondary" | "warning" | "info" | "success" }> = {
-  regular: { label: "Regular", variant: "secondary" },
-  bronze: { label: "Bronze", variant: "default" },
-  silver: { label: "Silver", variant: "info" },
-  gold: { label: "Gold", variant: "warning" },
-  vip: { label: "VIP", variant: "success" },
-};
-
-function TierBadge({ tier }: { tier: CustomerTier }) {
-  const config = TIER_CONFIG[tier] ?? TIER_CONFIG.regular;
-  const showStar = tier === "gold" || tier === "vip";
-
-  return (
-    <Badge variant={config.variant} className="gap-1">
-      {showStar && <Star className="h-3 w-3 fill-current" />}
-      {config.label}
-    </Badge>
-  );
-}
 
 function CustomersPage() {
   const businesses = useConvexQuery(api.businesses.list, {});
@@ -89,15 +76,21 @@ const ITEMS_PER_PAGE = 10;
 
 function CustomersContent({ businessId }: CustomersContentProps) {
   const navigate = useNavigate();
-  const [tierFilter, setTierFilter] = useState<CustomerTier | "all">("all");
+  const queryClient = useQueryClient();
   const [sortBy, setSortBy] = useState<SortBy>("lastSeenAt");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const handleAddSuccess = async (customerId: Id<"customers">) => {
+    await queryClient.invalidateQueries();
+    setShowAddDialog(false);
+    navigate({ to: "/customers/$customerId", params: { customerId } });
+  };
 
   const customersQuery = useQuery(
     convexQuery(api.customers.list, {
       businessId,
-      tier: tierFilter === "all" ? undefined : tierFilter,
       sortBy,
       limit: 100,
     })
@@ -123,7 +116,7 @@ function CustomersContent({ businessId }: CustomersContentProps) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, tierFilter, sortBy]);
+  }, [searchQuery, sortBy]);
 
   const formatCurrency = (amount: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
@@ -158,6 +151,10 @@ function CustomersContent({ businessId }: CustomersContentProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>All Customers</CardTitle>
+            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Customer
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -176,25 +173,6 @@ function CustomersContent({ businessId }: CustomersContentProps) {
                     className="h-9 pl-8 text-sm"
                   />
                 </div>
-              </div>
-              <div className="space-y-2 md:w-40">
-                <Label htmlFor="tier">Tier</Label>
-                <Select
-                  value={tierFilter}
-                  onValueChange={(value) => value && setTierFilter(value as CustomerTier | "all")}
-                >
-                  <SelectTrigger className="w-full h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Tiers</SelectItem>
-                    <SelectItem value="regular">Regular</SelectItem>
-                    <SelectItem value="bronze">Bronze</SelectItem>
-                    <SelectItem value="silver">Silver</SelectItem>
-                    <SelectItem value="gold">Gold</SelectItem>
-                    <SelectItem value="vip">VIP</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <div className="space-y-2 md:w-48">
                 <Label htmlFor="sort">Sort By</Label>
@@ -237,7 +215,6 @@ function CustomersContent({ businessId }: CustomersContentProps) {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Tier</TableHead>
                     <TableHead className="text-center">Orders</TableHead>
                     <TableHead className="text-right">Total Spent</TableHead>
                     <TableHead className="text-right">Last Seen</TableHead>
@@ -255,9 +232,6 @@ function CustomersContent({ businessId }: CustomersContentProps) {
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {customer.phone}
-                      </TableCell>
-                      <TableCell>
-                        <TierBadge tier={customer.tier as CustomerTier} />
                       </TableCell>
                       <TableCell className="text-center">
                         {customer.totalOrders}
@@ -307,6 +281,139 @@ function CustomersContent({ businessId }: CustomersContentProps) {
           )}
         </CardContent>
       </Card>
+
+      <AddCustomerDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        businessId={businessId}
+        onSuccess={handleAddSuccess}
+      />
     </div>
+  );
+}
+
+interface AddCustomerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  businessId: Id<"businesses">;
+  onSuccess: (customerId: Id<"customers">) => void;
+}
+
+function AddCustomerDialog({ open, onOpenChange, businessId, onSuccess }: AddCustomerDialogProps) {
+  const createCustomer = useMutation(api.customers.create);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const validatePhone = (value: string): boolean => {
+    // Basic international phone validation: must start with + and have 8-15 digits
+    const phoneRegex = /^\+[1-9]\d{7,14}$/;
+    if (!value.trim()) {
+      setPhoneError("Phone number is required");
+      return false;
+    }
+    if (!phoneRegex.test(value.trim())) {
+      setPhoneError("Enter a valid phone number with country code (e.g., +573001234567)");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setPhone(value);
+    if (phoneError) {
+      validatePhone(value);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validatePhone(phone)) return;
+
+    setIsSubmitting(true);
+    try {
+      const customerId = await createCustomer({
+        businessId,
+        phone: phone.trim(),
+        name: name.trim() || undefined,
+      });
+      toast.success("Customer added successfully");
+      onSuccess(customerId);
+      setPhone("");
+      setName("");
+      setPhoneError("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to add customer";
+      if (message.includes("already exists")) {
+        setPhoneError("A customer with this phone number already exists");
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    setPhone("");
+    setName("");
+    setPhoneError("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add Customer</DialogTitle>
+          <DialogDescription>
+            Add a new customer to your business. They'll appear in your customer list immediately.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="phone">
+              Phone Number <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              placeholder="+573001234567"
+              className={phoneError ? "border-destructive" : ""}
+            />
+            {phoneError && (
+              <p className="text-sm text-destructive">{phoneError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Include country code (e.g., +57 for Colombia, +55 for Brazil)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Customer name (optional)"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !phone.trim()}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Add Customer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

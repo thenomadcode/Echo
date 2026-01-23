@@ -176,3 +176,129 @@ export interface EscalateArgs {
 export interface CreateDeletionRequestArgs {
   confirmed: boolean;
 }
+
+// ============================================
+// Customer Memory & Notes Tools
+// ============================================
+
+export interface SaveCustomerPreferenceArgs {
+  customer_id: string;
+  category: "allergy" | "restriction" | "preference" | "behavior";
+  fact: string;
+  conversation_id: string;
+}
+
+export interface SaveCustomerAddressArgs {
+  customer_id: string;
+  address: string;
+  label?: string;
+  set_as_default?: boolean;
+  conversation_id: string;
+}
+
+export interface AddCustomerNoteArgs {
+  customer_id: string;
+  note: string;
+  conversation_id: string;
+}
+
+export const CUSTOMER_TOOLS: Tool[] = [
+  {
+    type: "function",
+    function: {
+      name: "save_customer_preference",
+      description:
+        "Save a preference, allergy, restriction, or behavior about the customer. " +
+        "Use this whenever the customer mentions something about themselves that should be remembered. " +
+        "Examples: 'I'm vegetarian', ' allergic to nuts', 'always orders decaf', 'prefers spicy food'.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: {
+            type: "string",
+            description: "The customer ID",
+          },
+          category: {
+            type: "string",
+            enum: ["allergy", "restriction", "preference", "behavior"],
+            description: "Type of memory: allergy (safety critical), restriction (dietary), preference (likes/dislikes), behavior (ordering patterns)",
+          },
+          fact: {
+            type: "string",
+            description: "The fact to remember (max 200 chars)",
+          },
+          conversation_id: {
+            type: "string",
+            description: "The conversation ID",
+          },
+        },
+        required: ["customer_id", "category", "fact", "conversation_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "save_customer_address",
+      description:
+        "Save or update a customer's delivery address. " +
+        "Use this when the customer provides a new delivery address. " +
+        "Automatically detects if address already exists and updates it instead of creating duplicates.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: {
+            type: "string",
+            description: "The customer ID",
+          },
+          address: {
+            type: "string",
+            description: "Full delivery address",
+          },
+          label: {
+            type: "string",
+            description: "Optional label (Home, Work, etc.) - auto-generated if not provided",
+          },
+          set_as_default: {
+            type: "boolean",
+            description: "Set as default delivery address (default: true for first address)",
+          },
+          conversation_id: {
+            type: "string",
+            description: "The conversation ID",
+          },
+        },
+        required: ["customer_id", "address", "conversation_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_customer_note",
+      description:
+        "Add a note about the customer for the business staff. " +
+        "Use this to record important context that staff should know. " +
+        "Examples: 'Customer mentioned birthday next week', 'Prefers phone calls over messages', 'Large order customer'." +
+        "Do NOT use for preferences that should auto-remember - use save_customer_preference instead.",
+      parameters: {
+        type: "object",
+        properties: {
+          customer_id: {
+            type: "string",
+            description: "The customer ID",
+          },
+          note: {
+            type: "string",
+            description: "The note to add (max 500 chars)",
+          },
+          conversation_id: {
+            type: "string",
+            description: "The conversation ID",
+          },
+        },
+        required: ["customer_id", "note", "conversation_id"],
+      },
+    },
+  },
+];

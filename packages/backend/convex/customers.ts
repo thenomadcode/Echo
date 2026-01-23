@@ -57,15 +57,6 @@ export const list = query({
   args: {
     businessId: v.id("businesses"),
     search: v.optional(v.string()),
-    tier: v.optional(
-      v.union(
-        v.literal("regular"),
-        v.literal("bronze"),
-        v.literal("silver"),
-        v.literal("gold"),
-        v.literal("vip")
-      )
-    ),
     sortBy: v.optional(
       v.union(
         v.literal("lastSeenAt"),
@@ -96,10 +87,6 @@ export const list = query({
 
     if (!args.includeAnonymized) {
       customers = customers.filter((c) => !c.isAnonymized);
-    }
-
-    if (args.tier) {
-      customers = customers.filter((c) => c.tier === args.tier);
     }
 
     if (args.search) {
@@ -177,7 +164,6 @@ export const create = mutation({
       businessId: args.businessId,
       phone: args.phone,
       name: args.name,
-      tier: "regular",
       totalOrders: 0,
       totalSpent: 0,
       firstSeenAt: now,
@@ -194,15 +180,6 @@ export const update = mutation({
   args: {
     customerId: v.id("customers"),
     name: v.optional(v.string()),
-    tier: v.optional(
-      v.union(
-        v.literal("regular"),
-        v.literal("bronze"),
-        v.literal("silver"),
-        v.literal("gold"),
-        v.literal("vip")
-      )
-    ),
     preferredLanguage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -230,11 +207,6 @@ export const update = mutation({
     if (args.name !== undefined) updates.name = args.name;
     if (args.preferredLanguage !== undefined)
       updates.preferredLanguage = args.preferredLanguage;
-    if (args.tier !== undefined) {
-      updates.manualTier = args.tier;
-      updates.tier = args.tier;
-      updates.tierUpdatedAt = Date.now();
-    }
 
     await ctx.db.patch(args.customerId, updates);
 
@@ -312,7 +284,6 @@ export const getContext = query({
       profile: {
         name: customer.name,
         phone: customer.phone,
-        tier: customer.tier,
         preferredLanguage: customer.preferredLanguage,
         firstSeenAt: customer.firstSeenAt,
         lastSeenAt: customer.lastSeenAt,
@@ -330,54 +301,6 @@ export const getContext = query({
     };
   },
 });
-
-type Tier = "regular" | "bronze" | "silver" | "gold" | "vip";
-
-interface TierThresholds {
-  bronze: { orders: number; spent: number };
-  silver: { orders: number; spent: number };
-  gold: { orders: number; spent: number };
-  vip: { orders: number; spent: number };
-}
-
-const DEFAULT_THRESHOLDS: TierThresholds = {
-  bronze: { orders: 3, spent: 5000 },
-  silver: { orders: 10, spent: 20000 },
-  gold: { orders: 25, spent: 50000 },
-  vip: { orders: 50, spent: 100000 },
-};
-
-function calculateTier(
-  totalOrders: number,
-  totalSpent: number,
-  thresholds: TierThresholds = DEFAULT_THRESHOLDS
-): Tier {
-  if (
-    totalOrders >= thresholds.vip.orders ||
-    totalSpent >= thresholds.vip.spent
-  ) {
-    return "vip";
-  }
-  if (
-    totalOrders >= thresholds.gold.orders ||
-    totalSpent >= thresholds.gold.spent
-  ) {
-    return "gold";
-  }
-  if (
-    totalOrders >= thresholds.silver.orders ||
-    totalSpent >= thresholds.silver.spent
-  ) {
-    return "silver";
-  }
-  if (
-    totalOrders >= thresholds.bronze.orders ||
-    totalSpent >= thresholds.bronze.spent
-  ) {
-    return "bronze";
-  }
-  return "regular";
-}
 
 export const updateStats = mutation({
   args: {
@@ -402,14 +325,6 @@ export const updateStats = mutation({
       lastOrderAt: now,
       updatedAt: now,
     };
-
-    if (!customer.manualTier) {
-      const calculatedTier = calculateTier(newTotalOrders, newTotalSpent);
-      if (calculatedTier !== customer.tier) {
-        updates.tier = calculatedTier;
-        updates.tierUpdatedAt = now;
-      }
-    }
 
     await ctx.db.patch(args.customerId, updates);
 
@@ -443,7 +358,6 @@ export const getOrCreate = internalMutation({
     const customerId = await ctx.db.insert("customers", {
       businessId: args.businessId,
       phone: args.phone,
-      tier: "regular",
       totalOrders: 0,
       totalSpent: 0,
       firstSeenAt: now,
@@ -481,14 +395,6 @@ export const updateStatsInternal = internalMutation({
       lastOrderAt: now,
       updatedAt: now,
     };
-
-    if (!customer.manualTier) {
-      const calculatedTier = calculateTier(newTotalOrders, newTotalSpent);
-      if (calculatedTier !== customer.tier) {
-        updates.tier = calculatedTier;
-        updates.tierUpdatedAt = now;
-      }
-    }
 
     await ctx.db.patch(args.customerId, updates);
     return args.customerId;
@@ -555,7 +461,6 @@ export const getContextInternal = internalQuery({
       profile: {
         name: customer.name,
         phone: customer.phone,
-        tier: customer.tier,
         preferredLanguage: customer.preferredLanguage,
         firstSeenAt: customer.firstSeenAt,
         lastSeenAt: customer.lastSeenAt,
@@ -707,9 +612,6 @@ export const anonymize = mutation({
       name: undefined,
       phone: anonymizedPhone,
       preferredLanguage: undefined,
-      tier: "regular",
-      manualTier: undefined,
-      tierUpdatedAt: undefined,
       totalOrders: 0,
       totalSpent: 0,
       averageOrderValue: undefined,

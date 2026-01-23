@@ -76,13 +76,6 @@ const customerContextValidator = v.optional(
     profile: v.object({
       name: v.optional(v.string()),
       phone: v.string(),
-      tier: v.union(
-        v.literal("regular"),
-        v.literal("bronze"),
-        v.literal("silver"),
-        v.literal("gold"),
-        v.literal("vip")
-      ),
       preferredLanguage: v.optional(v.string()),
       firstSeenAt: v.number(),
       lastSeenAt: v.number(),

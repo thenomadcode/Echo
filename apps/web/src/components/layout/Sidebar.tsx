@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -23,6 +24,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/conversations", label: "Conversations", icon: MessageSquare },
   { to: "/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/customers", label: "Customers", icon: Users },
   { to: "/products", label: "Products", icon: Package },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;

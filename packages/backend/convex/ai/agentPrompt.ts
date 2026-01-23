@@ -40,7 +40,6 @@ interface OrderState {
 interface CustomerContextProfile {
   name?: string;
   phone: string;
-  tier: "regular" | "bronze" | "silver" | "gold" | "vip";
   preferredLanguage?: string;
   firstSeenAt: number;
   lastSeenAt: number;
@@ -96,47 +95,6 @@ function formatPrice(cents: number, currency: string): string {
     MXN: "MX$",
   };
   return `${symbols[currency] ?? currency}${amount.toFixed(2)}`;
-}
-
-type CustomerTier = "regular" | "bronze" | "silver" | "gold" | "vip";
-
-function getVIPPromptSection(tier: CustomerTier, customerName?: string): string {
-  const name = customerName ?? "the customer";
-  
-  switch (tier) {
-    case "regular":
-      return "";
-    case "bronze":
-      return `## VIP Treatment (Bronze)
-- Use ${name}'s name when natural
-- Be extra friendly and welcoming
-- Make them feel valued`;
-    case "silver":
-      return `## VIP Treatment (Silver - Loyal Customer)
-- Warmly acknowledge their loyalty subtly ("Great to hear from you again!")
-- Be personalized and remember their preferences
-- Use ${name}'s name naturally throughout conversation
-- Go the extra mile in helpfulness`;
-    case "gold":
-      return `## VIP Treatment (Gold - High-Value Customer)
-- Very personal, warm service
-- Thank them for their loyalty when natural ("Always great serving you!")
-- Use ${name}'s name naturally
-- Offer the best service experience
-- Prioritize their requests
-- Be extra attentive to their preferences and needs`;
-    case "vip":
-      return `## VIP Treatment (VIP - Top Customer) 
-- White-glove service - this is your most valuable customer
-- Use ${name}'s name naturally and frequently
-- Apologize profusely and immediately for ANY inconvenience
-- Go above and beyond on every interaction
-- Make them feel truly special and appreciated
-- Anticipate needs based on their history
-- Be exceptionally warm, personal, and attentive`;
-    default:
-      return "";
-  }
 }
 
 function getReturningCustomerGreeting(customerName?: string, isReturning?: boolean): string {
@@ -210,7 +168,6 @@ function formatCustomerContext(customer: CustomerContext): string {
   const { profile, addresses, memory, businessNotes } = customer;
 
   sections.push(`Name: ${profile.name ?? "Unknown"}`);
-  sections.push(`Tier: ${profile.tier.toUpperCase()}`);
   sections.push(`Total Orders: ${profile.totalOrders}`);
   sections.push(`Lifetime Spend: ${formatPrice(profile.totalSpent, "USD")}`);
 
@@ -315,9 +272,7 @@ ${formatCustomerContext(customerContext)}`
 
   const isReturningCustomer = customerContext ? customerContext.profile.totalOrders > 0 : false;
   const customerName = customerContext?.profile.name;
-  const customerTier = customerContext?.profile.tier ?? "regular";
   
-  const vipSection = getVIPPromptSection(customerTier, customerName);
   const returningGreeting = getReturningCustomerGreeting(customerName, isReturningCustomer);
 
   return `You are a friendly shop assistant for ${business.name}, chatting with customers on WhatsApp.
@@ -340,7 +295,6 @@ ${productCatalog || "Catalog updating..."}
 ${orderSummary}
 
 ${customerSection}
-${vipSection}
 ${returningGreeting}
 
 ## Tools (use naturally, never mention to customer)

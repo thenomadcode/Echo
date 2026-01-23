@@ -271,9 +271,6 @@ export const generateConversationSummary = internalAction({
     if (customer?.name) {
       contextParts.push(`Customer name: ${customer.name}`);
     }
-    if (customer?.tier && customer.tier !== "regular") {
-      contextParts.push(`Customer tier: ${customer.tier}`);
-    }
     if (orders.length > 0) {
       const orderInfo = orders.map((order) => 
         `Order #${order.orderNumber} (${order.status}): ${order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}`

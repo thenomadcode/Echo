@@ -481,3 +481,49 @@ export const createDeletionRequest = action({
     };
   },
 });
+
+export const addCustomerNoteInternal = internalMutation({
+  args: {
+    customerId: v.id("customers"),
+    note: v.string(),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<Id<"customerNotes">> => {
+    return await ctx.db.insert("customerNotes", {
+      customerId: args.customerId,
+      note: args.note,
+      addedBy: "ai" as const,
+      staffOnly: false,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const addCustomerNote = action({
+  args: {
+    customerId: v.id("customers"),
+    note: v.string(),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; noteId?: Id<"customerNotes">; message: string }> => {
+    const customerData = await ctx.runQuery(
+      internal.ai.customerHistory.getCustomerForHistory,
+      { customerId: args.customerId }
+    );
+
+    if (!customerData) {
+      return { success: false, message: "Customer not found" };
+    }
+
+    const noteId = await ctx.runMutation(
+      internal.ai.customerHistory.addCustomerNoteInternal,
+      {
+        customerId: args.customerId,
+        note: args.note,
+        conversationId: args.conversationId,
+      }
+    );
+
+    return { success: true, noteId, message: "Note added successfully" };
+  },
+});

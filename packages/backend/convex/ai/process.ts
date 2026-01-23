@@ -16,7 +16,6 @@ type ProcessMessageResult = {
 interface CustomerContextProfile {
   name?: string;
   phone: string;
-  tier: "regular" | "bronze" | "silver" | "gold" | "vip";
   preferredLanguage?: string;
   firstSeenAt: number;
   lastSeenAt: number;
@@ -118,7 +117,6 @@ export const loadContext = internalQuery({
           profile: {
             name: customer.name,
             phone: customer.phone,
-            tier: customer.tier,
             preferredLanguage: customer.preferredLanguage,
             firstSeenAt: customer.firstSeenAt,
             lastSeenAt: customer.lastSeenAt,
