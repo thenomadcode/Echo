@@ -339,7 +339,7 @@
       "id": "S19",
       "title": "Create legal pages (Privacy and Terms)",
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Update apps/marketing/src/layouts/LegalLayout.astro extending BaseLayout",

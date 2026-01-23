@@ -1,3 +1,36 @@
+## 2026-01-23 23:00 - S19: Create legal pages (Privacy and Terms)
+
+**What was implemented:**
+- LegalLayout.astro already existed with proper structure
+- Created apps/marketing/src/pages/legal/privacy.astro with comprehensive privacy policy:
+  - Information We Collect (provided, automatic, conversation data)
+  - How We Use Your Information
+  - Data Sharing and Disclosure
+  - Data Retention (with configurable settings mention)
+  - Your Rights (GDPR and LGPD sections)
+  - Data Security (encryption details)
+  - Cookies, Children's Privacy, International Transfers
+  - Last updated: January 23, 2026
+- Created apps/marketing/src/pages/legal/terms.astro with full terms of service:
+  - Agreement to Terms, Description of Service
+  - Account Registration, Acceptable Use
+  - Your Content and Data (ownership, license)
+  - Third-Party Integrations
+  - Pricing and Payment
+  - Service Level, Intellectual Property
+  - Disclaimers, Limitation of Liability
+  - Termination, Governing Law
+  - Last updated: January 23, 2026
+
+**Files changed:**
+- apps/marketing/src/pages/legal/privacy.astro (created, ~150 lines)
+- apps/marketing/src/pages/legal/terms.astro (created, ~180 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:55 - S18: Create dedicated Pricing page with FAQ
 
 **What was implemented:**
