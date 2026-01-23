@@ -1,3 +1,28 @@
+## 2026-01-23 22:45 - S16: Create Shopify feature page
+
+**What was implemented:**
+- Created apps/marketing/src/pages/features/shopify.astro using FeaturePageLayout
+- Hero: "Built for Shopify sellers"
+- Shopify logo banner with "Official integration" text
+- Section 1: One-Click Product Import
+  - Mockup showing import success (127 products, 8 collections, 342 variants)
+  - Bullet points: Entire catalog synced, Variants supported, Auto-updates
+- Section 2: Orders Created in Shopify (alternating bg)
+  - Draft order mockup with product items and checkout link button
+  - Bullet points: Draft orders, Checkout links, Order tracking
+- Section 3: Real-Time Inventory
+  - Inventory status mockup with live indicator and color-coded stock levels
+  - Bullet points: Live stock sync, No overselling, Low stock alerts
+- Used Shopify brand color (#95BF47) throughout for icons and accents
+
+**Files changed:**
+- apps/marketing/src/pages/features/shopify.astro (created, ~230 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:40 - S15: Create Integrations feature page
 
 **What was implemented:**

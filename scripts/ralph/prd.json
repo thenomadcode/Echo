@@ -286,7 +286,7 @@
       "id": "S16",
       "title": "Create Shopify feature page",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/pages/features/shopify.astro using FeaturePageLayout",
