@@ -198,7 +198,7 @@
       "id": "S11",
       "title": "Create CTASection component",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/components/CTASection.astro",
