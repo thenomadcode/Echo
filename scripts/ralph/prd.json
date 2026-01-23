@@ -356,7 +356,7 @@
       "id": "S20",
       "title": "Add animations and micro-interactions",
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add subtle floating animation to hero screenshot (2-3px bob)",

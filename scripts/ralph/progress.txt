@@ -1,3 +1,43 @@
+## 2026-01-23 23:05 - S20: Add animations and micro-interactions
+
+**What was implemented:**
+- Added CSS animations to global.css:
+  - `@keyframes float`: 3s infinite bob animation (6px vertical movement)
+  - `@keyframes fade-in-up`: 0.6s fade + slide up animation
+  - `@keyframes slide-in-right` / `slide-out-right`: for mobile menu
+  - `.animate-float`: floating animation class
+  - `.animate-fade-in-up`: fade in with slide up
+  - `.animate-on-scroll`: opacity/transform animation triggered by IntersectionObserver
+  - `.cta-button`: scale(1.02) + shadow on hover
+  - `.link-underline`: animated underline on hover
+  - `.stagger-children`: staggered animation delays (100ms increments)
+- Updated Hero.astro:
+  - Added `animate-float` to hero screenshot container
+  - Added `cta-button` class to primary CTA
+- Updated FeatureCard.astro:
+  - Added `animate-on-scroll` class for scroll-triggered fade in
+- Updated FeaturesSection.astro:
+  - Added `stagger-children` to grid for staggered card animations
+  - Added IntersectionObserver script for scroll animation trigger
+- Updated Header.astro:
+  - Added `cta-button` to "Start Free" button
+  - Added `link-underline` to "Log in" and "Pricing" links
+- Updated CTASection.astro:
+  - Added `cta-button` to CTA button
+
+**Files changed:**
+- apps/marketing/src/styles/global.css (+90 lines of animation CSS)
+- apps/marketing/src/components/Hero.astro (2 classes added)
+- apps/marketing/src/components/FeatureCard.astro (1 class added)
+- apps/marketing/src/components/FeaturesSection.astro (script + classes added)
+- apps/marketing/src/components/Header.astro (3 classes added)
+- apps/marketing/src/components/CTASection.astro (1 class added)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 23:00 - S19: Create legal pages (Privacy and Terms)
 
 **What was implemented:**
