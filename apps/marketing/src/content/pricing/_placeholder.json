@@ -1,0 +1,10 @@
+{
+  "name": "Placeholder",
+  "price": 0,
+  "currency": "USD",
+  "interval": "month",
+  "popular": false,
+  "features": ["Placeholder feature"],
+  "cta": "Get Started",
+  "ctaLink": "/"
+}

@@ -1,0 +1,25 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import PageLayout from "../layouts/PageLayout.astro";
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect("/");
+}
+
+const pages = await getCollection("pages");
+const page = pages.find((p: CollectionEntry<"pages">) => p.id === slug);
+
+if (!page || page.data.draft) {
+  return Astro.redirect("/404");
+}
+
+const { Content } = await render(page);
+---
+
+<PageLayout title={page.data.title} description={page.data.description}>
+  <article class="container mx-auto px-4 py-12 max-w-3xl prose prose-stone dark:prose-invert">
+    <h1>{page.data.title}</h1>
+    <Content />
+  </article>
+</PageLayout>

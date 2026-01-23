@@ -1,0 +1,53 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import PageLayout from "../../layouts/PageLayout.astro";
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect("/changelog");
+}
+
+const changelogEntries = await getCollection("changelog");
+const entry = changelogEntries.find((e: CollectionEntry<"changelog">) => e.id === slug);
+
+if (!entry) {
+  return Astro.redirect("/404");
+}
+
+const { Content } = await render(entry);
+
+const formattedDate = entry.data.date.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<PageLayout
+  title={`${entry.data.version} - ${entry.data.title}`}
+  description={`Changelog for version ${entry.data.version}`}
+>
+  <article class="container mx-auto px-4 py-12 max-w-3xl">
+    <header class="mb-8">
+      <div class="flex items-center gap-4 mb-4">
+        <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
+          v{entry.data.version}
+        </span>
+        <time class="text-muted-foreground text-sm">{formattedDate}</time>
+      </div>
+      <h1 class="font-heading text-3xl font-bold">{entry.data.title}</h1>
+      {entry.data.tags.length > 0 && (
+        <div class="flex gap-2 mt-4">
+          {entry.data.tags.map((tag: string) => (
+            <span class="bg-muted text-muted-foreground px-2 py-1 rounded text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </header>
+    <div class="prose prose-stone dark:prose-invert max-w-none">
+      <Content />
+    </div>
+  </article>
+</PageLayout>
