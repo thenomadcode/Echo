@@ -149,7 +149,7 @@
       "id": "S10",
       "title": "Create Integrations Overview",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create integrations/index.mdx",
@@ -163,7 +163,7 @@
       "id": "S11",
       "title": "Create WhatsApp integration documentation",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create integrations/whatsapp.mdx",
@@ -182,7 +182,7 @@
       "id": "S12",
       "title": "Create Shopify integration documentation",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create integrations/shopify.mdx",

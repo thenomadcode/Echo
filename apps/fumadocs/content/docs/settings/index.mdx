@@ -4,4 +4,102 @@ description: Configure your business settings
 icon: Settings
 ---
 
-Settings placeholder.
+Configure every aspect of your Echo business from the Settings page. Access it by clicking **Settings** in the sidebar.
+
+## Settings Sections
+
+Settings are organized into four main sections:
+
+### General
+
+Configure your business fundamentals:
+
+- **Business Info** — Name, description, logo
+- **Localization** — Default language, timezone
+- **Business Hours** — Operating days and times
+
+### AI & Automation
+
+Customize how the AI behaves:
+
+- **AI Personality** — Greeting message, personality instructions
+- **Escalation Rules** — Keywords that trigger human handover
+
+[Learn more about AI configuration →](/docs/settings/ai-configuration)
+
+### Integrations
+
+Connect external services:
+
+- **WhatsApp** — Connect via Twilio to receive messages
+- **Shopify** — Import products and sync orders
+
+[Learn more about integrations →](/docs/integrations)
+
+### Privacy
+
+Manage customer data:
+
+- **Data Retention** — Configure automatic data anonymization
+
+## Business Info
+
+Update your business profile:
+
+| Field | Description |
+|-------|-------------|
+| **Business Name** | Your business name shown to customers |
+| **Description** | Brief description for AI context |
+| **Logo URL** | URL to your logo image |
+
+Changes are saved when you click **Save Changes**.
+
+## Localization
+
+Set your business locale:
+
+| Field | Description |
+|-------|-------------|
+| **Default Language** | Primary language for AI responses (English, Spanish, Portuguese) |
+| **Timezone** | Your business timezone for scheduling and timestamps |
+
+**Note:** The AI auto-detects customer language and responds in their language, but uses your default language for new conversations.
+
+## Business Hours
+
+Configure when your business operates:
+
+1. Check the days you're open
+2. Set opening and closing times for each day
+3. Click **Save Changes**
+
+Outside business hours:
+- AI continues to respond
+- Optionally, AI can mention when you'll be available
+
+## Privacy & Data Retention
+
+Configure how long customer data is kept:
+
+| Retention Period | Description |
+|------------------|-------------|
+| **Never delete** | Keep all data indefinitely |
+| **30 days** | Anonymize data after 30 days |
+| **60 days** | Anonymize data after 60 days |
+| **90 days** | Anonymize data after 90 days |
+| **180 days** | Anonymize data after 180 days |
+| **365 days** | Anonymize data after 365 days |
+
+When data is anonymized:
+- Customer name and phone are replaced
+- Order history is kept but de-identified
+- Conversations are kept but de-identified
+- Allergies and preferences are deleted
+
+Customers receive a 7-day warning before anonymization.
+
+## Navigation
+
+Settings uses a sidebar navigation on desktop. On mobile, sections appear vertically.
+
+Click any setting group in the sidebar to jump to that section. Changes are saved per-section when you click the save button.

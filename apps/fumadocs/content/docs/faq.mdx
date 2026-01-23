@@ -4,4 +4,173 @@ description: Frequently asked questions
 icon: HelpCircle
 ---
 
-FAQ placeholder.
+Answers to common questions about Echo.
+
+## General
+
+### What is Echo?
+
+Echo is an AI-powered customer service platform that automates WhatsApp conversations for small and medium businesses in Latin America. It handles product inquiries, order taking, and general questions 24/7.
+
+### Who is Echo for?
+
+Echo is designed for restaurants, pharmacies, retail stores, and other businesses in LATAM (Colombia, Brazil, Mexico) that receive customer messages on WhatsApp and want to automate responses.
+
+### What languages does Echo support?
+
+Echo supports English, Spanish, and Portuguese. The AI automatically detects the customer's language and responds in that language.
+
+### How much does Echo cost?
+
+Contact us for current pricing. We offer plans based on message volume and features.
+
+## WhatsApp
+
+### How do I connect my WhatsApp number?
+
+Echo uses Twilio to connect to WhatsApp. You'll need a Twilio account, WhatsApp-enabled phone number (or sandbox for testing), and to configure a webhook URL. See the [WhatsApp integration guide](/docs/integrations/whatsapp) for detailed steps.
+
+### Can I use my personal WhatsApp number?
+
+We recommend using a dedicated business number, but technically you can use any WhatsApp-enabled number through Twilio. For production use, get a WhatsApp Business number through Twilio.
+
+### Why aren't messages arriving?
+
+Check these common issues:
+1. Webhook URL not configured correctly in Twilio
+2. Phone number format is wrong (needs E.164 format like +1234567890)
+3. Twilio sandbox expired (rejoin if testing)
+
+See [WhatsApp troubleshooting](/docs/integrations/whatsapp#troubleshooting) for more.
+
+### Can I send messages to customers first?
+
+WhatsApp Business API has restrictions on proactive messaging. You can respond to customer-initiated conversations, but starting new conversations requires approved message templates. Echo focuses on responding to incoming messages.
+
+## AI
+
+### How smart is the AI?
+
+Echo uses advanced language models to understand customer intent, answer questions, and help with orders. It knows your product catalog, business information, and customer history. For complex or sensitive situations, it escalates to humans.
+
+### Will the AI say something wrong?
+
+The AI is designed to be helpful and accurate, but it may occasionally misunderstand or make errors. That's why:
+- We include escalation keywords for human handover
+- You can review all conversations in the dashboard
+- You can take over any conversation at any time
+
+### Can I customize how the AI responds?
+
+Yes! You can configure:
+- Greeting message (first message to customers)
+- Personality instructions (tone, style, behavior)
+- Escalation keywords (when to hand to humans)
+
+See [AI configuration](/docs/settings/ai-configuration) for details.
+
+### What if the AI doesn't know the answer?
+
+The AI will politely say it doesn't know and offer to connect the customer with a human, or suggest checking with you directly.
+
+## Orders
+
+### How do customers place orders?
+
+Customers chat with the AI on WhatsApp, and the AI guides them through:
+1. Choosing products
+2. Confirming quantities
+3. Selecting delivery or pickup
+4. Providing contact and address
+5. Paying via card or cash
+
+### How do payments work?
+
+Echo supports:
+- **Card payments** via Stripe or Shopify Checkout
+- **Cash on delivery/pickup**
+
+For card payments, customers receive a payment link in WhatsApp.
+
+### What if a customer wants to cancel?
+
+Customers can ask to cancel their order. You can cancel orders from the Orders dashboard. Note that refunds for card payments must be processed through your payment provider (Stripe or Shopify).
+
+### How do I track order status?
+
+All orders appear in the Orders dashboard with their current status. Update status as you prepare and deliver orders.
+
+## Products
+
+### Can I import products from Shopify?
+
+Yes! If you use Shopify, connect your store and import products with one click. Each Shopify variant becomes a separate Echo product. See [Shopify integration](/docs/integrations/shopify).
+
+### How do I mark products as out of stock?
+
+Edit the product and toggle availability to "Unavailable". The AI won't suggest unavailable products to customers.
+
+### Can I update prices?
+
+Yes, edit any product to change its price. Changes take effect immediately for new orders.
+
+## Customers
+
+### How are customers created?
+
+Customers are automatically created when they first message your WhatsApp number. You don't need to add them manually.
+
+### What customer data is stored?
+
+Echo stores:
+- Phone number (required for WhatsApp)
+- Name (if provided)
+- Order history
+- Preferences detected by AI
+- Addresses for delivery
+
+### How do I delete customer data?
+
+You can delete customers from the customer profile. Alternatively, customers can request deletion by saying "forget me" or "delete my data" in chat. See [privacy settings](/docs/settings) for data retention options.
+
+## Troubleshooting
+
+### The AI isn't responding
+
+1. Check WhatsApp connection in Settings > Integrations
+2. Verify webhook URL is correct in Twilio
+3. Look at the Conversations dashboard for errors
+4. Test by sending a message to your WhatsApp number
+
+### Products aren't showing to customers
+
+1. Make sure products have "Available" status
+2. Check that products have names and prices
+3. Verify your product catalog has at least one product
+
+### Orders aren't being created
+
+1. Confirm the order flow completed (customer confirmed and provided details)
+2. Check for payment issues (if card payment required)
+3. Look at order status in the Orders dashboard
+
+### The dashboard is slow
+
+1. Try refreshing the page
+2. Clear your browser cache
+3. Check your internet connection
+4. Contact support if the issue persists
+
+## Getting Help
+
+### How do I contact support?
+
+Email us at support@echo-app.com or use the chat widget in the dashboard.
+
+### Is there a community?
+
+Join our Discord community to connect with other Echo users and get help from the team.
+
+### Where can I suggest features?
+
+Email your feature requests to feedback@echo-app.com or share them in our Discord community.

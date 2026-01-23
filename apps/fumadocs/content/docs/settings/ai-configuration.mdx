@@ -4,4 +4,151 @@ description: Customize how your AI assistant responds
 icon: Bot
 ---
 
-AI Configuration placeholder.
+Echo's AI is customizable to match your business personality. Configure how it greets customers, its communication style, and when to escalate to humans.
+
+## How the AI Works
+
+Echo's AI:
+
+1. **Receives** customer messages via WhatsApp
+2. **Understands** intent (product question, order request, complaint, etc.)
+3. **Retrieves** relevant product information
+4. **Responds** in the customer's language with your business personality
+5. **Escalates** when it can't help or detects frustration
+
+The AI has access to:
+- Your product catalog (names, descriptions, prices, availability)
+- Customer history (past orders, preferences, allergies)
+- Your business information (name, description, hours)
+- Conversation context (what's been discussed)
+
+## Greeting Message
+
+The first message customers receive sets the tone. Configure it in **Settings > AI & Automation > AI Personality**.
+
+### Good Greeting Examples
+
+```
+Hello! Welcome to [Business Name]. I'm here to help you with our menu and orders. What can I get for you today?
+```
+
+```
+Hi there! Thanks for reaching out to [Business Name]. I can help you browse our products, place an order, or answer questions. How can I help?
+```
+
+### Tips for Greetings
+
+- Keep it warm but concise (1-2 sentences)
+- Mention what you can help with
+- Avoid being too formal or too casual
+- Don't use ALL CAPS or excessive emojis
+
+## Personality Instructions
+
+Guide the AI's tone and behavior with custom instructions. These shape how the AI responds throughout the conversation.
+
+### Example Instructions
+
+```
+Be friendly and casual, like talking to a neighbor. Use the customer's name when you know it. Keep responses concise - customers are busy. If asked about ingredients or allergies, take it seriously and be thorough.
+```
+
+```
+Be professional and helpful. Answer questions directly. When suggesting products, explain why they're a good fit. If you don't know something, say so honestly rather than making things up.
+```
+
+### What to Include
+
+| Topic | Example Instruction |
+|-------|---------------------|
+| **Tone** | "Be friendly and casual" or "Be professional" |
+| **Length** | "Keep responses under 3 sentences when possible" |
+| **Upselling** | "Suggest add-ons when relevant, but don't push" |
+| **Uncertainty** | "If unsure, offer to connect with a human" |
+| **Allergies** | "Take allergy questions very seriously" |
+
+### What to Avoid
+
+- Overly complex instructions
+- Contradicting instructions
+- Instructions about things outside the AI's knowledge
+- Instructions that violate WhatsApp policies
+
+## Escalation Keywords
+
+Configure words and phrases that automatically escalate to a human. Go to **Settings > AI & Automation > Escalation Rules**.
+
+### Default Escalation Keywords
+
+- "human"
+- "agent"
+- "manager"
+- "speak to someone"
+- "real person"
+
+### Adding Custom Keywords
+
+Add keywords relevant to your business:
+
+| Business Type | Suggested Keywords |
+|---------------|-------------------|
+| Restaurant | "refund", "wrong order", "sick" |
+| Pharmacy | "prescription", "doctor", "emergency" |
+| Retail | "return", "defective", "damaged" |
+
+### How Escalation Works
+
+When a customer uses an escalation keyword:
+
+1. Conversation is marked as "Escalated"
+2. You receive a notification (if configured)
+3. AI stops responding automatically
+4. Customer sees a message that a human will help soon
+
+## Language Detection
+
+The AI automatically detects the customer's language from their first message and responds in that language.
+
+### Supported Languages
+
+| Language | ISO Code |
+|----------|----------|
+| English | en |
+| Spanish | es |
+| Portuguese | pt |
+
+If the AI can't detect the language, it uses your **Default Language** setting.
+
+## Tips for Effective AI Configuration
+
+### Start Simple
+Begin with minimal instructions and add more as you notice issues.
+
+### Test Regularly
+Send test messages to your WhatsApp number to check how the AI responds.
+
+### Review Conversations
+Check the Conversations dashboard to see how customers interact with the AI.
+
+### Iterate
+Adjust greeting, instructions, and escalation keywords based on real conversations.
+
+### Don't Over-Engineer
+The AI is already trained to be helpful. Your instructions fine-tune behavior, not teach basics.
+
+## Common Adjustments
+
+### AI is Too Formal
+Add: "Be casual and friendly. Use contractions like "I'm" and "we'll"."
+
+### AI is Too Wordy
+Add: "Keep responses concise. Use 1-3 sentences when possible."
+
+### AI Pushes Sales Too Hard
+Add: "Only suggest products when directly relevant. Don't push sales."
+
+### AI Doesn't Know When to Stop
+Add: "If you've answered the question, don't add unnecessary follow-ups."
+
+### AI Handles Complaints Poorly
+Add: "For complaints, always apologize and offer to connect with a human."
