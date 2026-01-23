@@ -24,6 +24,37 @@
 - Sidebar context pattern: use SidebarContext + SidebarProvider for shared collapsed state between Sidebar and layout
 - Sidebar collapsible animation: use `transition-[width] duration-200` for smooth width changes
 - Content area responds to sidebar state: use `transition-[padding-left]` to animate content offset
+- Fumadocs Steps: use `<div className="fd-steps [&_h3]:fd-step">` with h3 headings for numbered steps (no import needed)
+
+---
+
+## 2026-01-23 10:05 - S03: Create Quick Start Guide
+
+**What was implemented:**
+- Created getting-started/index.mdx with comprehensive Quick Start Guide
+- Used fd-steps CSS class with [&_h3]:fd-step for numbered step styling
+- 7 steps covering the full onboarding flow:
+  1. Create your account
+  2. Set up your business profile
+  3. Add your products
+  4. Connect WhatsApp
+  5. Configure your AI assistant
+  6. Test your setup
+  7. Go live!
+- Each step links to detailed documentation pages
+- Estimated time (~30 minutes) shown in intro
+- Added "What's next?" section with Cards linking to Products, Conversations, Orders
+
+**Files changed:**
+- apps/fumadocs/content/docs/getting-started/index.mdx (rewritten, ~85 lines)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+
+**Learnings for future iterations:**
+- Fumadocs Steps can use CSS-only approach: `<div className="fd-steps [&_h3]:fd-step">` with h3 headings
+- No import needed for Steps component when using CSS classes
+- Steps styling automatically numbers h3 elements inside the container
 
 ---
 

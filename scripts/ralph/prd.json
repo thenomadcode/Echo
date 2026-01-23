@@ -36,7 +36,7 @@
       "id": "S03",
       "title": "Create Quick Start Guide",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create getting-started/index.mdx",
