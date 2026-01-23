@@ -1,5 +1,8 @@
 ## Codebase Patterns
 - Schema tables use `defineTable()` with `v` validators from "convex/values"
+- Fumadocs: meta.json in each folder defines navigation order via `pages` array
+- Fumadocs: Page frontmatter includes title, description, icon (Lucide icon name)
+- Fumadocs: URL structure is /docs/{slug} where slug matches folder/file structure
 - TailwindCSS 4: custom fonts defined in `@theme inline` block with `--font-*` variables
 - Google Fonts: use preconnect hints + `display=swap` for optimal loading
 - Auth pattern: `authComponent.safeGetAuthUser(ctx)` returns authUser with `userId` property - always check `!authUser || !authUser.userId`
@@ -21,6 +24,33 @@
 - Sidebar context pattern: use SidebarContext + SidebarProvider for shared collapsed state between Sidebar and layout
 - Sidebar collapsible animation: use `transition-[width] duration-200` for smooth width changes
 - Content area responds to sidebar state: use `transition-[padding-left]` to animate content offset
+
+---
+
+## 2026-01-23 09:56 - S01: Set up documentation structure and navigation
+
+**What was implemented:**
+- Created folder structure: getting-started/, products/, integrations/, settings/
+- Created root meta.json with navigation order matching PRD requirements
+- Created meta.json for each subfolder with page order
+- Removed test.mdx test content
+- Created placeholder pages for all navigation items with appropriate icons
+- Updated layout to show "Echo Docs" branding
+
+**Files changed:**
+- apps/fumadocs/content/docs/meta.json (created)
+- apps/fumadocs/content/docs/getting-started/meta.json (created)
+- apps/fumadocs/content/docs/products/meta.json (created)
+- apps/fumadocs/content/docs/integrations/meta.json (created)
+- apps/fumadocs/content/docs/settings/meta.json (created)
+- apps/fumadocs/content/docs/index.mdx (updated)
+- apps/fumadocs/content/docs/test.mdx (deleted)
+- 13 new placeholder .mdx files for navigation structure
+- apps/fumadocs/src/lib/layout.shared.tsx (branding update)
+
+**Verification:**
+- fumadocs-mdx && tsc --noEmit: passes
+- Folder structure complete with all required sections
 
 ---
 
@@ -3829,5 +3859,29 @@
 - LSP diagnostics: no errors on all changed files
 - bunx convex dev --once: compiles successfully
 - web tsc --noEmit: passes
+
+---
+
+## 2026-01-23 10:05 - S02: Create documentation landing page
+
+**What was implemented:**
+- Updated index.mdx with comprehensive landing page content
+- Added 2-3 sentence explanation of what Echo does
+- Dashboard screenshot placeholder (actual screenshot deferred to S16)
+- Quick Start Guide as primary CTA (first card)
+- Cards component linking to all 8 main documentation sections
+- Each card has title and description explaining the section
+
+**Files changed:**
+- apps/fumadocs/content/docs/index.mdx (rewritten)
+
+**Verification:**
+- fumadocs build: passes, 15 pages prerendered
+- Cards component auto-available via fumadocs defaultMdxComponents
+
+**Learnings for future iterations:**
+- Fumadocs Cards/Card components are auto-registered via defaultMdxComponents
+- Card props: href (required), title (required), children for description
+- Image paths in MDX must resolve at build time - use placeholders or ensure file exists
 
 ---

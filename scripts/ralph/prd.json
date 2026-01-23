@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Set up documentation structure and navigation",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create folder structure: getting-started/, products/, integrations/, settings/",
@@ -21,7 +21,7 @@
       "id": "S02",
       "title": "Create documentation landing page",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create index.mdx as Welcome to Echo page",
