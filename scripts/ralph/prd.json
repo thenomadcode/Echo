@@ -250,7 +250,7 @@
       "id": "S14",
       "title": "Create AI Chat feature page",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/pages/features/ai-chat.astro using FeaturePageLayout",

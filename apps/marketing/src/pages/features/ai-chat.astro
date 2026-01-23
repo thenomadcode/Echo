@@ -8,10 +8,251 @@ import FeaturePageLayout from "../../layouts/FeaturePageLayout.astro";
   featureName="AI Chat"
   description="Echo's AI chat handles customer conversations naturally, supporting multiple languages and knowing when to escalate to you."
 >
-  <!-- Content will be added in S14 -->
-  <section class="py-16">
+  <!-- Section 1: Natural Conversations -->
+  <section class="py-16 lg:py-24">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <p class="text-center text-muted-foreground">Feature content coming soon...</p>
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Natural Conversations
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Echo doesn't sound like a bot. It learns your communication style and responds the way you would.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">No robotic scripts</strong> — Dynamic responses tailored to each conversation</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Matches your style</strong> — Casual, professional, or friendly—you decide</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Handles typos gracefully</strong> — Understands "pizzza" means pizza</span>
+            </li>
+          </ul>
+        </div>
+        <div class="relative">
+          <div class="bg-muted/30 rounded-xl p-6 border border-border">
+            <div class="space-y-4">
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <span class="text-blue-600 text-sm font-medium">C</span>
+                </div>
+                <div class="bg-background rounded-lg px-4 py-2 shadow-sm">
+                  <p class="text-sm">hey do u have the black tshirt in mediun?</p>
+                </div>
+              </div>
+              <div class="flex gap-3 justify-end">
+                <div class="bg-primary text-primary-foreground rounded-lg px-4 py-2 shadow-sm max-w-xs">
+                  <p class="text-sm">Hey! Yes, we have the black t-shirt in medium! Want me to add it to your cart? 🛒</p>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span class="text-primary text-sm font-medium">E</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Multi-Language Support -->
+  <section class="py-16 lg:py-24 bg-muted/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="grid grid-cols-3 gap-4">
+            <div class="bg-background rounded-xl p-6 border border-border text-center">
+              <div class="text-2xl mb-2">🇺🇸</div>
+              <p class="font-heading font-semibold text-foreground">English</p>
+              <p class="text-xs text-muted-foreground mt-1">Primary</p>
+            </div>
+            <div class="bg-background rounded-xl p-6 border border-border text-center">
+              <div class="text-2xl mb-2">🇪🇸</div>
+              <p class="font-heading font-semibold text-foreground">Español</p>
+              <p class="text-xs text-muted-foreground mt-1">Supported</p>
+            </div>
+            <div class="bg-background rounded-xl p-6 border border-border text-center">
+              <div class="text-2xl mb-2">🇧🇷</div>
+              <p class="font-heading font-semibold text-foreground">Português</p>
+              <p class="text-xs text-muted-foreground mt-1">Supported</p>
+            </div>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Multi-Language Support
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Reach customers in their preferred language without hiring multilingual staff.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Auto-detects language</strong> — Responds in the customer's language automatically</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Perfect for LATAM</strong> — Native Spanish and Portuguese support</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Consistent brand voice</strong> — Same personality across all languages</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Smart Intent Recognition -->
+  <section class="py-16 lg:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Smart Intent Recognition
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Echo understands what customers really want—even when they don't say it clearly.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Beyond keywords</strong> — Understands context and intent, not just exact matches</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Product recommendations</strong> — Suggests relevant items based on conversation</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Handles complex queries</strong> — "What's like that blue dress but cheaper?"</span>
+            </li>
+          </ul>
+        </div>
+        <div class="relative">
+          <div class="bg-muted/30 rounded-xl p-6 border border-border">
+            <div class="space-y-3">
+              <div class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Intent Analysis
+              </div>
+              <div class="bg-background rounded-lg p-4 border border-border">
+                <p class="text-sm text-muted-foreground mb-2">"looking for something warm for winter"</p>
+                <div class="flex flex-wrap gap-2 mt-3">
+                  <span class="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">Intent: Product Search</span>
+                  <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">Season: Winter</span>
+                  <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Attribute: Warm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Human Handoff -->
+  <section class="py-16 lg:py-24 bg-muted/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="bg-background rounded-xl p-6 border border-border">
+            <div class="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+              <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <p class="font-heading font-semibold text-foreground">Escalation Detected</p>
+                <p class="text-sm text-muted-foreground">Customer requested human agent</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium">
+                Take Over
+              </button>
+              <button class="flex-1 px-4 py-2 bg-muted text-foreground rounded-md text-sm font-medium">
+                View Context
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Human Handoff
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            AI knows its limits. Complex issues get escalated to you with full context.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Smart escalation triggers</strong> — Complaints, refund requests, frustrated customers</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Full conversation context</strong> — See everything discussed before you jump in</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Seamless transition</strong> — Customer never knows they're talking to AI until you take over</span>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </section>
 </FeaturePageLayout>

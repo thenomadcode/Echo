@@ -1,3 +1,30 @@
+## 2026-01-23 22:35 - S14: Create AI Chat feature page
+
+**What was implemented:**
+- Created full AI Chat feature page at apps/marketing/src/pages/features/ai-chat.astro
+- Uses FeaturePageLayout with title "AI that actually sounds human"
+- Section 1: Natural Conversations
+  - Icon, heading, description
+  - Bullet points: No robotic scripts, Matches your style, Handles typos gracefully
+  - Visual: Chat mockup showing typo handling
+- Section 2: Multi-Language Support (alternating bg)
+  - Language cards: English, Spanish, Portuguese with flags
+  - Bullet points: Auto-detects language, Perfect for LATAM, Consistent brand voice
+- Section 3: Smart Intent Recognition
+  - Bullet points: Beyond keywords, Product recommendations, Handles complex queries
+  - Visual: Intent analysis mockup showing tags
+- Section 4: Human Handoff (alternating bg)
+  - Escalation notification mockup with Take Over button
+  - Bullet points: Smart escalation triggers, Full conversation context, Seamless transition
+
+**Files changed:**
+- apps/marketing/src/pages/features/ai-chat.astro (rewritten, ~230 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:30 - S13: Create FeaturePageLayout component
 
 **What was implemented:**
