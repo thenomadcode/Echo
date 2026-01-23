@@ -42,23 +42,12 @@ export function MobileMenu() {
       <button
         type="button"
         onClick={toggleMenu}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "40px",
-          height: "40px",
-          borderRadius: "6px",
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-        }}
-        className="sm:hidden"
+        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md border-none bg-transparent cursor-pointer"
         aria-label={isOpen ? "Close menu" : "Open menu"}
         aria-expanded={isOpen}
       >
         <svg
-          style={{ width: "24px", height: "24px", color: "#1C1917" }}
+          className="w-6 h-6 text-foreground"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
