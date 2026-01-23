@@ -1,3 +1,27 @@
+## 2026-01-23 22:25 - S12: Assemble homepage with all sections
+
+**What was implemented:**
+- Updated apps/marketing/src/pages/index.astro to use PageLayout
+- Imported and included all 7 homepage sections in order:
+  1. Hero
+  2. SocialProofBar
+  3. FeaturesSection
+  4. HowItWorks
+  5. PricingTable
+  6. TestimonialSection
+  7. CTASection
+- Set page title: "Echo - AI That Sells While You Sleep"
+- Set meta description for SEO
+- Each section component handles its own spacing (py-16/py-24)
+
+**Files changed:**
+- apps/marketing/src/pages/index.astro (updated, 24 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:20 - S11: Create CTASection component
 
 **What was implemented:**

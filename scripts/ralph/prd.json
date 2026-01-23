@@ -215,7 +215,7 @@
       "id": "S12",
       "title": "Assemble homepage with all sections",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Update apps/marketing/src/pages/index.astro to use BaseLayout",
