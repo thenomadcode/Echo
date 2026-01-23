@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://echo.com/sitemap.xml

@@ -25,6 +25,7 @@
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @echo/backend dev",
     "dev:setup": "turbo -F @echo/backend dev:setup",
+    "dev:marketing": "turbo -F marketing dev",
     "ralph": "cd scripts/ralph/tui && go build -o ../ralph-tui && cd .. && ./ralph-tui"
   },
   "dependencies": {
