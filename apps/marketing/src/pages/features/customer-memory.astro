@@ -1,0 +1,311 @@
+---
+import FeaturePageLayout from "../../layouts/FeaturePageLayout.astro";
+---
+
+<FeaturePageLayout
+  title="AI that remembers your customers"
+  subtitle="Every interaction builds a richer customer profile. Echo remembers preferences, allergies, addresses, and more."
+  featureName="Customer Memory"
+  description="Echo builds detailed customer profiles automatically. Remembers preferences, restrictions, addresses, and order history to provide personalized service."
+>
+  <!-- Section 1: Customer Profiles -->
+  <section class="py-16 lg:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Customer Profiles
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Rich profiles built automatically from every conversation and order. No manual data entry needed.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Automatic creation</strong> — Profiles created from first WhatsApp message</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Order history</strong> — Every purchase tracked and searchable</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Lifetime value</strong> — See total spend and engagement at a glance</span>
+            </li>
+          </ul>
+        </div>
+        <div class="relative">
+          <div class="bg-background rounded-xl border border-border p-6 shadow-lg">
+            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <span class="text-2xl font-heading font-bold text-primary">MG</span>
+              </div>
+              <div>
+                <h3 class="font-heading font-semibold text-lg text-foreground">Maria Garcia</h3>
+                <p class="text-sm text-muted-foreground">+55 11 9999-8888</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">Gold</span>
+                  <span class="text-xs text-muted-foreground">Customer since Jan 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p class="text-2xl font-heading font-bold text-foreground">23</p>
+                <p class="text-xs text-muted-foreground">Orders</p>
+              </div>
+              <div>
+                <p class="text-2xl font-heading font-bold text-foreground">$1,847</p>
+                <p class="text-xs text-muted-foreground">Lifetime Value</p>
+              </div>
+              <div>
+                <p class="text-2xl font-heading font-bold text-foreground">98%</p>
+                <p class="text-xs text-muted-foreground">Satisfaction</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Preferences & Restrictions -->
+  <section class="py-16 lg:py-24 bg-muted/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="bg-background rounded-xl border border-border p-6 shadow-lg">
+            <h4 class="font-heading font-semibold text-foreground mb-4">Customer Preferences</h4>
+            <div class="space-y-3">
+              <div class="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-red-700">Allergy: Peanuts</p>
+                  <p class="text-xs text-red-600">AI will warn about products containing peanuts</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-amber-700">Restriction: Vegetarian</p>
+                  <p class="text-xs text-amber-600">Only recommend vegetarian options</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-blue-700">Preference: Extra spicy</p>
+                  <p class="text-xs text-blue-600">Prefers spicy options when available</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Preferences & Restrictions
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Echo learns and remembers what each customer likes—and what they can't have.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Allergies tracked</strong> — Critical safety info prominently displayed</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Dietary restrictions</strong> — Vegan, vegetarian, halal, kosher—all supported</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">AI conflict warnings</strong> — Automatically warns if order conflicts with restrictions</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Saved Addresses -->
+  <section class="py-16 lg:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Saved Addresses
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Customers don't have to repeat their address. Echo remembers and suggests their preferred delivery location.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Multiple addresses</strong> — Home, work, or anywhere else</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">One-tap reorder</strong> — "Same as last time" works perfectly</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Delivery notes saved</strong> — "Leave at gate", "Call on arrival", etc.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="relative">
+          <div class="bg-background rounded-xl border border-border p-6 shadow-lg">
+            <h4 class="font-heading font-semibold text-foreground mb-4">Saved Addresses</h4>
+            <div class="space-y-3">
+              <div class="flex items-start gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <svg class="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <p class="text-sm font-medium text-foreground">Home</p>
+                    <span class="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">Default</span>
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-1">Rua das Flores, 123, Apt 4B</p>
+                  <p class="text-xs text-muted-foreground">São Paulo, SP 01310-100</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-3 border border-border rounded-lg">
+                <svg class="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-foreground">Work</p>
+                  <p class="text-xs text-muted-foreground mt-1">Av. Paulista, 1000, 15th floor</p>
+                  <p class="text-xs text-muted-foreground">São Paulo, SP 01310-200</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Privacy First -->
+  <section class="py-16 lg:py-24 bg-muted/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="bg-background rounded-xl border border-border p-6 shadow-lg">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-border">
+              <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <p class="font-heading font-semibold text-foreground">Privacy Protected</p>
+                <p class="text-sm text-muted-foreground">Your customers' data is safe</p>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-sm text-foreground">GDPR Compliant</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-sm text-foreground">LGPD Compliant (Brazil)</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-sm text-foreground">256-bit AES Encryption</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-sm text-foreground">One-click data deletion</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-foreground mb-4">
+            Privacy First
+          </h2>
+          <p class="text-lg text-muted-foreground mb-6">
+            Customer data is encrypted, protected, and compliant with international privacy regulations.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">GDPR & LGPD compliant</strong> — Built for global privacy standards</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Data deletion on request</strong> — "Forget me" chat command works instantly</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-foreground"><strong class="font-medium">Encrypted at rest</strong> — All customer data encrypted with AES-256</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</FeaturePageLayout>

@@ -303,7 +303,7 @@
       "id": "S17",
       "title": "Create Customer Memory feature page",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/marketing/src/pages/features/customer-memory.astro using FeaturePageLayout",

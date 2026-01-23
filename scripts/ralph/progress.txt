@@ -1,3 +1,29 @@
+## 2026-01-23 22:50 - S17: Create Customer Memory feature page
+
+**What was implemented:**
+- Created apps/marketing/src/pages/features/customer-memory.astro using FeaturePageLayout
+- Hero: "AI that remembers your customers"
+- Section 1: Customer Profiles
+  - Customer profile card mockup with avatar, tier badge, stats (orders, lifetime value, satisfaction)
+  - Bullet points: Automatic creation, Order history, Lifetime value
+- Section 2: Preferences & Restrictions (alternating bg)
+  - Preferences card with color-coded items: allergies (red), restrictions (amber), preferences (blue)
+  - Bullet points: Allergies tracked, Dietary restrictions, AI conflict warnings
+- Section 3: Saved Addresses
+  - Saved addresses card with home/work addresses
+  - Bullet points: Multiple addresses, One-tap reorder, Delivery notes saved
+- Section 4: Privacy First (alternating bg)
+  - Privacy compliance checklist (GDPR, LGPD, encryption, deletion)
+  - Bullet points: GDPR & LGPD compliant, Data deletion on request, Encrypted at rest
+
+**Files changed:**
+- apps/marketing/src/pages/features/customer-memory.astro (created, ~260 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 22:45 - S16: Create Shopify feature page
 
 **What was implemented:**
