@@ -1,3 +1,25 @@
+## 2026-01-25 20:05 - S19: Create MetaDisconnectDialog component
+
+**What was implemented:**
+- Component was created as part of S18 implementation (tightly coupled)
+- See S18 entry for full implementation details
+- All acceptance criteria satisfied:
+  - Uses AlertDialog from shadcn/ui
+  - Shows warning about losing connection
+  - Confirm and Cancel buttons
+  - On confirm, calls disconnect action
+  - Shows loading state during disconnect
+  - Closes dialog and calls onDisconnected callback on success
+  - Shows error toast on failure
+
+**Files changed:**
+- apps/web/src/components/integrations/meta-disconnect-dialog.tsx (created in S18, ~90 lines)
+
+**Verification:**
+- `tsc --noEmit` in apps/web: passes (0 errors)
+
+---
+
 ## 2026-01-25 20:00 - S18: Create MetaConnectionStatus component
 
 **What was implemented:**

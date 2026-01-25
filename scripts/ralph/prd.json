@@ -315,7 +315,7 @@
       "id": "S19",
       "title": "Create MetaDisconnectDialog component",
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/integrations/meta-disconnect-dialog.tsx",
