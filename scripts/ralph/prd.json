@@ -194,7 +194,7 @@
       "id": "S12",
       "title": "Implement rich message support",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Extend sendMessage action to support type: 'quick_replies'",

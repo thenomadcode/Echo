@@ -1,3 +1,35 @@
+## 2026-01-25 14:58 - S12: Implement rich message support
+
+**What was implemented:**
+- Extended `sendMessage` action to support type: "quick_replies" and "generic_template"
+- Added `quickReplies` parameter for Messenger quick reply buttons (array of QuickReply)
+- Added `templateElements` parameter for Messenger generic templates (product cards)
+- Implemented `sendGenericTemplate` method in `MetaMessagingProviderImpl` class
+- Graceful fallback to text for unsupported types on Instagram:
+  - Quick replies → numbered text list with "Reply with number" prompt
+  - Generic templates → formatted text with title, subtitle, URL
+- Respects platform limits: 13 quick replies (Messenger), 10 template elements (Messenger)
+- Added `richContent` field to `storeSentMessage` mutation for storing original structured data
+- Added `fallbackUsed` return field to indicate when Instagram fallback was used
+- Logs when falling back due to platform limitations
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (+135 lines - extended sendMessage, validators)
+- packages/backend/convex/integrations/meta/provider.ts (+56 lines - sendGenericTemplate method)
+- packages/backend/convex/integrations/meta/types.ts (+18 lines - GenericTemplateElement, GenericTemplateButton)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Instagram DM only supports: text, image, video, audio. No quick replies, templates, or buttons.
+- Messenger generic template: max 10 elements, max 3 buttons per element, title max 80 chars, button title max 20 chars
+- Store `richContent` JSON even when fallback is used - preserves intent for analytics/debugging
+- Return `fallbackUsed: true` so callers know original rich content was degraded
+
+---
+
 ## 2026-01-25 14:52 - S11: Implement sendMessage action
 
 **What was implemented:**
