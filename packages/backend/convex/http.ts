@@ -108,6 +108,52 @@ http.route({
 });
 
 // ============================================================================
+// Meta (Instagram/Messenger) Webhooks
+// ============================================================================
+
+/**
+ * Webhook verification endpoint for Meta (Instagram DM / Facebook Messenger)
+ *
+ * Meta sends a GET request to verify the webhook URL during setup.
+ * We must verify the token and return the challenge value.
+ *
+ * @see https://developers.facebook.com/docs/graph-api/webhooks/getting-started#verification-requests
+ */
+http.route({
+  path: "/webhook/meta",
+  method: "GET",
+  handler: httpAction(async (_, request) => {
+    const url = new URL(request.url);
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+
+    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
+
+    console.log("Meta webhook verification attempt:", {
+      mode,
+      hasToken: !!token,
+      hasChallenge: !!challenge,
+      tokenConfigured: !!verifyToken,
+    });
+
+    if (mode === "subscribe" && token && token === verifyToken) {
+      console.log("Meta webhook verification successful");
+      return new Response(challenge ?? "", {
+        status: 200,
+        headers: { "Content-Type": "text/plain" },
+      });
+    }
+
+    console.error("Meta webhook verification failed:", {
+      modeValid: mode === "subscribe",
+      tokenMatch: token === verifyToken,
+    });
+    return new Response("Forbidden", { status: 403 });
+  }),
+});
+
+// ============================================================================
 // WhatsApp Webhooks
 // ============================================================================
 

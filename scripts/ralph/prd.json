@@ -122,7 +122,7 @@
       "id": "S08",
       "title": "Implement webhook verification endpoint",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add HTTP route /webhook/meta GET to packages/backend/convex/http.ts",

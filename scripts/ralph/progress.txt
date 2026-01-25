@@ -1,3 +1,28 @@
+## 2026-01-25 14:32 - S08: Implement webhook verification endpoint
+
+**What was implemented:**
+- Added HTTP route `/webhook/meta` GET to `packages/backend/convex/http.ts`
+- Implemented metaWebhookVerify handler that:
+  - Parses hub.mode, hub.verify_token, hub.challenge from query params
+  - Verifies hub.verify_token matches META_WEBHOOK_VERIFY_TOKEN env var
+  - Returns hub.challenge value on success (plain text response)
+  - Returns 403 if verification fails
+  - Logs verification attempts for debugging
+
+**Files changed:**
+- packages/backend/convex/http.ts (+43 lines - Meta webhook verification route)
+
+**Verification:**
+- `bunx convex typecheck`: passes
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta webhook verification follows same pattern as WhatsApp: hub.mode="subscribe", hub.verify_token, hub.challenge
+- Return challenge as plain text with Content-Type: text/plain header
+- Use separate env var META_WEBHOOK_VERIFY_TOKEN (not shared with WhatsApp)
+
+---
+
 ## 2026-01-25 14:29 - S07: Create OAuth callback handler and token exchange
 
 **What was implemented:**
