@@ -1,4 +1,5 @@
 import { api } from "@echo/backend/convex/_generated/api";
+import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
@@ -19,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { MetaConnectButton } from "@/components/integrations/meta-connect-button";
 
 export const Route = createFileRoute("/_authenticated/settings_/integrations_/meta")({
   component: MetaSettingsPage,
@@ -31,26 +33,24 @@ export const Route = createFileRoute("/_authenticated/settings_/integrations_/me
 function MetaSettingsPage() {
   const { connected, error } = Route.useSearch();
   const businesses = useQuery(api.businesses.list);
-  const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [activeBusinessId, setActiveBusinessId] = useState<Id<"businesses"> | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
 
-  const startOAuth = useAction(api.integrations.meta.actions.startOAuth);
   const disconnect = useAction(api.integrations.meta.actions.disconnect);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("echo:activeBusinessId");
       if (stored) {
-        setActiveBusinessId(stored);
+        setActiveBusinessId(stored as Id<"businesses">);
       }
     }
   }, []);
 
   useEffect(() => {
     if (businesses && businesses.length > 0 && !activeBusinessId) {
-      setActiveBusinessId(businesses[0]._id);
+      setActiveBusinessId(businesses[0]._id as Id<"businesses">);
     }
   }, [businesses, activeBusinessId]);
 
@@ -67,27 +67,6 @@ function MetaSettingsPage() {
     api.integrations.meta.queries.getConnectionStatus,
     activeBusinessId ? { businessId: activeBusinessId as never } : "skip"
   );
-
-  const handleConnect = async () => {
-    if (!activeBusinessId) {
-      toast.error("No active business selected");
-      return;
-    }
-
-    setIsConnecting(true);
-
-    try {
-      const result = await startOAuth({
-        businessId: activeBusinessId as never,
-      });
-
-      window.location.href = result.authUrl;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start connection";
-      toast.error(message);
-      setIsConnecting(false);
-    }
-  };
 
   const handleDisconnect = async () => {
     if (!activeBusinessId) {
@@ -155,7 +134,7 @@ function MetaSettingsPage() {
         </div>
       </div>
 
-      {!isConnected && (
+      {!isConnected && activeBusinessId && (
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>Connect with Facebook</CardTitle>
@@ -168,23 +147,7 @@ function MetaSettingsPage() {
               You'll be redirected to Facebook to authorize Echo to access your Page's messaging.
               Make sure you have admin access to the Facebook Page you want to connect.
             </p>
-            <Button
-              onClick={handleConnect}
-              disabled={isConnecting}
-              className="w-full bg-[#1877F2] hover:bg-[#1877F2]/90"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Facebook className="mr-2 h-4 w-4" />
-                  Connect with Facebook
-                </>
-              )}
-            </Button>
+            <MetaConnectButton businessId={activeBusinessId} className="w-full" />
           </CardContent>
         </Card>
       )}
