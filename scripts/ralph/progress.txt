@@ -1,3 +1,75 @@
+## 2026-01-25 20:00 - S18: Create MetaConnectionStatus component
+
+**What was implemented:**
+- Updated `apps/web/src/components/integrations/meta-connection-status.tsx`:
+  - Display connected Facebook Page name
+  - Display connected Instagram username (if linked)
+  - Show last message timestamp with human-readable formatting
+  - Show webhook status (Active/Inactive badge)
+  - Include 'Test Connection' button (UI ready, wired to optional callback for S20)
+  - Include 'Disconnect' button
+  - Uses Card component from shadcn/ui
+  - Accepts `onTestConnection` optional callback prop for future wiring
+- Created `apps/web/src/components/integrations/meta-disconnect-dialog.tsx`:
+  - Uses AlertDialog from shadcn/ui
+  - Shows warning about losing connection
+  - Confirm and Cancel buttons
+  - On confirm, calls disconnect action
+  - Shows loading state during disconnect
+  - Closes dialog and calls onDisconnected callback on success
+  - Shows error toast on failure
+- Refactored `apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx`:
+  - Now uses MetaConnectionStatus component instead of inline display
+  - Now uses MetaDisconnectDialog component instead of inline AlertDialog
+  - Significantly reduced code (~150 lines removed)
+  - Cleaner separation of concerns
+
+**Files changed:**
+- apps/web/src/components/integrations/meta-connection-status.tsx (updated, ~150 lines)
+- apps/web/src/components/integrations/meta-disconnect-dialog.tsx (created, ~90 lines)
+- apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx (refactored, -154 lines)
+
+**Verification:**
+- `tsc --noEmit` in apps/web: passes (0 errors)
+- `bunx convex typecheck` in packages/backend: passes (0 errors)
+
+**Learnings for future iterations:**
+- Component pattern: Use optional callback props for actions that require backend work not yet implemented
+- `onTestConnection?: () => Promise<{ success: boolean; error?: string }>` allows wiring in S20
+- Extracting dialog components improves reusability and testing
+
+---
+
+## 2026-01-25 15:07 - S17: Create MetaConnectButton component
+
+**What was implemented:**
+- Created `apps/web/src/components/integrations/meta-connect-button.tsx`:
+  - Button displays 'Connect with Facebook' with Facebook icon
+  - On click, calls `startOAuth` action and redirects to Facebook
+  - Shows loading state during OAuth initiation (Loader2 spinner + "Connecting..." text)
+  - Handles errors with toast notification
+  - Uses shadcn Button component with Facebook blue (#1877F2) styling
+  - Accepts `businessId` and optional `className` props
+- Refactored `apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx`:
+  - Imported and uses the new `MetaConnectButton` component
+  - Removed inline connect button logic (`handleConnect`, `isConnecting`, `startOAuth` action)
+  - Changed `activeBusinessId` type from `string` to `Id<"businesses">` for type safety
+
+**Files changed:**
+- apps/web/src/components/integrations/meta-connect-button.tsx (created, ~55 lines)
+- apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx (refactored, -44/+22 lines)
+
+**Verification:**
+- `tsc --noEmit` in apps/web: passes (0 errors)
+- `bunx convex typecheck` in packages/backend: passes (0 errors)
+
+**Learnings for future iterations:**
+- Extract reusable OAuth connection buttons into `components/integrations/` folder
+- Use `Id<"businesses">` type consistently instead of `string` for Convex document IDs
+- Component pattern: Accept businessId prop, manage loading state internally, use toast for errors
+
+---
+
 ## 2026-01-25 15:02 - S16: Create Meta settings page
 
 **What was implemented:**

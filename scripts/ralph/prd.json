@@ -278,7 +278,7 @@
       "id": "S17",
       "title": "Create MetaConnectButton component",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/integrations/meta-connect-button.tsx",
@@ -295,7 +295,7 @@
       "id": "S18",
       "title": "Create MetaConnectionStatus component",
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/components/integrations/meta-connection-status.tsx",
