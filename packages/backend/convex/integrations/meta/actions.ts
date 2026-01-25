@@ -795,3 +795,212 @@ export const saveConnection = internalMutation({
     return connectionId;
   },
 });
+
+// ============================================================================
+// Connection Management Actions
+// ============================================================================
+
+export const getConnectionForDisconnect = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    return {
+      _id: connection._id,
+      pageId: connection.pageId,
+      pageAccessToken: connection.pageAccessToken,
+    };
+  },
+});
+
+export const deleteConnection = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (connection) {
+      await ctx.db.delete(connection._id);
+    }
+
+    return { deleted: !!connection };
+  },
+});
+
+export const disconnect = action({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    const authResult = await ctx.runQuery(
+      internal.integrations.meta.actions.verifyBusinessOwnership,
+      { businessId: args.businessId }
+    );
+
+    if (!authResult.authorized) {
+      return { success: false, error: authResult.error ?? "Not authorized" };
+    }
+
+    const connection = await ctx.runQuery(
+      internal.integrations.meta.actions.getConnectionForDisconnect,
+      { businessId: args.businessId }
+    );
+
+    if (!connection) {
+      return { success: false, error: "No Meta connection found for this business" };
+    }
+
+    try {
+      const unsubscribeUrl = new URL(`${META_GRAPH_API_BASE}/${connection.pageId}/subscribed_apps`);
+      unsubscribeUrl.searchParams.set("access_token", connection.pageAccessToken);
+
+      const response = await fetch(unsubscribeUrl.toString(), {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn("Failed to unsubscribe webhooks:", errorData);
+      }
+    } catch (error) {
+      console.warn("Error unsubscribing webhooks (continuing with disconnect):", error);
+    }
+
+    await ctx.runMutation(
+      internal.integrations.meta.actions.deleteConnection,
+      { businessId: args.businessId }
+    );
+
+    console.log(`Disconnected Meta connection for business ${args.businessId}`);
+
+    return { success: true };
+  },
+});
+
+export const getConnectionForWebhooks = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    return {
+      _id: connection._id,
+      pageId: connection.pageId,
+      pageAccessToken: connection.pageAccessToken,
+      webhooksSubscribed: connection.webhooksSubscribed,
+    };
+  },
+});
+
+export const updateWebhookStatus = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    webhooksSubscribed: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (connection) {
+      await ctx.db.patch(connection._id, {
+        webhooksSubscribed: args.webhooksSubscribed,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+type MetaSubscribeResponse = {
+  success?: boolean;
+  error?: {
+    message: string;
+    type: string;
+    code: number;
+  };
+};
+
+export const subscribeWebhooks = action({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    const authResult = await ctx.runQuery(
+      internal.integrations.meta.actions.verifyBusinessOwnership,
+      { businessId: args.businessId }
+    );
+
+    if (!authResult.authorized) {
+      return { success: false, error: authResult.error ?? "Not authorized" };
+    }
+
+    const connection = await ctx.runQuery(
+      internal.integrations.meta.actions.getConnectionForWebhooks,
+      { businessId: args.businessId }
+    );
+
+    if (!connection) {
+      return { success: false, error: "No Meta connection found for this business" };
+    }
+
+    const subscribedFields = ["messages", "messaging_postbacks", "messaging_optins"];
+
+    try {
+      const subscribeUrl = new URL(`${META_GRAPH_API_BASE}/${connection.pageId}/subscribed_apps`);
+
+      const response = await fetch(subscribeUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${connection.pageAccessToken}`,
+        },
+        body: JSON.stringify({
+          subscribed_fields: subscribedFields,
+        }),
+      });
+
+      const data = (await response.json()) as MetaSubscribeResponse;
+
+      if (!response.ok || data.error) {
+        const errorMessage = data.error?.message ?? `HTTP ${response.status}`;
+        console.error("Failed to subscribe webhooks:", data);
+        return { success: false, error: `Failed to subscribe webhooks: ${errorMessage}` };
+      }
+
+      await ctx.runMutation(
+        internal.integrations.meta.actions.updateWebhookStatus,
+        { businessId: args.businessId, webhooksSubscribed: true }
+      );
+
+      console.log(`Subscribed to Meta webhooks for business ${args.businessId}: ${subscribedFields.join(", ")}`);
+
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error subscribing webhooks:", message);
+      return { success: false, error: message };
+    }
+  },
+});
