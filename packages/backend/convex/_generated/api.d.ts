@@ -35,6 +35,8 @@ import type * as dashboard from "../dashboard.js";
 import type * as deletionRequests from "../deletionRequests.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as integrations_meta_security from "../integrations/meta/security.js";
+import type * as integrations_meta_types from "../integrations/meta/types.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
 import type * as integrations_whatsapp_settings from "../integrations/whatsapp/settings.js";
 import type * as integrations_whatsapp_templates from "../integrations/whatsapp/templates.js";
@@ -84,6 +86,8 @@ declare const fullApi: ApiFromModules<{
   deletionRequests: typeof deletionRequests;
   healthCheck: typeof healthCheck;
   http: typeof http;
+  "integrations/meta/security": typeof integrations_meta_security;
+  "integrations/meta/types": typeof integrations_meta_types;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;
   "integrations/whatsapp/settings": typeof integrations_whatsapp_settings;
   "integrations/whatsapp/templates": typeof integrations_whatsapp_templates;
