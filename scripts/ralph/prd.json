@@ -176,7 +176,7 @@
       "id": "S11",
       "title": "Implement sendMessage action",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add sendMessage action to packages/backend/convex/integrations/meta/actions.ts",

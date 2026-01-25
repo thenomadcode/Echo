@@ -1,3 +1,31 @@
+## 2026-01-25 14:52 - S11: Implement sendMessage action
+
+**What was implemented:**
+- Added `sendMessage` action to packages/backend/convex/integrations/meta/actions.ts
+- Looks up conversation by ID to get channel and channelId (recipient)
+- Looks up metaConnection by businessId to get pageAccessToken
+- Extracts recipientId from channelId format: `{channel}:{senderId}:{businessAccountId}`
+- Instantiates MetaMessagingProviderImpl with correct parameters (token, pageOrIgId, channel)
+- Supports both "text" and "image" message types
+- Stores sent message in database with externalId (mid) for delivery tracking
+- Handles and logs errors, returns success/failure status
+- Added helper queries: `getConversationWithConnection`, `storeSentMessage`
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (+225 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- channelId format for Meta: `{channel}:{senderId}:{businessAccountId}` - senderId is the recipient for outgoing messages
+- For Instagram DMs, use `instagramAccountId` as pageOrIgId; for Messenger use `pageId`
+- Always store sent messages even on failure (with deliveryStatus: "failed") for audit trail
+- Meta Graph API returns `message_id` (mid) on successful send - store as externalId for status tracking
+
+---
+
 ## 2026-01-25 14:47 - S10: Implement Messenger webhook handler
 
 **What was implemented:**
