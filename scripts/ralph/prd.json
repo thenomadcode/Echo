@@ -242,7 +242,7 @@
       "id": "S15",
       "title": "Create Meta connection queries and mutations",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/integrations/meta/queries.ts",

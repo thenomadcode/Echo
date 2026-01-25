@@ -1,3 +1,35 @@
+## 2026-01-25 14:58 - S15: Create Meta connection queries and mutations
+
+**What was implemented:**
+- Created `packages/backend/convex/integrations/meta/queries.ts` with:
+  - `getConnectionStatus` query: returns full connection details (pageId, pageName, instagramAccountId, instagramUsername, permissions, webhooksSubscribed, verified, lastMessageAt, tokenExpiresAt)
+  - `getConnectedAccounts` query: returns structured pages and instagramAccounts arrays for UI display
+- Added to `packages/backend/convex/integrations/meta/actions.ts`:
+  - `disconnect` action: unsubscribes webhooks via Graph API DELETE, then removes connection from database
+  - `subscribeWebhooks` action: subscribes to messages, messaging_postbacks, messaging_optins fields
+  - `getConnectionForDisconnect` internal query for disconnect flow
+  - `getConnectionForWebhooks` internal query for webhook subscription
+  - `deleteConnection` internal mutation for connection removal
+  - `updateWebhookStatus` internal mutation for webhook status tracking
+- All queries/mutations require authentication via `authComponent.safeGetAuthUser(ctx)`
+- Business ownership verified before any operation
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/queries.ts (created, ~100 lines)
+- packages/backend/convex/integrations/meta/actions.ts (+209 lines - disconnect, subscribeWebhooks, internal helpers)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Graph API webhook subscription: POST to `/{page_id}/subscribed_apps` with subscribed_fields array
+- Unsubscribe webhooks: DELETE to same endpoint
+- Use Bearer token auth header (not query param) for subscribed_apps endpoint
+- saveConnection already existed in actions.ts (from S07) - added disconnect and subscribeWebhooks
+
+---
+
 ## 2026-01-25 14:27 - S14: Implement message status updates handler
 
 **What was implemented:**
