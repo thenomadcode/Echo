@@ -1,3 +1,49 @@
+## 2026-01-25 14:17 - S03: Create Meta provider types and interfaces
+
+**What was implemented:**
+- Created `packages/backend/convex/integrations/meta/types.ts` with comprehensive Meta platform types
+- Exported `MetaChannel` type: `'instagram' | 'messenger'`
+- Exported `MetaMessagingProvider` interface with:
+  - `sendText(recipientId, text)` method
+  - `sendImage(recipientId, imageUrl, caption?)` method
+  - `sendQuickReplies(recipientId, text, quickReplies)` method
+- Exported `ParsedMetaMessage` interface with all required fields:
+  - channel, businessAccountId, senderId, content, timestamp, messageId
+  - messageType, mediaUrl, isEcho (plus optional story/postback/referral fields)
+- Exported `QuickReply` interface: content_type, title, payload, image_url?
+- Exported `MessageResult` interface: success, messageId?, error?, errorCode?, errorSubcode?
+- Exported `StatusUpdate` interface: channel, businessAccountId, recipientId, type, messageIds?, watermark, timestamp
+- Added raw webhook payload types for parsing: MetaWebhookPayload, MetaWebhookEntry, MetaMessagingEvent, etc.
+- All types match Meta Graph API v19.0 specifications
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/types.ts (created, ~330 lines)
+
+**Verification:**
+- LSP diagnostics: 0 errors
+- `bunx convex codegen`: passes (TypeScript compilation succeeds)
+
+---
+
+## 2026-01-25 14:15 - S02: Update conversations channel type for Meta channels
+
+**What was implemented:**
+- Updated `channel` field in conversations table (schema.ts) from `v.string()` to a union type
+- Channel now supports: `'whatsapp' | 'instagram' | 'messenger'`
+- Updated `conversations.create` mutation arg to use the same union type validator
+- Existing `channel: "whatsapp"` usage in WhatsApp webhook remains valid (backward compatible)
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+6 lines)
+- packages/backend/convex/conversations.ts (+6 lines)
+
+**Verification:**
+- LSP diagnostics: 0 errors on all changed files
+- `bunx convex codegen`: passes (schema compiles)
+- No breaking changes to existing queries/mutations that use channel field
+
+---
+
 ## 2026-01-25 14:12 - S01: Create metaConnections schema table
 
 **What was implemented:**

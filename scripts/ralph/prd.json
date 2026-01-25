@@ -25,7 +25,7 @@
       "id": "S02",
       "title": "Update conversations channel type for Meta channels",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Update conversations table channel field in packages/backend/convex/schema.ts",
@@ -39,7 +39,7 @@
       "id": "S03",
       "title": "Create Meta provider types and interfaces",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/integrations/meta/types.ts",
