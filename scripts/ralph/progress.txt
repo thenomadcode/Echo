@@ -1,3 +1,33 @@
+## 2026-01-25 14:27 - S14: Implement message status updates handler
+
+**What was implemented:**
+- Created `parseMetaWebhookPayloadFull()` function that parses all webhook event types
+- New `ParsedWebhookResult` interface with: messages, statusUpdates, echoConfirmations arrays
+- New `EchoConfirmation` interface for sent message confirmations
+- Added parsing functions: `parseDeliveryReceipt()`, `parseReadReceipt()`, `parseMessageEcho()`
+- Updated http.ts POST handler to:
+  - Process delivery receipts: update message status to "delivered"
+  - Process read receipts: update message status to "read"
+  - Process message echoes (is_echo): update message status to "sent"
+  - Match messages by externalId (mid) using existing `updateMessageStatus` mutation
+- Refactored `parseWebhookEntryFull()` to detect and route delivery/read/echo events
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/webhook.ts (+180 lines - new parsing functions)
+- packages/backend/convex/http.ts (+28 lines - status update handling in POST handler)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta delivery receipts contain `mids` array of delivered message IDs
+- Meta read receipts only have `watermark` timestamp, no specific message IDs
+- Message echoes (is_echo: true) are confirmations that our sent messages were accepted by Meta
+- The existing `updateMessageStatus` mutation already handles the db update - just needed webhook parsing
+
+---
+
 ## 2026-01-25 15:10 - S13: Implement 24-hour messaging window tracking
 
 **What was implemented:**

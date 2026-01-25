@@ -226,7 +226,7 @@
       "id": "S14",
       "title": "Implement message status updates handler",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Extend metaWebhookHandler to handle message_deliveries events",
