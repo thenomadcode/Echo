@@ -296,6 +296,231 @@ export const handleOAuthCallback = internalAction({
   },
 });
 
+// ============================================================================
+// Message Sending Actions
+// ============================================================================
+
+/**
+ * Get conversation details including channel info and connection data
+ */
+export const getConversationWithConnection = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return null;
+    }
+
+    // Only proceed for Meta channels (instagram, messenger)
+    if (conversation.channel !== "instagram" && conversation.channel !== "messenger") {
+      return null;
+    }
+
+    // Look up metaConnection for the business
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", conversation.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    // channelId format: {channel}:{senderId}:{businessAccountId}
+    // We need to extract the senderId (recipient) from channelId
+    const channelIdParts = conversation.channelId.split(":");
+    if (channelIdParts.length < 2) {
+      console.error("[sendMessage] Invalid channelId format:", conversation.channelId);
+      return null;
+    }
+
+    // senderId is the second part (recipient for outgoing messages)
+    const recipientId = channelIdParts[1];
+
+    // Determine which ID to use for the Graph API endpoint
+    // For Instagram: use instagramAccountId
+    // For Messenger: use pageId
+    const pageOrIgId = conversation.channel === "instagram"
+      ? connection.instagramAccountId
+      : connection.pageId;
+
+    if (!pageOrIgId) {
+      console.error("[sendMessage] Missing pageOrIgId for channel:", conversation.channel);
+      return null;
+    }
+
+    return {
+      conversation,
+      connection,
+      recipientId,
+      pageOrIgId,
+      channel: conversation.channel as "instagram" | "messenger",
+    };
+  },
+});
+
+/**
+ * Store a sent message in the database
+ */
+export const storeSentMessage = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    content: v.string(),
+    messageType: v.string(),
+    externalId: v.optional(v.string()),
+    deliveryStatus: v.string(),
+    mediaUrl: v.optional(v.string()),
+    mediaType: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      sender: "business",
+      content: args.content,
+      messageType: args.messageType,
+      externalId: args.externalId,
+      deliveryStatus: args.deliveryStatus,
+      mediaUrl: args.mediaUrl,
+      mediaType: args.mediaType,
+      createdAt: Date.now(),
+    });
+
+    // Update conversation's updatedAt
+    await ctx.db.patch(args.conversationId, {
+      updatedAt: Date.now(),
+    });
+
+    return messageId;
+  },
+});
+
+/**
+ * Send a message to a Meta channel (Instagram DM or Facebook Messenger)
+ *
+ * This action looks up the conversation, gets the connection credentials,
+ * sends the message via the Meta Graph API, and stores it in the database.
+ */
+export const sendMessage = action({
+  args: {
+    conversationId: v.id("conversations"),
+    content: v.string(),
+    type: v.union(v.literal("text"), v.literal("image")),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    messageId?: string;
+    externalId?: string;
+    error?: string;
+  }> => {
+    const { MetaMessagingProviderImpl } = await import("./provider");
+
+    // Get conversation and connection details
+    const data = await ctx.runQuery(
+      internal.integrations.meta.actions.getConversationWithConnection,
+      { conversationId: args.conversationId }
+    );
+
+    if (!data) {
+      console.error("[sendMessage] Could not get conversation/connection data for:", args.conversationId);
+      return {
+        success: false,
+        error: "Conversation not found or not a Meta channel",
+      };
+    }
+
+    const { connection, recipientId, pageOrIgId, channel } = data;
+
+    // Validate that we have the necessary credentials
+    if (!connection.pageAccessToken) {
+      console.error("[sendMessage] No page access token for business:", data.conversation.businessId);
+      return {
+        success: false,
+        error: "Meta connection missing access token",
+      };
+    }
+
+    // Instantiate the provider
+    const provider = new MetaMessagingProviderImpl(
+      connection.pageAccessToken,
+      pageOrIgId,
+      channel
+    );
+
+    let result: { success: boolean; messageId?: string; error?: string; errorCode?: number; errorSubcode?: number };
+
+    try {
+      // Send based on type
+      if (args.type === "image") {
+        if (!args.imageUrl) {
+          return {
+            success: false,
+            error: "imageUrl is required for image messages",
+          };
+        }
+        result = await provider.sendImage(recipientId, args.imageUrl, args.content || undefined);
+      } else {
+        // text
+        result = await provider.sendText(recipientId, args.content);
+      }
+
+      console.log(`[sendMessage] ${channel} message sent. Success: ${result.success}, mid: ${result.messageId}`);
+
+      // Store the sent message in the database
+      const storedMessageId = await ctx.runMutation(
+        internal.integrations.meta.actions.storeSentMessage,
+        {
+          conversationId: args.conversationId,
+          content: args.content,
+          messageType: args.type,
+          externalId: result.messageId,
+          deliveryStatus: result.success ? "sent" : "failed",
+          mediaUrl: args.type === "image" ? args.imageUrl : undefined,
+          mediaType: args.type === "image" ? "image/*" : undefined,
+        }
+      );
+
+      if (!result.success) {
+        console.error("[sendMessage] Meta API error:", {
+          error: result.error,
+          errorCode: result.errorCode,
+          errorSubcode: result.errorSubcode,
+        });
+      }
+
+      return {
+        success: result.success,
+        messageId: storedMessageId,
+        externalId: result.messageId,
+        error: result.error,
+      };
+    } catch (error) {
+      console.error("[sendMessage] Unexpected error:", error);
+
+      // Still store the message as failed
+      const storedMessageId = await ctx.runMutation(
+        internal.integrations.meta.actions.storeSentMessage,
+        {
+          conversationId: args.conversationId,
+          content: args.content,
+          messageType: args.type,
+          deliveryStatus: "failed",
+          mediaUrl: args.type === "image" ? args.imageUrl : undefined,
+          mediaType: args.type === "image" ? "image/*" : undefined,
+        }
+      );
+
+      return {
+        success: false,
+        messageId: storedMessageId,
+        error: error instanceof Error ? error.message : "Unknown error sending message",
+      };
+    }
+  },
+});
+
 export const saveConnection = internalMutation({
   args: {
     businessId: v.id("businesses"),
