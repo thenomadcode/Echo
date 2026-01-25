@@ -210,7 +210,7 @@
       "id": "S13",
       "title": "Implement 24-hour messaging window tracking",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Track lastCustomerMessageAt timestamp in conversations table",

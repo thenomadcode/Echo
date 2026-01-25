@@ -1,3 +1,39 @@
+## 2026-01-25 15:10 - S13: Implement 24-hour messaging window tracking
+
+**What was implemented:**
+- Created `getMessagingWindowStatus` public query for frontend to check window status
+- Created `isWithinMessagingWindow` internal query for backend use
+- Returns: `isWithinWindow`, `timeRemainingMs`, `lastCustomerMessageAt`, `windowClosesAt`
+- Updated `MetaMessagingProviderImpl` to accept optional `messagingType` and `messageTag` parameters
+- Added `MessagingOptions` interface for configuring messaging behavior
+- Added `MetaMessagingType` and `MetaMessageTag` types to types.ts
+- Updated `sendMessage` action to:
+  - Check 24-hour window status before sending
+  - Within 24h: use `messaging_type: RESPONSE`
+  - After 24h (Messenger): use `messaging_type: MESSAGE_TAG` with `HUMAN_AGENT` tag
+  - After 24h (Instagram): log warning (Instagram doesn't support MESSAGE_TAG)
+  - Accept optional `messageTag` parameter for custom tag selection
+  - Return `outsideMessagingWindow: boolean` in response
+- Refactored provider to use `buildRequestBody` helper for consistent messaging_type handling
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (+104 lines - window queries, sendMessage updates)
+- packages/backend/convex/integrations/meta/provider.ts (+38 lines - MessagingOptions, buildRequestBody)
+- packages/backend/convex/integrations/meta/types.ts (+16 lines - MetaMessagingType, MetaMessageTag)
+
+**Verification:**
+- `bunx convex typecheck`: passes
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta 24-hour window: From last customer message, businesses can respond freely. After 24h, need MESSAGE_TAG
+- Message tags available: CONFIRMED_EVENT_UPDATE, POST_PURCHASE_UPDATE, ACCOUNT_UPDATE, HUMAN_AGENT
+- Instagram doesn't support MESSAGE_TAG - consider implementing OTN (One-Time Notification) for future
+- `lastCustomerMessageAt` already existed in conversations schema - just needed tracking/checking logic
+- Messenger's HUMAN_AGENT tag allows sending outside window if a human agent is responding (7-day window)
+
+---
+
 ## 2026-01-25 14:58 - S12: Implement rich message support
 
 **What was implemented:**
