@@ -1,3 +1,47 @@
+## 2026-01-25 15:02 - S16: Create Meta settings page
+
+**What was implemented:**
+- Created `apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx` with:
+  - Page requires authentication (inherits from `_authenticated` route)
+  - Displays current connection status with Facebook Page name and Instagram username
+  - Shows MetaConnectButton (blue Facebook-branded button) when not connected
+  - Shows connection status card when connected with:
+    - Facebook Page name
+    - Instagram username (if linked)
+    - Webhook status (Active/Inactive badge)
+    - Last message timestamp
+  - Includes disconnect option with confirmation AlertDialog
+  - Handles loading and error states
+  - Search params for `connected` and `error` to show toasts after OAuth redirect
+- Updated `apps/web/src/routes/_authenticated/settings_.integrations.tsx` to:
+  - Add Meta integration card in the grid alongside Shopify
+  - Query Meta connection status
+  - Show connected/not connected badge
+- Fixed pre-existing type error in `test-ai.tsx` (changed channel "test" to "whatsapp" after S02 schema change)
+- Removed unused `Id` type import from `actions.ts`
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx (created, ~270 lines)
+- apps/web/src/routes/_authenticated/settings_.integrations.tsx (+38 lines - Meta card)
+- apps/web/src/routes/test-ai.tsx (1 line - channel type fix)
+- packages/backend/convex/integrations/meta/actions.ts (1 line - unused import removal)
+- apps/web/src/routeTree.gen.ts (auto-generated route tree update)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Verification:**
+- `tsc --noEmit` in apps/web: passes (0 errors)
+- `bunx convex typecheck` in packages/backend: passes (0 errors)
+
+**Learnings for future iterations:**
+- TanStack Router file-based routing: `settings_.integrations_.meta.tsx` maps to `/settings/integrations/meta`
+- Use `useAction` from `convex/react` for calling Convex actions (startOAuth, disconnect)
+- Use `useQuery` from `convex/react` for Convex queries with conditional skip: `api.query, args ? { ... } : "skip"`
+- AlertDialogTrigger uses `render` prop pattern in this codebase's shadcn/ui implementation
+- Route search params validated with `validateSearch` in route definition
+- Active business ID stored in `localStorage.getItem("echo:activeBusinessId")`
+
+---
+
 ## 2026-01-25 14:58 - S15: Create Meta connection queries and mutations
 
 **What was implemented:**

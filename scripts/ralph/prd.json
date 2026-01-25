@@ -259,7 +259,7 @@
       "id": "S16",
       "title": "Create Meta settings page",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create apps/web/src/routes/settings/integrations/meta.tsx",
