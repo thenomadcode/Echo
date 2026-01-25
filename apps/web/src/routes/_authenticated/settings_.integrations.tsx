@@ -2,7 +2,7 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { ShoppingBag, ChevronRight, Check, ArrowLeft } from "lucide-react";
+import { ShoppingBag, ChevronRight, Check, ArrowLeft, Facebook } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +30,13 @@ function IntegrationsPage() {
     }
   }, [businesses, activeBusinessId]);
 
-  const connectionStatus = useQuery(
+  const shopifyStatus = useQuery(
     api.shopify.getConnectionStatus,
+    activeBusinessId ? { businessId: activeBusinessId as never } : "skip"
+  );
+
+  const metaStatus = useQuery(
+    api.integrations.meta.queries.getConnectionStatus,
     activeBusinessId ? { businessId: activeBusinessId as never } : "skip"
   );
 
@@ -47,7 +52,8 @@ function IntegrationsPage() {
     return null;
   }
 
-  const isShopifyConnected = connectionStatus?.connected === true;
+  const isShopifyConnected = shopifyStatus?.connected === true;
+  const isMetaConnected = metaStatus?.connected === true;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -88,6 +94,35 @@ function IntegrationsPage() {
             </CardHeader>
             <CardContent>
               {isShopifyConnected ? (
+                <Badge variant="success" className="flex items-center gap-1 w-fit">
+                  <Check className="h-3 w-3" />
+                  Connected
+                </Badge>
+              ) : (
+                <Badge variant="secondary">Not connected</Badge>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/settings/integrations/meta" search={{ connected: false, error: undefined }}>
+          <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1877F2]">
+                  <Facebook className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Meta</CardTitle>
+                  <CardDescription className="text-sm">
+                    Messenger & Instagram DMs
+                  </CardDescription>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isMetaConnected ? (
                 <Badge variant="success" className="flex items-center gap-1 w-fit">
                   <Check className="h-3 w-3" />
                   Connected

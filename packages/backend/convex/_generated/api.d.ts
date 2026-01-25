@@ -37,6 +37,7 @@ import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as integrations_meta_actions from "../integrations/meta/actions.js";
 import type * as integrations_meta_provider from "../integrations/meta/provider.js";
+import type * as integrations_meta_queries from "../integrations/meta/queries.js";
 import type * as integrations_meta_security from "../integrations/meta/security.js";
 import type * as integrations_meta_types from "../integrations/meta/types.js";
 import type * as integrations_meta_webhook from "../integrations/meta/webhook.js";
@@ -91,6 +92,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "integrations/meta/actions": typeof integrations_meta_actions;
   "integrations/meta/provider": typeof integrations_meta_provider;
+  "integrations/meta/queries": typeof integrations_meta_queries;
   "integrations/meta/security": typeof integrations_meta_security;
   "integrations/meta/types": typeof integrations_meta_types;
   "integrations/meta/webhook": typeof integrations_meta_webhook;

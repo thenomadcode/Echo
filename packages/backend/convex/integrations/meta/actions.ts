@@ -2,7 +2,6 @@ import { v } from "convex/values";
 import { action, internalAction, internalMutation, internalQuery, query } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { authComponent } from "../../auth";
-import type { Id } from "../../_generated/dataModel";
 
 function generateStateParameter(): string {
   const array = new Uint8Array(32);

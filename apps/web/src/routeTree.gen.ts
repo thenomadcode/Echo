@@ -32,6 +32,7 @@ import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers/$customerId'
 import { Route as AuthenticatedConversationsConversationIdRouteImport } from './routes/_authenticated/conversations.$conversationId'
 import { Route as AuthenticatedSettingsIntegrationsShopifyRouteImport } from './routes/_authenticated/settings_.integrations_.shopify'
+import { Route as AuthenticatedSettingsIntegrationsMetaRouteImport } from './routes/_authenticated/settings_.integrations_.meta'
 
 const TestAiRoute = TestAiRouteImport.update({
   id: '/test-ai',
@@ -159,6 +160,12 @@ const AuthenticatedSettingsIntegrationsShopifyRoute =
     path: '/settings/integrations/shopify',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsIntegrationsMetaRoute =
+  AuthenticatedSettingsIntegrationsMetaRouteImport.update({
+    id: '/settings_/integrations_/meta',
+    path: '/settings/integrations/meta',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
+  '/settings/integrations/meta': typeof AuthenticatedSettingsIntegrationsMetaRoute
   '/settings/integrations/shopify': typeof AuthenticatedSettingsIntegrationsShopifyRoute
 }
 export interface FileRoutesByTo {
@@ -206,6 +214,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
+  '/settings/integrations/meta': typeof AuthenticatedSettingsIntegrationsMetaRoute
   '/settings/integrations/shopify': typeof AuthenticatedSettingsIntegrationsShopifyRoute
 }
 export interface FileRoutesById {
@@ -232,6 +241,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
+  '/_authenticated/settings_/integrations_/meta': typeof AuthenticatedSettingsIntegrationsMetaRoute
   '/_authenticated/settings_/integrations_/shopify': typeof AuthenticatedSettingsIntegrationsShopifyRoute
 }
 export interface FileRouteTypes {
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/customers'
     | '/products'
+    | '/settings/integrations/meta'
     | '/settings/integrations/shopify'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/customers'
     | '/products'
+    | '/settings/integrations/meta'
     | '/settings/integrations/shopify'
   id:
     | '__root__'
@@ -307,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/_authenticated/customers/'
     | '/_authenticated/products/'
+    | '/_authenticated/settings_/integrations_/meta'
     | '/_authenticated/settings_/integrations_/shopify'
   fileRoutesById: FileRoutesById
 }
@@ -483,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIntegrationsShopifyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings_/integrations_/meta': {
+      id: '/_authenticated/settings_/integrations_/meta'
+      path: '/settings/integrations/meta'
+      fullPath: '/settings/integrations/meta'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsMetaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -526,6 +546,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
+  AuthenticatedSettingsIntegrationsMetaRoute: typeof AuthenticatedSettingsIntegrationsMetaRoute
   AuthenticatedSettingsIntegrationsShopifyRoute: typeof AuthenticatedSettingsIntegrationsShopifyRoute
 }
 
@@ -544,6 +565,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
+  AuthenticatedSettingsIntegrationsMetaRoute:
+    AuthenticatedSettingsIntegrationsMetaRoute,
   AuthenticatedSettingsIntegrationsShopifyRoute:
     AuthenticatedSettingsIntegrationsShopifyRoute,
 }

@@ -145,7 +145,7 @@ function AITestChat({ businessId, businessName, onBack }: { businessId: Id<"busi
         activeConversationId = await createConversation({
           businessId,
           customerId: "test-user-" + Date.now(),
-          channel: "test",
+          channel: "whatsapp",
           channelId: "test-channel-" + Date.now(),
         });
         setConversationId(activeConversationId);
