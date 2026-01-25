@@ -98,6 +98,26 @@ export default defineSchema({
     .index("by_business", ["businessId"])
     .index("by_phone", ["phoneNumber"]),
 
+  // Meta (Instagram/Messenger) Integration table
+  metaConnections: defineTable({
+    businessId: v.id("businesses"),
+    pageId: v.string(),
+    pageName: v.string(),
+    pageAccessToken: v.string(),
+    instagramAccountId: v.optional(v.string()),
+    instagramUsername: v.optional(v.string()),
+    permissions: v.array(v.string()),
+    webhooksSubscribed: v.boolean(),
+    verified: v.boolean(),
+    lastMessageAt: v.optional(v.number()),
+    tokenExpiresAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_page", ["pageId"])
+    .index("by_instagram", ["instagramAccountId"]),
+
   conversations: defineTable({
     businessId: v.id("businesses"),
     customerId: v.string(),
