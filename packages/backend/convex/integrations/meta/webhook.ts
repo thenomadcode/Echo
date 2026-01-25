@@ -78,6 +78,39 @@ function parseMessagingEvent(
   channel: MetaChannel,
   businessAccountId: string
 ): ParsedMetaMessage | null {
+  const senderId = event.sender.id;
+  const timestamp = event.timestamp;
+
+  // Handle postback events (button clicks) - Messenger only
+  if (event.postback) {
+    const postback = event.postback;
+    const parsed: ParsedMetaMessage = {
+      channel,
+      businessAccountId,
+      senderId,
+      // Use postback title as content for AI processing
+      content: postback.title,
+      timestamp,
+      // Generate a unique message ID for postbacks (they don't have mid)
+      messageId: `postback_${businessAccountId}_${senderId}_${timestamp}`,
+      messageType: "text",
+      isEcho: false,
+      postbackPayload: postback.payload,
+    };
+
+    // Handle referral data if present (e.g., from ads or m.me links)
+    if (postback.referral) {
+      parsed.referralData = {
+        source: postback.referral.source,
+        type: postback.referral.type,
+        adId: postback.referral.ad_id,
+        ref: postback.referral.ref,
+      };
+    }
+
+    return parsed;
+  }
+
   // Skip if no message (could be a delivery/read receipt or other event)
   if (!event.message) {
     return null;
@@ -90,8 +123,6 @@ function parseMessagingEvent(
     return null;
   }
 
-  const senderId = event.sender.id;
-  const timestamp = event.timestamp;
   const messageId = message.mid;
 
   // Determine message type and extract content

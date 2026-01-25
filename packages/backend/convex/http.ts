@@ -188,7 +188,8 @@ http.route({
     }
 
     const data = payload as { object?: string };
-    console.log(`Meta webhook received: object=${data.object}`);
+    const objectType = data.object === "page" ? "messenger" : data.object;
+    console.log(`Meta webhook received: object=${data.object} (${objectType})`);
 
     const parsedMessages = parseMetaWebhookPayload(payload);
 
