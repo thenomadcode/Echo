@@ -11,6 +11,7 @@ import type {
   MetaRawMessage,
   MetaRawAttachment,
   ParsedMetaMessage,
+  StatusUpdate,
 } from "./types";
 
 // ============================================================================
@@ -46,9 +47,187 @@ export function parseMetaWebhookPayload(
   return messages;
 }
 
+// ============================================================================
+// Status Update Parsing (Delivery/Read Receipts)
+// ============================================================================
+
 /**
- * Parse a single webhook entry (one per Page/Instagram account)
+ * Result type for parsed webhook events
+ * Contains either messages, status updates, or echo confirmations
  */
+export interface ParsedWebhookResult {
+  messages: ParsedMetaMessage[];
+  statusUpdates: StatusUpdate[];
+  echoConfirmations: EchoConfirmation[];
+}
+
+/**
+ * Confirmation for a sent message (message_echo event)
+ */
+export interface EchoConfirmation {
+  channel: MetaChannel;
+  businessAccountId: string;
+  messageId: string;
+  timestamp: number;
+}
+
+/**
+ * Parse a raw Meta webhook payload into all event types
+ * Returns messages, status updates, and echo confirmations separately
+ */
+export function parseMetaWebhookPayloadFull(
+  payload: unknown
+): ParsedWebhookResult {
+  const result: ParsedWebhookResult = {
+    messages: [],
+    statusUpdates: [],
+    echoConfirmations: [],
+  };
+
+  if (!payload || typeof payload !== "object") {
+    return result;
+  }
+
+  const data = payload as MetaWebhookPayload;
+
+  if (!data.object || !Array.isArray(data.entry)) {
+    return result;
+  }
+
+  const channel: MetaChannel = data.object === "instagram" ? "instagram" : "messenger";
+
+  for (const entry of data.entry) {
+    const entryResult = parseWebhookEntryFull(entry, channel);
+    result.messages.push(...entryResult.messages);
+    result.statusUpdates.push(...entryResult.statusUpdates);
+    result.echoConfirmations.push(...entryResult.echoConfirmations);
+  }
+
+  return result;
+}
+
+/**
+ * Parse a single webhook entry for all event types
+ */
+function parseWebhookEntryFull(
+  entry: MetaWebhookEntry,
+  channel: MetaChannel
+): ParsedWebhookResult {
+  const result: ParsedWebhookResult = {
+    messages: [],
+    statusUpdates: [],
+    echoConfirmations: [],
+  };
+
+  const businessAccountId = entry.id;
+
+  if (!entry.messaging || !Array.isArray(entry.messaging)) {
+    return result;
+  }
+
+  for (const event of entry.messaging) {
+    // Handle delivery receipts
+    if (event.delivery) {
+      const statusUpdate = parseDeliveryReceipt(event, channel, businessAccountId);
+      if (statusUpdate) {
+        result.statusUpdates.push(statusUpdate);
+      }
+      continue;
+    }
+
+    // Handle read receipts
+    if (event.read) {
+      const statusUpdate = parseReadReceipt(event, channel, businessAccountId);
+      if (statusUpdate) {
+        result.statusUpdates.push(statusUpdate);
+      }
+      continue;
+    }
+
+    // Handle message echoes (our sent messages coming back)
+    if (event.message?.is_echo) {
+      const echoConfirmation = parseMessageEcho(event, channel, businessAccountId);
+      if (echoConfirmation) {
+        result.echoConfirmations.push(echoConfirmation);
+      }
+      continue;
+    }
+
+    // Handle regular incoming messages
+    const parsed = parseMessagingEvent(event, channel, businessAccountId);
+    if (parsed) {
+      result.messages.push(parsed);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Parse a delivery receipt event
+ */
+function parseDeliveryReceipt(
+  event: MetaMessagingEvent,
+  channel: MetaChannel,
+  businessAccountId: string
+): StatusUpdate | null {
+  if (!event.delivery) {
+    return null;
+  }
+
+  return {
+    channel,
+    businessAccountId,
+    recipientId: event.sender.id,
+    type: "delivery",
+    messageIds: event.delivery.mids,
+    watermark: event.delivery.watermark,
+    timestamp: event.timestamp,
+  };
+}
+
+/**
+ * Parse a read receipt event
+ */
+function parseReadReceipt(
+  event: MetaMessagingEvent,
+  channel: MetaChannel,
+  businessAccountId: string
+): StatusUpdate | null {
+  if (!event.read) {
+    return null;
+  }
+
+  return {
+    channel,
+    businessAccountId,
+    recipientId: event.sender.id,
+    type: "read",
+    watermark: event.read.watermark,
+    timestamp: event.timestamp,
+  };
+}
+
+/**
+ * Parse a message echo (sent message confirmation)
+ */
+function parseMessageEcho(
+  event: MetaMessagingEvent,
+  channel: MetaChannel,
+  businessAccountId: string
+): EchoConfirmation | null {
+  if (!event.message?.is_echo || !event.message.mid) {
+    return null;
+  }
+
+  return {
+    channel,
+    businessAccountId,
+    messageId: event.message.mid,
+    timestamp: event.timestamp,
+  };
+}
+
 function parseWebhookEntry(
   entry: MetaWebhookEntry,
   channel: MetaChannel
@@ -70,9 +249,6 @@ function parseWebhookEntry(
   return messages;
 }
 
-/**
- * Parse a single messaging event
- */
 function parseMessagingEvent(
   event: MetaMessagingEvent,
   channel: MetaChannel,
@@ -81,24 +257,20 @@ function parseMessagingEvent(
   const senderId = event.sender.id;
   const timestamp = event.timestamp;
 
-  // Handle postback events (button clicks) - Messenger only
   if (event.postback) {
     const postback = event.postback;
     const parsed: ParsedMetaMessage = {
       channel,
       businessAccountId,
       senderId,
-      // Use postback title as content for AI processing
       content: postback.title,
       timestamp,
-      // Generate a unique message ID for postbacks (they don't have mid)
       messageId: `postback_${businessAccountId}_${senderId}_${timestamp}`,
       messageType: "text",
       isEcho: false,
       postbackPayload: postback.payload,
     };
 
-    // Handle referral data if present (e.g., from ads or m.me links)
     if (postback.referral) {
       parsed.referralData = {
         source: postback.referral.source,
@@ -111,24 +283,19 @@ function parseMessagingEvent(
     return parsed;
   }
 
-  // Skip if no message (could be a delivery/read receipt or other event)
   if (!event.message) {
     return null;
   }
 
   const message = event.message;
 
-  // Skip echo messages (our own sent messages coming back)
   if (message.is_echo) {
     return null;
   }
 
   const messageId = message.mid;
-
-  // Determine message type and extract content
   const { messageType, content, mediaUrl, mediaMimeType } = extractMessageContent(message, channel);
 
-  // Build parsed message
   const parsed: ParsedMetaMessage = {
     channel,
     businessAccountId,
@@ -142,12 +309,10 @@ function parseMessagingEvent(
     mediaMimeType,
   };
 
-  // Handle quick reply payload
   if (message.quick_reply) {
     parsed.quickReplyPayload = message.quick_reply.payload;
   }
 
-  // Handle story reply (Instagram only)
   if (message.reply_to?.story) {
     parsed.replyToStoryId = message.reply_to.mid;
     parsed.storyUrl = message.reply_to.story.url;
@@ -159,9 +324,6 @@ function parseMessagingEvent(
   return parsed;
 }
 
-/**
- * Extract message content and type from raw message
- */
 function extractMessageContent(
   message: MetaRawMessage,
   channel: MetaChannel
@@ -171,7 +333,6 @@ function extractMessageContent(
   mediaUrl?: string;
   mediaMimeType?: string;
 } {
-  // Text message
   if (message.text && !message.attachments?.length) {
     return {
       messageType: "text",
@@ -179,22 +340,17 @@ function extractMessageContent(
     };
   }
 
-  // Message with attachments
   if (message.attachments && message.attachments.length > 0) {
     const attachment = message.attachments[0];
     return extractAttachmentContent(attachment, message.text ?? "", channel);
   }
 
-  // Fallback to text with empty content
   return {
     messageType: "text",
     content: message.text ?? "",
   };
 }
 
-/**
- * Extract content from an attachment
- */
 function extractAttachmentContent(
   attachment: MetaRawAttachment,
   fallbackText: string,
@@ -244,7 +400,6 @@ function extractAttachmentContent(
         mediaUrl,
       };
     case "fallback":
-      // Sticker or unsupported type
       if (attachment.payload?.sticker_id) {
         return {
           messageType: "sticker",

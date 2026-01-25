@@ -4,7 +4,7 @@ import { api, internal } from "./_generated/api";
 import { TwilioWhatsAppProvider } from "./integrations/whatsapp/twilio";
 import type { MessageType } from "./integrations/whatsapp/types";
 import { verifyMetaSignature } from "./integrations/meta/security";
-import { parseMetaWebhookPayload } from "./integrations/meta/webhook";
+import { parseMetaWebhookPayloadFull } from "./integrations/meta/webhook";
 
 import { authComponent, createAuth } from "./auth";
 import type { Id } from "./_generated/dataModel";
@@ -191,13 +191,37 @@ http.route({
     const objectType = data.object === "page" ? "messenger" : data.object;
     console.log(`Meta webhook received: object=${data.object} (${objectType})`);
 
-    const parsedMessages = parseMetaWebhookPayload(payload);
+    const parsed = parseMetaWebhookPayloadFull(payload);
 
-    if (parsedMessages.length === 0) {
+    for (const statusUpdate of parsed.statusUpdates) {
+      const status = statusUpdate.type === "delivery" ? "delivered" : "read";
+      
+      if (statusUpdate.messageIds && statusUpdate.messageIds.length > 0) {
+        for (const mid of statusUpdate.messageIds) {
+          await ctx.runMutation(
+            internal.integrations.meta.webhook.updateMessageStatus,
+            { externalId: mid, status }
+          );
+        }
+        console.log(
+          `Meta ${statusUpdate.channel}: Updated ${statusUpdate.messageIds.length} messages to ${status}`
+        );
+      }
+    }
+
+    for (const echo of parsed.echoConfirmations) {
+      await ctx.runMutation(
+        internal.integrations.meta.webhook.updateMessageStatus,
+        { externalId: echo.messageId, status: "sent" }
+      );
+      console.log(`Meta ${echo.channel}: Confirmed sent message ${echo.messageId}`);
+    }
+
+    if (parsed.messages.length === 0) {
       return new Response("OK", { status: 200 });
     }
 
-    for (const message of parsedMessages) {
+    for (const message of parsed.messages) {
       let businessLookup;
 
       if (message.channel === "instagram") {
