@@ -158,7 +158,7 @@
       "id": "S10",
       "title": "Implement Messenger webhook handler",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Extend metaWebhookHandler to handle object: 'page'",

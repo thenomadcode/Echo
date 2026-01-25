@@ -1,3 +1,31 @@
+## 2026-01-25 14:47 - S10: Implement Messenger webhook handler
+
+**What was implemented:**
+- Extended `parseMessagingEvent()` in webhook.ts to handle postback events (button clicks)
+- Postbacks are parsed into ParsedMetaMessage with:
+  - Button title as content (for AI processing)
+  - postbackPayload field for the button's payload string
+  - referralData for ads/m.me link sources
+  - Generated unique messageId (postbacks don't have mid)
+- Updated http.ts POST handler logging to clarify messenger vs instagram
+- Messenger webhook already handled via `object: "page"` in existing code
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/webhook.ts (+32 lines - postback parsing)
+- packages/backend/convex/http.ts (+2 lines - improved logging)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Messenger postbacks (button clicks) don't have a message ID (mid) - must generate one
+- Use postback.title as content so AI can respond to the button label
+- postback.payload contains the custom payload string set when creating the button
+- Postbacks can include referral data when user came from an ad or m.me link
+
+---
+
 ## 2026-01-25 14:38 - S09: Implement Instagram DM webhook handler
 
 **What was implemented:**
