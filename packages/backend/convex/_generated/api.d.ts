@@ -39,6 +39,7 @@ import type * as integrations_meta_actions from "../integrations/meta/actions.js
 import type * as integrations_meta_provider from "../integrations/meta/provider.js";
 import type * as integrations_meta_security from "../integrations/meta/security.js";
 import type * as integrations_meta_types from "../integrations/meta/types.js";
+import type * as integrations_meta_webhook from "../integrations/meta/webhook.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
 import type * as integrations_whatsapp_settings from "../integrations/whatsapp/settings.js";
 import type * as integrations_whatsapp_templates from "../integrations/whatsapp/templates.js";
@@ -92,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   "integrations/meta/provider": typeof integrations_meta_provider;
   "integrations/meta/security": typeof integrations_meta_security;
   "integrations/meta/types": typeof integrations_meta_types;
+  "integrations/meta/webhook": typeof integrations_meta_webhook;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;
   "integrations/whatsapp/settings": typeof integrations_whatsapp_settings;
   "integrations/whatsapp/templates": typeof integrations_whatsapp_templates;

@@ -3,6 +3,8 @@ import { httpAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { TwilioWhatsAppProvider } from "./integrations/whatsapp/twilio";
 import type { MessageType } from "./integrations/whatsapp/types";
+import { verifyMetaSignature } from "./integrations/meta/security";
+import { parseMetaWebhookPayload } from "./integrations/meta/webhook";
 
 import { authComponent, createAuth } from "./auth";
 import type { Id } from "./_generated/dataModel";
@@ -150,6 +152,116 @@ http.route({
       tokenMatch: token === verifyToken,
     });
     return new Response("Forbidden", { status: 403 });
+  }),
+});
+
+http.route({
+  path: "/webhook/meta",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const appSecret = process.env.META_APP_SECRET;
+    if (!appSecret) {
+      console.error("META_APP_SECRET not configured");
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+
+    const signature = request.headers.get("X-Hub-Signature-256");
+    if (!signature) {
+      console.error("Missing X-Hub-Signature-256 header");
+      return new Response("Missing signature", { status: 400 });
+    }
+
+    const body = await request.text();
+
+    const isValid = verifyMetaSignature(body, signature, appSecret);
+    if (!isValid) {
+      console.error("Invalid Meta webhook signature");
+      return new Response("Invalid signature", { status: 401 });
+    }
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(body);
+    } catch {
+      console.error("Failed to parse Meta webhook body");
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    const data = payload as { object?: string };
+    console.log(`Meta webhook received: object=${data.object}`);
+
+    const parsedMessages = parseMetaWebhookPayload(payload);
+
+    if (parsedMessages.length === 0) {
+      return new Response("OK", { status: 200 });
+    }
+
+    for (const message of parsedMessages) {
+      let businessLookup;
+
+      if (message.channel === "instagram") {
+        businessLookup = await ctx.runQuery(
+          internal.integrations.meta.webhook.getBusinessByInstagramId,
+          { instagramAccountId: message.businessAccountId }
+        );
+      } else {
+        businessLookup = await ctx.runQuery(
+          internal.integrations.meta.webhook.getBusinessByPageId,
+          { pageId: message.businessAccountId }
+        );
+      }
+
+      if (!businessLookup) {
+        console.log(
+          `No business found for ${message.channel} account: ${message.businessAccountId}`
+        );
+        continue;
+      }
+
+      const messageResult = await ctx.runMutation(
+        internal.integrations.meta.webhook.processIncomingMessage,
+        {
+          businessId: businessLookup.businessId,
+          channel: message.channel,
+          senderId: message.senderId,
+          content: message.content,
+          messageType: message.messageType,
+          messageId: message.messageId,
+          mediaUrl: message.mediaUrl,
+          mediaType: message.mediaMimeType,
+          timestamp: message.timestamp,
+          businessAccountId: message.businessAccountId,
+        }
+      );
+
+      if (messageResult.isDuplicate) {
+        console.log(`Skipping duplicate message: ${message.messageId}`);
+        continue;
+      }
+
+      if (message.messageType === "text" && message.content.trim()) {
+        try {
+          const aiResult = await ctx.runAction(api.ai.process.processMessage, {
+            conversationId: messageResult.conversationId,
+            message: message.content,
+          });
+
+          await ctx.runMutation(internal.ai.process.storeMessage, {
+            conversationId: messageResult.conversationId,
+            content: aiResult.response,
+            sender: "assistant",
+          });
+
+          console.log(
+            `Meta ${message.channel}: AI response stored for conversation ${messageResult.conversationId}`
+          );
+        } catch (error) {
+          console.error("AI processing failed:", error);
+        }
+      }
+    }
+
+    return new Response("OK", { status: 200 });
   }),
 });
 
