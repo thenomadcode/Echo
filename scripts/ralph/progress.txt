@@ -1,3 +1,35 @@
+## 2026-01-25 20:15 - S20: Implement test connection functionality
+
+**What was implemented:**
+- Added `testConnection` action to `packages/backend/convex/integrations/meta/actions.ts`:
+  - Verifies business ownership first
+  - Calls Meta Graph API `debug_token` endpoint to check token validity
+  - Makes secondary API call to verify page access works
+  - Updates `verified` field in metaConnections on success/failure
+  - Returns `success`, `error`, and `tokenExpires` timestamp
+- Added helper queries/mutations:
+  - `getConnectionForTest` - fetch connection data
+  - `updateConnectionVerified` - update verified status
+- Wired up to MetaConnectionStatus component via `onTestConnection` prop:
+  - Settings page passes the action as a callback
+  - Component handles loading state, success/error toasts
+  - Connection status display updates after test (via Convex reactivity)
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (+160 lines - testConnection action)
+- apps/web/src/routes/_authenticated/settings_.integrations_.meta.tsx (+8 lines - wire up action)
+
+**Verification:**
+- `tsc --noEmit` in apps/web: passes (0 errors)
+- `bunx convex typecheck` in packages/backend: passes (0 errors)
+
+**Learnings for future iterations:**
+- Meta debug_token endpoint: `GET /debug_token?input_token={token}&access_token={app_id}|{app_secret}`
+- Two-stage verification pattern: debug_token (token validity) + actual API call (access works)
+- Component callback pattern: `onTestConnection?: () => Promise<{ success: boolean; error?: string }>`
+
+---
+
 ## 2026-01-25 20:05 - S19: Create MetaDisconnectDialog component
 
 **What was implemented:**

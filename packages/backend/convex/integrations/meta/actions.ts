@@ -1003,3 +1003,161 @@ export const subscribeWebhooks = action({
     }
   },
 });
+
+// ============================================================================
+// Test Connection Action
+// ============================================================================
+
+type MetaDebugTokenResponse = {
+  data?: {
+    is_valid: boolean;
+    app_id: string;
+    user_id?: string;
+    expires_at?: number;
+    scopes?: string[];
+  };
+  error?: {
+    message: string;
+    type: string;
+    code: number;
+  };
+};
+
+export const getConnectionForTest = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    return {
+      _id: connection._id,
+      pageId: connection.pageId,
+      pageAccessToken: connection.pageAccessToken,
+    };
+  },
+});
+
+export const updateConnectionVerified = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    verified: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (connection) {
+      await ctx.db.patch(connection._id, {
+        verified: args.verified,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const testConnection = action({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string; tokenExpires?: number }> => {
+    // Verify ownership
+    const authResult = await ctx.runQuery(
+      internal.integrations.meta.actions.verifyBusinessOwnership,
+      { businessId: args.businessId }
+    );
+
+    if (!authResult.authorized) {
+      return { success: false, error: authResult.error ?? "Not authorized" };
+    }
+
+    // Get connection
+    const connection = await ctx.runQuery(
+      internal.integrations.meta.actions.getConnectionForTest,
+      { businessId: args.businessId }
+    );
+
+    if (!connection) {
+      return { success: false, error: "No Meta connection found for this business" };
+    }
+
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+
+    if (!appId || !appSecret) {
+      return { success: false, error: "Meta app credentials not configured" };
+    }
+
+    try {
+      // Test token validity by calling debug_token endpoint
+      // This verifies the token is still valid and has not been revoked
+      const debugUrl = new URL(`${META_GRAPH_API_BASE}/debug_token`);
+      debugUrl.searchParams.set("input_token", connection.pageAccessToken);
+      debugUrl.searchParams.set("access_token", `${appId}|${appSecret}`);
+
+      const response = await fetch(debugUrl.toString());
+      const data = (await response.json()) as MetaDebugTokenResponse;
+
+      if ("error" in data && data.error) {
+        console.error("Token debug error:", data.error);
+        await ctx.runMutation(
+          internal.integrations.meta.actions.updateConnectionVerified,
+          { businessId: args.businessId, verified: false }
+        );
+        return { success: false, error: data.error.message };
+      }
+
+      if (!data.data?.is_valid) {
+        console.warn("Token is no longer valid for business:", args.businessId);
+        await ctx.runMutation(
+          internal.integrations.meta.actions.updateConnectionVerified,
+          { businessId: args.businessId, verified: false }
+        );
+        return { success: false, error: "Token is no longer valid. Please reconnect." };
+      }
+
+      // Token is valid - also verify we can make an API call
+      const meUrl = new URL(`${META_GRAPH_API_BASE}/${connection.pageId}`);
+      meUrl.searchParams.set("fields", "id,name");
+      meUrl.searchParams.set("access_token", connection.pageAccessToken);
+
+      const meResponse = await fetch(meUrl.toString());
+      const meData = await meResponse.json();
+
+      if (!meResponse.ok || meData.error) {
+        console.error("Page API call failed:", meData);
+        await ctx.runMutation(
+          internal.integrations.meta.actions.updateConnectionVerified,
+          { businessId: args.businessId, verified: false }
+        );
+        return { success: false, error: meData.error?.message ?? "Failed to verify page access" };
+      }
+
+      // Connection is working - update verified status
+      await ctx.runMutation(
+        internal.integrations.meta.actions.updateConnectionVerified,
+        { businessId: args.businessId, verified: true }
+      );
+
+      console.log(`Connection test passed for business ${args.businessId}`);
+
+      return { 
+        success: true, 
+        tokenExpires: data.data.expires_at 
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Connection test error:", message);
+      return { success: false, error: message };
+    }
+  },
+});

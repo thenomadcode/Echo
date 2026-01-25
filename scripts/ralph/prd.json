@@ -335,7 +335,7 @@
       "id": "S20",
       "title": "Implement test connection functionality",
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add testConnection action to packages/backend/convex/integrations/meta/actions.ts",

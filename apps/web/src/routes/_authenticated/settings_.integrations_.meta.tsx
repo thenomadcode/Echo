@@ -1,7 +1,7 @@
 import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Facebook } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +24,8 @@ function MetaSettingsPage() {
   const businesses = useQuery(api.businesses.list);
   const [activeBusinessId, setActiveBusinessId] = useState<Id<"businesses"> | null>(null);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+  
+  const testConnectionAction = useAction(api.integrations.meta.actions.testConnection);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -117,6 +119,10 @@ function MetaSettingsPage() {
             connectionStatus={connectionStatus}
             businessId={activeBusinessId}
             onDisconnect={() => setShowDisconnectDialog(true)}
+            onTestConnection={async () => {
+              const result = await testConnectionAction({ businessId: activeBusinessId });
+              return result;
+            }}
           />
 
           <MetaDisconnectDialog
