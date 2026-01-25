@@ -47,6 +47,22 @@ export type MetaMessageType =
  */
 export type MetaDeliveryStatus = "sent" | "delivered" | "read" | "failed";
 
+/**
+ * Meta messaging_type parameter for Send API
+ * @see https://developers.facebook.com/docs/messenger-platform/send-messages#messaging_types
+ */
+export type MetaMessagingType = "RESPONSE" | "UPDATE" | "MESSAGE_TAG";
+
+/**
+ * Message tags for sending outside 24-hour window (Messenger only)
+ * @see https://developers.facebook.com/docs/messenger-platform/send-messages/message-tags
+ */
+export type MetaMessageTag =
+  | "CONFIRMED_EVENT_UPDATE"
+  | "POST_PURCHASE_UPDATE"
+  | "ACCOUNT_UPDATE"
+  | "HUMAN_AGENT";
+
 // ============================================================================
 // Quick Replies (Messenger)
 // ============================================================================

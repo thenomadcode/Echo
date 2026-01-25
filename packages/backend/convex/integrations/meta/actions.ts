@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalAction, internalMutation, internalQuery } from "../../_generated/server";
+import { action, internalAction, internalMutation, internalQuery, query } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { authComponent } from "../../auth";
 import type { Id } from "../../_generated/dataModel";
@@ -107,6 +107,108 @@ export const getExistingConnection = internalQuery({
       .first();
 
     return connection;
+  },
+});
+
+// ============================================================================
+// 24-Hour Messaging Window
+// ============================================================================
+
+const MESSAGING_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export const getMessagingWindowStatus = query({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{
+    isWithinWindow: boolean;
+    timeRemainingMs: number;
+    lastCustomerMessageAt: number | null;
+    windowClosesAt: number | null;
+  } | null> => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser || !authUser._id) {
+      return null;
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return null;
+    }
+
+    const business = await ctx.db.get(conversation.businessId);
+    if (!business || business.ownerId !== authUser._id) {
+      return null;
+    }
+
+    if (conversation.channel !== "instagram" && conversation.channel !== "messenger") {
+      return {
+        isWithinWindow: true,
+        timeRemainingMs: Infinity,
+        lastCustomerMessageAt: conversation.lastCustomerMessageAt,
+        windowClosesAt: null,
+      };
+    }
+
+    const lastCustomerMessageAt = conversation.lastCustomerMessageAt;
+    const now = Date.now();
+    const windowClosesAt = lastCustomerMessageAt + MESSAGING_WINDOW_MS;
+    const timeRemainingMs = Math.max(0, windowClosesAt - now);
+    const isWithinWindow = timeRemainingMs > 0;
+
+    return {
+      isWithinWindow,
+      timeRemainingMs,
+      lastCustomerMessageAt,
+      windowClosesAt,
+    };
+  },
+});
+
+export const isWithinMessagingWindow = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{
+    isWithinWindow: boolean;
+    timeRemainingMs: number;
+    lastCustomerMessageAt: number | null;
+    windowClosesAt: number | null;
+  }> => {
+    const conversation = await ctx.db.get(args.conversationId);
+    
+    if (!conversation) {
+      return {
+        isWithinWindow: false,
+        timeRemainingMs: 0,
+        lastCustomerMessageAt: null,
+        windowClosesAt: null,
+      };
+    }
+
+    // Only applies to Meta channels
+    if (conversation.channel !== "instagram" && conversation.channel !== "messenger") {
+      // Non-Meta channels don't have a 24h window restriction
+      return {
+        isWithinWindow: true,
+        timeRemainingMs: Infinity,
+        lastCustomerMessageAt: conversation.lastCustomerMessageAt,
+        windowClosesAt: null,
+      };
+    }
+
+    const lastCustomerMessageAt = conversation.lastCustomerMessageAt;
+    const now = Date.now();
+    const windowClosesAt = lastCustomerMessageAt + MESSAGING_WINDOW_MS;
+    const timeRemainingMs = Math.max(0, windowClosesAt - now);
+    const isWithinWindow = timeRemainingMs > 0;
+
+    return {
+      isWithinWindow,
+      timeRemainingMs,
+      lastCustomerMessageAt,
+      windowClosesAt,
+    };
   },
 });
 
@@ -420,6 +522,13 @@ const genericTemplateElementValidator = v.object({
   buttons: v.optional(v.array(genericTemplateButtonValidator)),
 });
 
+const messageTagValidator = v.union(
+  v.literal("CONFIRMED_EVENT_UPDATE"),
+  v.literal("POST_PURCHASE_UPDATE"),
+  v.literal("ACCOUNT_UPDATE"),
+  v.literal("HUMAN_AGENT")
+);
+
 export const sendMessage = action({
   args: {
     conversationId: v.id("conversations"),
@@ -433,6 +542,7 @@ export const sendMessage = action({
     imageUrl: v.optional(v.string()),
     quickReplies: v.optional(v.array(quickReplyValidator)),
     templateElements: v.optional(v.array(genericTemplateElementValidator)),
+    messageTag: v.optional(messageTagValidator),
   },
   handler: async (ctx, args): Promise<{
     success: boolean;
@@ -440,8 +550,10 @@ export const sendMessage = action({
     externalId?: string;
     error?: string;
     fallbackUsed?: boolean;
+    outsideMessagingWindow?: boolean;
   }> => {
     const { MetaMessagingProviderImpl } = await import("./provider");
+    type MetaMessageTag = "CONFIRMED_EVENT_UPDATE" | "POST_PURCHASE_UPDATE" | "ACCOUNT_UPDATE" | "HUMAN_AGENT";
 
     const data = await ctx.runQuery(
       internal.integrations.meta.actions.getConversationWithConnection,
@@ -466,10 +578,46 @@ export const sendMessage = action({
       };
     }
 
+    const windowStatus = await ctx.runQuery(
+      internal.integrations.meta.actions.isWithinMessagingWindow,
+      { conversationId: args.conversationId }
+    );
+
+    let messagingType: "RESPONSE" | "MESSAGE_TAG" = "RESPONSE";
+    let messageTag: MetaMessageTag | undefined;
+    let outsideMessagingWindow = false;
+
+    if (!windowStatus.isWithinWindow) {
+      outsideMessagingWindow = true;
+      const hoursAgo = windowStatus.lastCustomerMessageAt
+        ? Math.round((Date.now() - windowStatus.lastCustomerMessageAt) / (1000 * 60 * 60))
+        : "unknown";
+      console.warn(
+        `[sendMessage] Outside 24-hour messaging window for conversation ${args.conversationId}. ` +
+        `Last customer message was ${hoursAgo} hours ago.`
+      );
+
+      if (args.messageTag) {
+        messagingType = "MESSAGE_TAG";
+        messageTag = args.messageTag;
+        console.log(`[sendMessage] Using MESSAGE_TAG with tag: ${messageTag}`);
+      } else if (channel === "messenger") {
+        messagingType = "MESSAGE_TAG";
+        messageTag = "HUMAN_AGENT";
+        console.log("[sendMessage] Using HUMAN_AGENT tag for Messenger (outside 24h window)");
+      } else {
+        console.warn(
+          "[sendMessage] Instagram does not support MESSAGE_TAG. Message may fail. " +
+          "Consider implementing One-Time Notification (OTN) request flow."
+        );
+      }
+    }
+
     const provider = new MetaMessagingProviderImpl(
       connection.pageAccessToken,
       pageOrIgId,
-      channel
+      channel,
+      { messagingType, messageTag }
     );
 
     let result: { success: boolean; messageId?: string; error?: string; errorCode?: number; errorSubcode?: number };
@@ -566,6 +714,7 @@ export const sendMessage = action({
         externalId: result.messageId,
         error: result.error,
         fallbackUsed,
+        outsideMessagingWindow,
       };
     } catch (error) {
       console.error("[sendMessage] Unexpected error:", error);
@@ -588,6 +737,7 @@ export const sendMessage = action({
         messageId: storedMessageId,
         error: error instanceof Error ? error.message : "Unknown error sending message",
         fallbackUsed,
+        outsideMessagingWindow,
       };
     }
   },

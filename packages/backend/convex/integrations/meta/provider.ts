@@ -14,6 +14,8 @@ import type {
   MessageResult,
   QuickReply,
   GenericTemplateElement,
+  MetaMessagingType,
+  MetaMessageTag,
 } from "./types";
 
 /** Meta Graph API base URL */
@@ -48,10 +50,17 @@ interface MetaSendResponse {
  * - No rich templates
  * - 24-hour messaging window strictly enforced
  */
+export interface MessagingOptions {
+  messagingType?: MetaMessagingType;
+  messageTag?: MetaMessageTag;
+}
+
 export class MetaMessagingProviderImpl implements MetaMessagingProvider {
   private readonly pageAccessToken: string;
   private readonly pageOrIgId: string;
   private readonly channel: MetaChannel;
+  private messagingType: MetaMessagingType = "RESPONSE";
+  private messageTag?: MetaMessageTag;
 
   /**
    * Creates a new Meta Messaging Provider instance
@@ -59,11 +68,13 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
    * @param pageAccessToken - Long-lived page access token from OAuth
    * @param pageOrIgId - Facebook Page ID (for Messenger) or Instagram Business Account ID (for Instagram)
    * @param channel - The channel to send messages on ('instagram' or 'messenger')
+   * @param options - Optional messaging configuration (messagingType, messageTag)
    */
   constructor(
     pageAccessToken: string,
     pageOrIgId: string,
-    channel: MetaChannel
+    channel: MetaChannel,
+    options?: MessagingOptions
   ) {
     if (!pageAccessToken) {
       throw new Error("pageAccessToken is required");
@@ -74,6 +85,26 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
     this.pageAccessToken = pageAccessToken;
     this.pageOrIgId = pageOrIgId;
     this.channel = channel;
+    if (options?.messagingType) {
+      this.messagingType = options.messagingType;
+    }
+    if (options?.messageTag) {
+      this.messageTag = options.messageTag;
+    }
+  }
+
+  private buildRequestBody(recipientId: string, message: object): object {
+    const body: Record<string, unknown> = {
+      recipient: { id: recipientId },
+      messaging_type: this.messagingType,
+      message,
+    };
+
+    if (this.messagingType === "MESSAGE_TAG" && this.messageTag) {
+      body.tag = this.messageTag;
+    }
+
+    return body;
   }
 
   /**
@@ -83,12 +114,7 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
    * @param text - Message text content (max 2000 characters)
    */
   async sendText(recipientId: string, text: string): Promise<MessageResult> {
-    const requestBody = {
-      recipient: { id: recipientId },
-      messaging_type: "RESPONSE",
-      message: { text },
-    };
-
+    const requestBody = this.buildRequestBody(recipientId, { text });
     return this.sendRequest(requestBody);
   }
 
@@ -104,28 +130,19 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
     imageUrl: string,
     caption?: string
   ): Promise<MessageResult> {
-    // For Messenger: send image as attachment
-    // For Instagram: same format works
-    const requestBody = {
-      recipient: { id: recipientId },
-      messaging_type: "RESPONSE",
-      message: {
-        attachment: {
-          type: "image",
-          payload: {
-            url: imageUrl,
-            is_reusable: false,
-          },
+    const requestBody = this.buildRequestBody(recipientId, {
+      attachment: {
+        type: "image",
+        payload: {
+          url: imageUrl,
+          is_reusable: false,
         },
       },
-    };
+    });
 
     const result = await this.sendRequest(requestBody);
 
-    // If there's a caption and the image was sent successfully,
-    // send the caption as a follow-up text message
     if (result.success && caption) {
-      // Send caption as separate text message
       await this.sendText(recipientId, caption);
     }
 
@@ -167,19 +184,15 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
       );
     }
 
-    const requestBody = {
-      recipient: { id: recipientId },
-      messaging_type: "RESPONSE",
-      message: {
-        text,
-        quick_replies: truncatedReplies.map((qr) => ({
-          content_type: qr.content_type,
-          title: qr.title.slice(0, 20), // Max 20 characters for title
-          payload: qr.payload.slice(0, 1000), // Max 1000 characters for payload
-          ...(qr.image_url && { image_url: qr.image_url }),
-        })),
-      },
-    };
+    const requestBody = this.buildRequestBody(recipientId, {
+      text,
+      quick_replies: truncatedReplies.map((qr) => ({
+        content_type: qr.content_type,
+        title: qr.title.slice(0, 20),
+        payload: qr.payload.slice(0, 1000),
+        ...(qr.image_url && { image_url: qr.image_url }),
+      })),
+    });
 
     return this.sendRequest(requestBody);
   }
@@ -218,30 +231,26 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
       );
     }
 
-    const requestBody = {
-      recipient: { id: recipientId },
-      messaging_type: "RESPONSE",
-      message: {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "generic",
-            elements: truncatedElements.map((el) => ({
-              title: el.title.slice(0, 80), // Max 80 characters
-              subtitle: el.subtitle?.slice(0, 80),
-              image_url: el.image_url,
-              default_action: el.default_action,
-              buttons: el.buttons?.slice(0, 3).map((btn) => ({
-                type: btn.type,
-                title: btn.title.slice(0, 20), // Max 20 characters
-                ...(btn.url && { url: btn.url }),
-                ...(btn.payload && { payload: btn.payload }),
-              })),
+    const requestBody = this.buildRequestBody(recipientId, {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "generic",
+          elements: truncatedElements.map((el) => ({
+            title: el.title.slice(0, 80),
+            subtitle: el.subtitle?.slice(0, 80),
+            image_url: el.image_url,
+            default_action: el.default_action,
+            buttons: el.buttons?.slice(0, 3).map((btn) => ({
+              type: btn.type,
+              title: btn.title.slice(0, 20),
+              ...(btn.url && { url: btn.url }),
+              ...(btn.payload && { payload: btn.payload }),
             })),
-          },
+          })),
         },
       },
-    };
+    });
 
     return this.sendRequest(requestBody);
   }
