@@ -56,7 +56,7 @@
       "id": "S04",
       "title": "Implement Meta webhook signature verification",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/integrations/meta/security.ts",
@@ -71,7 +71,7 @@
       "id": "S05",
       "title": "Implement MetaMessagingProviderImpl class",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/integrations/meta/provider.ts",

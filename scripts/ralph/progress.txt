@@ -1,3 +1,57 @@
+## 2026-01-25 14:23 - S05: Implement MetaMessagingProviderImpl class
+
+**What was implemented:**
+- Created `packages/backend/convex/integrations/meta/provider.ts`
+- Implemented `MetaMessagingProviderImpl` class implementing `MetaMessagingProvider` interface
+- Constructor takes `pageAccessToken`, `pageOrIgId`, `channel` parameters with validation
+- `sendText` method: POST to `/{page_or_ig_id}/messages` with `messaging_type: RESPONSE`
+- `sendImage` method: attachment type `image` with URL payload, sends caption as follow-up text if provided
+- `sendQuickReplies` method: Messenger native quick replies (max 13 buttons enforced), Instagram fallback to numbered text
+- All methods use `Authorization: Bearer {token}` header
+- Proper error handling: parses Meta error responses, returns `MessageResult` with errorCode/errorSubcode
+- Uses Graph API v19.0 base URL
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/provider.ts (created, ~225 lines)
+
+**Verification:**
+- `bun run check-types`: passes
+
+**Learnings for future iterations:**
+- Meta Graph API Send endpoint: `POST https://graph.facebook.com/v19.0/{page_or_ig_id}/messages`
+- Instagram DM doesn't support quick replies - fallback to numbered text format
+- Messenger quick replies: max 13 buttons, max 20 chars for title, max 1000 chars for payload
+- Same JSON format works for both Instagram and Messenger channels
+
+---
+
+## 2026-01-25 14:20 - S04: Implement Meta webhook signature verification
+
+**What was implemented:**
+- Created `packages/backend/convex/integrations/meta/security.ts`
+- Implemented `verifyMetaSignature(payload, signature, appSecret)` function using HMAC-SHA256
+- Function handles Meta's signature format: `sha256=` prefix + hex digest
+- Returns boolean indicating if signature matches
+- Validates signature format (64 hex characters after prefix)
+- Uses constant-time comparison (`timingSafeEqual`) to prevent timing attacks
+- Pure JavaScript SHA-256 and HMAC implementation (required since Convex doesn't expose Node.js crypto)
+- Follows same pattern as existing Shopify/Stripe signature verification in http.ts
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/security.ts (created, ~240 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Verification:**
+- LSP diagnostics: 0 errors
+- `bun run check-types`: passes
+
+**Learnings for future iterations:**
+- Convex serverless functions don't have access to Node.js crypto module - must use pure JS implementations
+- Meta webhook signatures use `sha256=` prefix + lowercase hex (unlike Shopify's base64)
+- Timing-safe comparison is essential for security-critical signature verification
+
+---
+
 ## 2026-01-25 14:17 - S03: Create Meta provider types and interfaces
 
 **What was implemented:**
