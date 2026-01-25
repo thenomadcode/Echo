@@ -361,9 +361,6 @@ export const getConversationWithConnection = internalQuery({
   },
 });
 
-/**
- * Store a sent message in the database
- */
 export const storeSentMessage = internalMutation({
   args: {
     conversationId: v.id("conversations"),
@@ -373,6 +370,7 @@ export const storeSentMessage = internalMutation({
     deliveryStatus: v.string(),
     mediaUrl: v.optional(v.string()),
     mediaType: v.optional(v.string()),
+    richContent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const messageId = await ctx.db.insert("messages", {
@@ -384,10 +382,10 @@ export const storeSentMessage = internalMutation({
       deliveryStatus: args.deliveryStatus,
       mediaUrl: args.mediaUrl,
       mediaType: args.mediaType,
+      richContent: args.richContent,
       createdAt: Date.now(),
     });
 
-    // Update conversation's updatedAt
     await ctx.db.patch(args.conversationId, {
       updatedAt: Date.now(),
     });
@@ -396,28 +394,55 @@ export const storeSentMessage = internalMutation({
   },
 });
 
-/**
- * Send a message to a Meta channel (Instagram DM or Facebook Messenger)
- *
- * This action looks up the conversation, gets the connection credentials,
- * sends the message via the Meta Graph API, and stores it in the database.
- */
+const quickReplyValidator = v.object({
+  content_type: v.union(v.literal("text"), v.literal("user_phone_number"), v.literal("user_email")),
+  title: v.string(),
+  payload: v.string(),
+  image_url: v.optional(v.string()),
+});
+
+const genericTemplateButtonValidator = v.object({
+  type: v.union(v.literal("web_url"), v.literal("postback")),
+  title: v.string(),
+  url: v.optional(v.string()),
+  payload: v.optional(v.string()),
+});
+
+const genericTemplateElementValidator = v.object({
+  title: v.string(),
+  subtitle: v.optional(v.string()),
+  image_url: v.optional(v.string()),
+  default_action: v.optional(v.object({
+    type: v.literal("web_url"),
+    url: v.string(),
+    webview_height_ratio: v.optional(v.union(v.literal("compact"), v.literal("tall"), v.literal("full"))),
+  })),
+  buttons: v.optional(v.array(genericTemplateButtonValidator)),
+});
+
 export const sendMessage = action({
   args: {
     conversationId: v.id("conversations"),
     content: v.string(),
-    type: v.union(v.literal("text"), v.literal("image")),
+    type: v.union(
+      v.literal("text"),
+      v.literal("image"),
+      v.literal("quick_replies"),
+      v.literal("generic_template")
+    ),
     imageUrl: v.optional(v.string()),
+    quickReplies: v.optional(v.array(quickReplyValidator)),
+    templateElements: v.optional(v.array(genericTemplateElementValidator)),
   },
   handler: async (ctx, args): Promise<{
     success: boolean;
     messageId?: string;
     externalId?: string;
     error?: string;
+    fallbackUsed?: boolean;
   }> => {
     const { MetaMessagingProviderImpl } = await import("./provider");
 
-    // Get conversation and connection details
     const data = await ctx.runQuery(
       internal.integrations.meta.actions.getConversationWithConnection,
       { conversationId: args.conversationId }
@@ -433,7 +458,6 @@ export const sendMessage = action({
 
     const { connection, recipientId, pageOrIgId, channel } = data;
 
-    // Validate that we have the necessary credentials
     if (!connection.pageAccessToken) {
       console.error("[sendMessage] No page access token for business:", data.conversation.businessId);
       return {
@@ -442,7 +466,6 @@ export const sendMessage = action({
       };
     }
 
-    // Instantiate the provider
     const provider = new MetaMessagingProviderImpl(
       connection.pageAccessToken,
       pageOrIgId,
@@ -450,35 +473,82 @@ export const sendMessage = action({
     );
 
     let result: { success: boolean; messageId?: string; error?: string; errorCode?: number; errorSubcode?: number };
+    let fallbackUsed = false;
+    let richContentJson: string | undefined;
 
     try {
-      // Send based on type
-      if (args.type === "image") {
-        if (!args.imageUrl) {
-          return {
-            success: false,
-            error: "imageUrl is required for image messages",
-          };
+      switch (args.type) {
+        case "image": {
+          if (!args.imageUrl) {
+            return {
+              success: false,
+              error: "imageUrl is required for image messages",
+            };
+          }
+          result = await provider.sendImage(recipientId, args.imageUrl, args.content || undefined);
+          break;
         }
-        result = await provider.sendImage(recipientId, args.imageUrl, args.content || undefined);
-      } else {
-        // text
-        result = await provider.sendText(recipientId, args.content);
+
+        case "quick_replies": {
+          if (!args.quickReplies || args.quickReplies.length === 0) {
+            return {
+              success: false,
+              error: "quickReplies array is required for quick_replies type",
+            };
+          }
+
+          if (channel === "instagram") {
+            console.log("[sendMessage] Quick replies not supported on Instagram, provider will fallback to text");
+            fallbackUsed = true;
+          } else if (args.quickReplies.length > 13) {
+            console.log(`[sendMessage] Truncating quick replies from ${args.quickReplies.length} to 13 (Messenger limit)`);
+          }
+
+          richContentJson = JSON.stringify({ quickReplies: args.quickReplies });
+          result = await provider.sendQuickReplies(recipientId, args.content, args.quickReplies);
+          break;
+        }
+
+        case "generic_template": {
+          if (!args.templateElements || args.templateElements.length === 0) {
+            return {
+              success: false,
+              error: "templateElements array is required for generic_template type",
+            };
+          }
+
+          if (channel === "instagram") {
+            console.log("[sendMessage] Generic templates not supported on Instagram, provider will fallback to text");
+            fallbackUsed = true;
+          } else if (args.templateElements.length > 10) {
+            console.log(`[sendMessage] Truncating template elements from ${args.templateElements.length} to 10 (Messenger limit)`);
+          }
+
+          richContentJson = JSON.stringify({ templateElements: args.templateElements });
+          result = await provider.sendGenericTemplate(recipientId, args.templateElements);
+          break;
+        }
+
+        case "text":
+        default: {
+          result = await provider.sendText(recipientId, args.content);
+          break;
+        }
       }
 
-      console.log(`[sendMessage] ${channel} message sent. Success: ${result.success}, mid: ${result.messageId}`);
+      console.log(`[sendMessage] ${channel} message sent. Success: ${result.success}, mid: ${result.messageId}${fallbackUsed ? " (fallback used)" : ""}`);
 
-      // Store the sent message in the database
       const storedMessageId = await ctx.runMutation(
         internal.integrations.meta.actions.storeSentMessage,
         {
           conversationId: args.conversationId,
           content: args.content,
-          messageType: args.type,
+          messageType: fallbackUsed ? "text" : args.type,
           externalId: result.messageId,
           deliveryStatus: result.success ? "sent" : "failed",
           mediaUrl: args.type === "image" ? args.imageUrl : undefined,
           mediaType: args.type === "image" ? "image/*" : undefined,
+          richContent: richContentJson,
         }
       );
 
@@ -495,11 +565,11 @@ export const sendMessage = action({
         messageId: storedMessageId,
         externalId: result.messageId,
         error: result.error,
+        fallbackUsed,
       };
     } catch (error) {
       console.error("[sendMessage] Unexpected error:", error);
 
-      // Still store the message as failed
       const storedMessageId = await ctx.runMutation(
         internal.integrations.meta.actions.storeSentMessage,
         {
@@ -509,6 +579,7 @@ export const sendMessage = action({
           deliveryStatus: "failed",
           mediaUrl: args.type === "image" ? args.imageUrl : undefined,
           mediaType: args.type === "image" ? "image/*" : undefined,
+          richContent: richContentJson,
         }
       );
 
@@ -516,6 +587,7 @@ export const sendMessage = action({
         success: false,
         messageId: storedMessageId,
         error: error instanceof Error ? error.message : "Unknown error sending message",
+        fallbackUsed,
       };
     }
   },

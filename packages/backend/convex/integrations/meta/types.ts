@@ -27,6 +27,8 @@ export type MetaChannel = "instagram" | "messenger";
  * - sticker: Sticker message (Messenger only)
  * - story_mention: User mentioned business in their story (Instagram only)
  * - story_reply: Reply to a story (Instagram only)
+ * - quick_replies: Message with quick reply buttons (Messenger native, Instagram fallback to text)
+ * - generic_template: Product cards carousel (Messenger only)
  */
 export type MetaMessageType =
   | "text"
@@ -36,7 +38,9 @@ export type MetaMessageType =
   | "file"
   | "sticker"
   | "story_mention"
-  | "story_reply";
+  | "story_reply"
+  | "quick_replies"
+  | "generic_template";
 
 /**
  * Delivery status types from Meta webhook status updates
@@ -62,6 +66,31 @@ export interface QuickReply {
   payload: string;
   /** Optional URL to image icon (24x24 px recommended) */
   image_url?: string;
+}
+
+/**
+ * Generic template element for product cards (Messenger only)
+ * Used for displaying product information in a carousel format
+ *
+ * @see https://developers.facebook.com/docs/messenger-platform/send-messages/template/generic
+ */
+export interface GenericTemplateElement {
+  title: string;
+  subtitle?: string;
+  image_url?: string;
+  default_action?: {
+    type: "web_url";
+    url: string;
+    webview_height_ratio?: "compact" | "tall" | "full";
+  };
+  buttons?: GenericTemplateButton[];
+}
+
+export interface GenericTemplateButton {
+  type: "web_url" | "postback";
+  title: string;
+  url?: string;
+  payload?: string;
 }
 
 // ============================================================================
@@ -173,47 +202,24 @@ export interface MetaReferral {
 // Provider Interface
 // ============================================================================
 
-/**
- * Meta Messaging Provider Interface
- * All Meta channel implementations must implement this interface
- *
- * Note: Instagram has stricter messaging limitations than Messenger:
- * - No rich templates (product cards, carousels)
- * - No quick replies
- * - 24-hour messaging window strictly enforced
- */
 export interface MetaMessagingProvider {
-  /**
-   * Send a plain text message
-   * @param recipientId - PSID (Messenger) or IGSID (Instagram)
-   * @param text - Message text content
-   */
   sendText(recipientId: string, text: string): Promise<MessageResult>;
 
-  /**
-   * Send an image message with optional caption
-   * @param recipientId - PSID (Messenger) or IGSID (Instagram)
-   * @param imageUrl - Public URL to the image
-   * @param caption - Optional text caption (Instagram only, Messenger uses separate text message)
-   */
   sendImage(
     recipientId: string,
     imageUrl: string,
     caption?: string
   ): Promise<MessageResult>;
 
-  /**
-   * Send a message with quick reply buttons (Messenger only)
-   * Instagram does not support quick replies - will fallback to text
-   *
-   * @param recipientId - PSID (Messenger) or IGSID (Instagram)
-   * @param text - Message text to accompany the quick replies
-   * @param quickReplies - Array of quick reply buttons (max 13 for Messenger)
-   */
   sendQuickReplies(
     recipientId: string,
     text: string,
     quickReplies: QuickReply[]
+  ): Promise<MessageResult>;
+
+  sendGenericTemplate(
+    recipientId: string,
+    elements: GenericTemplateElement[]
   ): Promise<MessageResult>;
 }
 

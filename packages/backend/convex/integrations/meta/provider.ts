@@ -13,6 +13,7 @@ import type {
   MetaMessagingProvider,
   MessageResult,
   QuickReply,
+  GenericTemplateElement,
 } from "./types";
 
 /** Meta Graph API base URL */
@@ -183,12 +184,68 @@ export class MetaMessagingProviderImpl implements MetaMessagingProvider {
     return this.sendRequest(requestBody);
   }
 
-  /**
-   * Send a request to the Meta Graph API
-   *
-   * @param requestBody - The request body to send
-   * @returns MessageResult with success status and message ID or error
-   */
+  async sendGenericTemplate(
+    recipientId: string,
+    elements: GenericTemplateElement[]
+  ): Promise<MessageResult> {
+    // Instagram does not support generic templates - fallback to text list
+    if (this.channel === "instagram") {
+      console.log(
+        "[MetaProvider] Generic templates not supported on Instagram, falling back to text"
+      );
+      const textFallback = elements
+        .map((el, idx) => {
+          let text = `${idx + 1}. ${el.title}`;
+          if (el.subtitle) {
+            text += `\n   ${el.subtitle}`;
+          }
+          if (el.default_action?.url) {
+            text += `\n   ${el.default_action.url}`;
+          }
+          return text;
+        })
+        .join("\n\n");
+      return this.sendText(recipientId, textFallback);
+    }
+
+    // Messenger: max 10 elements in generic template
+    const MAX_ELEMENTS = 10;
+    const truncatedElements = elements.slice(0, MAX_ELEMENTS);
+
+    if (elements.length > MAX_ELEMENTS) {
+      console.log(
+        `[MetaProvider] Truncating generic template from ${elements.length} to ${MAX_ELEMENTS} elements`
+      );
+    }
+
+    const requestBody = {
+      recipient: { id: recipientId },
+      messaging_type: "RESPONSE",
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "generic",
+            elements: truncatedElements.map((el) => ({
+              title: el.title.slice(0, 80), // Max 80 characters
+              subtitle: el.subtitle?.slice(0, 80),
+              image_url: el.image_url,
+              default_action: el.default_action,
+              buttons: el.buttons?.slice(0, 3).map((btn) => ({
+                type: btn.type,
+                title: btn.title.slice(0, 20), // Max 20 characters
+                ...(btn.url && { url: btn.url }),
+                ...(btn.payload && { payload: btn.payload }),
+              })),
+            })),
+          },
+        },
+      },
+    };
+
+    return this.sendRequest(requestBody);
+  }
+
   private async sendRequest(requestBody: object): Promise<MessageResult> {
     const url = `${GRAPH_API_BASE_URL}/${this.pageOrIgId}/messages`;
 
