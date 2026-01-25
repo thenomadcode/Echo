@@ -1,3 +1,33 @@
+## 2026-01-25 14:12 - S01: Create metaConnections schema table
+
+**What was implemented:**
+- Added metaConnections table to packages/backend/convex/schema.ts
+- Table fields:
+  - businessId (v.id("businesses"))
+  - pageId (string) - Facebook Page ID
+  - pageName (string) - Facebook Page name
+  - pageAccessToken (string) - Long-lived page access token
+  - instagramAccountId (optional string) - Instagram Business Account ID
+  - instagramUsername (optional string) - Instagram username
+  - permissions (array of strings) - Granted OAuth permissions
+  - webhooksSubscribed (boolean) - Whether webhooks are set up
+  - verified (boolean) - Whether connection is verified
+  - lastMessageAt (optional number) - Last message timestamp
+  - tokenExpiresAt (optional number) - Token expiration timestamp
+  - createdAt (number), updatedAt (number)
+- Indexes:
+  - by_business on [businessId]
+  - by_page on [pageId]
+  - by_instagram on [instagramAccountId]
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+20 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+---
+
 ## 2026-01-23 23:10 - S21: SEO finalization (sitemap, robots, OG images)
 
 **What was implemented:**

@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Create metaConnections schema table",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Add metaConnections table to packages/backend/convex/schema.ts",
