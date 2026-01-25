@@ -89,7 +89,7 @@
       "id": "S06",
       "title": "Create OAuth start action",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create packages/backend/convex/integrations/meta/actions.ts",
@@ -105,7 +105,7 @@
       "id": "S07",
       "title": "Create OAuth callback handler and token exchange",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add HTTP route /meta/callback GET to packages/backend/convex/http.ts",

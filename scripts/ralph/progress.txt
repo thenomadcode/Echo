@@ -1,3 +1,65 @@
+## 2026-01-25 14:29 - S07: Create OAuth callback handler and token exchange
+
+**What was implemented:**
+- Added HTTP route `/meta/callback` GET to `packages/backend/convex/http.ts`
+- Implemented `handleOAuthCallback` internal action in meta/actions.ts
+- Full OAuth token exchange flow:
+  1. Exchange authorization code for short-lived user access token
+  2. Exchange short-lived token for long-lived token (~60 days)
+  3. Fetch granted permissions via `/me/permissions`
+  4. Fetch user's Facebook Pages via `/me/accounts`
+  5. Fetch Instagram Business Account linked to first Page
+- Created `saveConnection` internal mutation to store OAuth results in metaConnections table
+- Handles OAuth denial/error from Facebook with proper error redirects
+- Redirects user to `/settings/integrations/meta?connected=true` on success
+- Redirects with `?error={message}` on failure
+
+**Files changed:**
+- packages/backend/convex/http.ts (+64 lines - Meta callback route)
+- packages/backend/convex/integrations/meta/actions.ts (+240 lines - handleOAuthCallback, saveConnection, types)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta token exchange: POST to `/oauth/access_token` with client_id, client_secret, redirect_uri, code
+- Long-lived token exchange: grant_type=fb_exchange_token, fb_exchange_token={short_lived_token}
+- Page access tokens are fetched from `/me/accounts` - each page has its own token
+- Instagram Business Account is fetched via `/{page_id}?fields=instagram_business_account{id,username}`
+- Always store the Page access token (not user token) for messaging
+
+---
+
+## 2026-01-25 14:26 - S06: Create OAuth start action
+
+**What was implemented:**
+- Created `packages/backend/convex/integrations/meta/actions.ts`
+- Implemented `startOAuth` action that takes businessId and returns authorization URL
+- OAuth URL targets Facebook Login (Graph API v19.0) with `response_type=code`
+- Required scopes: instagram_basic, instagram_manage_messages, pages_messaging, pages_manage_metadata, pages_show_list
+- State parameter format: `{randomHex64}|{businessId}` for CSRF protection
+- Uses META_APP_ID from environment variables
+- Redirect URI: `{CONVEX_SITE_URL}/meta/callback`
+- Added `verifyBusinessOwnership` internal query for auth checks
+- Added `getExistingConnection` internal query to check for existing connections
+- Prevents duplicate connections (throws if business already connected)
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (created, ~102 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Verification:**
+- `bunx convex typecheck`: passes
+- LSP diagnostics: 0 errors
+
+**Learnings for future iterations:**
+- Facebook OAuth URL: `https://www.facebook.com/v19.0/dialog/oauth`
+- State parameter should embed businessId for callback to know which business to connect
+- Follow existing patterns from shopify.ts for OAuth action structure
+
+---
+
 ## 2026-01-25 14:23 - S05: Implement MetaMessagingProviderImpl class
 
 **What was implemented:**
