@@ -1,3 +1,40 @@
+## 2026-01-25 14:38 - S09: Implement Instagram DM webhook handler
+
+**What was implemented:**
+- Added HTTP route `/webhook/meta` POST to `packages/backend/convex/http.ts`
+- Created `packages/backend/convex/integrations/meta/webhook.ts` with:
+  - `parseMetaWebhookPayload()` function for parsing Instagram DM and Messenger payloads
+  - `getBusinessByInstagramId` internal query to look up business by Instagram Account ID
+  - `getBusinessByPageId` internal query to look up business by Page ID
+  - `processIncomingMessage` internal mutation to create/find conversation and store message
+  - `updateMessageStatus` internal mutation for delivery/read receipts
+- Implemented webhook signature verification using `verifyMetaSignature` from security.ts
+- Handles message types: text, image, video, audio, story_mention, story_reply, file, sticker
+- Skips is_echo messages (our own sent messages)
+- Creates conversation with channel: 'instagram' or 'messenger'
+- Stores message in database with externalId (mid) for deduplication
+- Triggers AI processing for text messages
+- Updates lastMessageAt on metaConnections
+
+**Files changed:**
+- packages/backend/convex/http.ts (+112 lines - Meta POST webhook handler)
+- packages/backend/convex/integrations/meta/webhook.ts (created, ~470 lines)
+- packages/backend/convex/_generated/api.d.ts (auto-generated)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta webhooks POST with object: "instagram" for Instagram DMs, object: "page" for Messenger
+- Instagram uses IGSID (Instagram Scoped ID) not phone numbers for sender identification
+- channelId format: `{channel}:{senderId}:{businessAccountId}` for unique conversation identification
+- Must check for duplicate messages by externalId (mid) as Meta may retry webhook delivery
+- Message storage uses the existing `internal.ai.process.storeMessage` for AI responses
+- Note: sendMessage action (S11) not yet implemented - AI response only stored, not sent to customer
+
+---
+
 ## 2026-01-25 14:32 - S08: Implement webhook verification endpoint
 
 **What was implemented:**

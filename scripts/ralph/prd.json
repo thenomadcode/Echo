@@ -138,7 +138,7 @@
       "id": "S09",
       "title": "Implement Instagram DM webhook handler",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Add HTTP route /webhook/meta POST to packages/backend/convex/http.ts",
