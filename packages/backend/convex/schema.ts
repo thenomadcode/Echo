@@ -123,7 +123,11 @@ export default defineSchema({
     customerId: v.string(),
     // Reference to customer record (optional for backward compatibility during migration)
     customerRecordId: v.optional(v.id("customers")),
-    channel: v.string(),
+    channel: v.union(
+      v.literal("whatsapp"),
+      v.literal("instagram"),
+      v.literal("messenger")
+    ),
     channelId: v.string(),
     lastCustomerMessageAt: v.number(),
 

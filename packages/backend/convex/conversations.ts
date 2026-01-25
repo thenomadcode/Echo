@@ -277,7 +277,11 @@ export const create = mutation({
   args: {
     businessId: v.id("businesses"),
     customerId: v.string(),
-    channel: v.string(),
+    channel: v.union(
+      v.literal("whatsapp"),
+      v.literal("instagram"),
+      v.literal("messenger")
+    ),
     channelId: v.string(),
   },
   handler: async (ctx, args) => {
