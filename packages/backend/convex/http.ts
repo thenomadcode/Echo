@@ -5,6 +5,7 @@ import { TwilioWhatsAppProvider } from "./integrations/whatsapp/twilio";
 import type { MessageType } from "./integrations/whatsapp/types";
 
 import { authComponent, createAuth } from "./auth";
+import type { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
 
@@ -45,6 +46,70 @@ http.route({
     }
   }),
 });
+
+// ============================================================================
+// Meta (Instagram/Messenger) OAuth Callback
+// ============================================================================
+
+http.route({
+  path: "/meta/callback",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const url = new URL(request.url);
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    const error = url.searchParams.get("error");
+    const errorReason = url.searchParams.get("error_reason");
+    const errorDescription = url.searchParams.get("error_description");
+
+    const frontendUrl = process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "";
+    const redirectBase = `${frontendUrl}/settings/integrations/meta`;
+
+    // Handle OAuth denial/error from Facebook
+    if (error) {
+      console.error("Meta OAuth error:", { error, errorReason, errorDescription });
+      const errorParam = encodeURIComponent(errorDescription ?? errorReason ?? error);
+      return Response.redirect(`${redirectBase}?error=${errorParam}`, 302);
+    }
+
+    if (!code || !state) {
+      return Response.redirect(`${redirectBase}?error=missing_params`, 302);
+    }
+
+    // State format: {randomState}|{businessId}
+    const stateParts = state.split("|");
+    if (stateParts.length !== 2) {
+      return Response.redirect(`${redirectBase}?error=invalid_state`, 302);
+    }
+
+    const [, businessIdStr] = stateParts;
+    const businessId = businessIdStr as Id<"businesses">;
+
+    try {
+      const result = await ctx.runAction(
+        internal.integrations.meta.actions.handleOAuthCallback,
+        {
+          code,
+          businessId,
+        }
+      );
+
+      if (result.success) {
+        return Response.redirect(`${redirectBase}?connected=true`, 302);
+      }
+
+      const errorParam = encodeURIComponent(result.error ?? "auth_failed");
+      return Response.redirect(`${redirectBase}?error=${errorParam}`, 302);
+    } catch (err) {
+      console.error("Meta OAuth callback error:", err);
+      return Response.redirect(`${redirectBase}?error=auth_failed`, 302);
+    }
+  }),
+});
+
+// ============================================================================
+// WhatsApp Webhooks
+// ============================================================================
 
 http.route({
   path: "/webhook/whatsapp",
