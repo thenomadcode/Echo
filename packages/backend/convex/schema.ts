@@ -347,6 +347,9 @@ export default defineSchema({
     // Privacy
     isAnonymized: v.optional(v.boolean()),
 
+    tier: v.optional(v.string()),
+    tierUpdatedAt: v.optional(v.number()),
+
     // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
