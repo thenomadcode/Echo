@@ -1,3 +1,35 @@
+## 2026-01-27 16:00 - S09: Clear processing state on timeout
+
+**What was implemented:**
+- Created `clearStaleProcessingState` public mutation in `packages/backend/convex/ai/process.ts`:
+  - Can be called directly to clear processing state for a conversation
+  - Returns `{ success: boolean; alreadyCleared?: boolean; error?: string }`
+- Created `autoCleanupProcessingState` internal mutation:
+  - Checks if processing state still matches the original `startedAt` timestamp
+  - Only clears if the conversation is still processing with the same start time
+  - Logs when auto-cleanup occurs
+- Created `scheduleProcessingCleanup` internal mutation:
+  - Schedules `autoCleanupProcessingState` to run after 60 seconds
+  - Uses `ctx.scheduler.runAfter(PROCESSING_TIMEOUT_MS, ...)` pattern
+- Updated webhook handlers in `packages/backend/convex/http.ts`:
+  - Meta webhook: schedules cleanup after setting `isAiProcessing: true`
+  - WhatsApp webhook: same pattern for consistency
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (+65 lines - clearStaleProcessingState, autoCleanupProcessingState, scheduleProcessingCleanup)
+- packages/backend/convex/http.ts (+12 lines - schedule cleanup in both Meta and WhatsApp handlers)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+
+**Learnings for future iterations:**
+- Use `ctx.scheduler.runAfter(milliseconds, functionRef, args)` for delayed execution
+- Pass `startedAt` timestamp to scheduled job to verify state hasn't changed
+- Safety net cleanup checks `processingStartedAt === args.startedAt` to avoid clearing legitimate processing
+
+---
+
 ## 2026-01-27 15:50 - S08: Create timeout error state UI
 
 **What was implemented:**
