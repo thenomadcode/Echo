@@ -1,3 +1,32 @@
+## 2026-01-27 15:40 - S06: Send WhatsApp read receipts
+
+**What was implemented:**
+- Created `sendReadReceipt` internal action in `packages/backend/convex/integrations/whatsapp/actions.ts`:
+  - POSTs to WhatsApp Cloud API `/{phoneNumberId}/messages` with `status: "read"` and `message_id`
+  - Looks up WhatsApp connection to get `phoneNumberId` and `apiKey` (Cloud API token)
+  - Only sends if connection has Cloud API credentials (returns silently for Twilio-only connections)
+  - Fire and forget: catches errors and logs warnings, never throws
+- Created `getConnectionForReadReceipt` internal query to fetch required data
+- Updated `packages/backend/convex/http.ts` WhatsApp webhook handler:
+  - Calls `sendReadReceipt` after `processIncomingMessage` without awaiting
+  - Errors caught and logged, don't block AI processing
+  - Only processes for WhatsApp channel conversations
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/actions.ts (+81 lines - read receipt action and query)
+- packages/backend/convex/http.ts (+6 lines - call read receipt in webhook handler)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- WhatsApp Cloud API read receipt: POST to `/{phoneNumberId}/messages` with `{ messaging_product: "whatsapp", status: "read", message_id: "<wamid>" }`
+- The codebase supports both Twilio and WhatsApp Cloud API - check for `apiKey` to determine if Cloud API is available
+- Fire-and-forget pattern same as Meta typing indicator: call without `await`, add `.catch()` handler
+
+---
+
 ## 2026-01-27 15:25 - S05: Send Meta typing status
 
 **What was implemented:**

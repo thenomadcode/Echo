@@ -77,7 +77,7 @@
       "id": "S06",
       "title": "Send WhatsApp read receipts",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create helper function to mark WhatsApp message as read",
