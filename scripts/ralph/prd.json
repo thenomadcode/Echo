@@ -1,350 +1,135 @@
 {
-  "projectName": "meta-messaging-integration",
-  "branchName": "feature/meta-messaging-integration",
+  "projectName": "ai-typing-indicator",
+  "branchName": "feature/ai-typing-indicator",
   "userStories": [
     {
       "id": "S01",
-      "title": "Create metaConnections schema table",
+      "title": "Add processing state fields to conversation schema",
       "priority": 1,
-      "passes": true,
+      "passes": false,
       "ultrawork": true,
       "acceptanceCriteria": [
-        "Add metaConnections table to packages/backend/convex/schema.ts",
-        "Fields: businessId (id businesses), pageId (string), pageName (string), pageAccessToken (string)",
-        "Fields: instagramAccountId (optional string), instagramUsername (optional string)",
-        "Fields: permissions (array of strings), webhooksSubscribed (boolean), verified (boolean)",
-        "Fields: lastMessageAt (optional number), tokenExpiresAt (optional number)",
-        "Fields: createdAt (number), updatedAt (number)",
-        "Index by_business on [businessId]",
-        "Index by_page on [pageId]",
-        "Index by_instagram on [instagramAccountId]",
-        "Run npx convex dev to verify schema compiles"
+        "Add `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts",
+        "Add `processingStartedAt: v.optional(v.number())` field to conversations table",
+        "Run `bunx convex dev` to verify schema compiles without errors"
       ]
     },
     {
       "id": "S02",
-      "title": "Update conversations channel type for Meta channels",
+      "title": "Update AI processing to track state",
       "priority": 2,
-      "passes": true,
-      "ultrawork": true,
+      "passes": false,
+      "ultrawork": false,
       "acceptanceCriteria": [
-        "Update conversations table channel field in packages/backend/convex/schema.ts",
-        "Channel type becomes union: 'whatsapp' | 'instagram' | 'messenger'",
-        "Ensure existing whatsapp conversations remain valid",
-        "Run npx convex dev to verify schema compiles",
-        "No breaking changes to existing queries/mutations that use channel field"
+        "When customer message is received, set `isAiProcessing: true` and `processingStartedAt: Date.now()` on the conversation",
+        "When AI response is saved, set `isAiProcessing: false` and clear `processingStartedAt`",
+        "When AI processing fails/errors, set `isAiProcessing: false`",
+        "State updates happen atomically with message operations"
       ]
     },
     {
       "id": "S03",
-      "title": "Create Meta provider types and interfaces",
+      "title": "Create TypingIndicator component",
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/integrations/meta/types.ts",
-        "Export MetaChannel type: 'instagram' | 'messenger'",
-        "Export MetaMessagingProvider interface with sendText, sendImage, sendQuickReplies methods",
-        "Export ParsedMetaMessage interface with channel, businessAccountId, senderId, content, timestamp, messageId, messageType, mediaUrl, isEcho",
-        "Export QuickReply interface with content_type, title, payload",
-        "Export MessageResult interface with success, messageId, error",
-        "Export StatusUpdate interface for delivery/read receipts",
-        "Types match Meta Graph API v19.0 specifications"
+        "Create `apps/web/src/components/conversation/TypingIndicator.tsx`",
+        "Component shows three animated bouncing dots",
+        "Component shows 'Echo AI is typing...' label below the dots",
+        "Animation has staggered 0.3s delay between each dot bounce",
+        "Uses `bg-muted` background and `text-muted-foreground` colors",
+        "Component accepts `className` prop for positioning"
       ]
     },
     {
       "id": "S04",
-      "title": "Implement Meta webhook signature verification",
+      "title": "Integrate typing indicator into conversation view",
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/integrations/meta/security.ts",
-        "Implement verifyMetaSignature function using HMAC-SHA256",
-        "Function takes payload string, signature string, appSecret string",
-        "Returns boolean indicating if signature matches",
-        "Signature format is 'sha256=' prefix + hex digest",
-        "Export function for use in webhook handlers"
+        "Subscribe to `isAiProcessing` field from conversation in the conversation detail page",
+        "Show TypingIndicator below messages when `isAiProcessing === true`",
+        "Position indicator on the right side (AI message side)",
+        "Indicator disappears immediately when AI response arrives",
+        "Auto-scroll to show typing indicator when it appears",
+        "BROWSER TEST: Navigate to a conversation, verify typing indicator is NOT shown when isAiProcessing is false",
+        "BROWSER TEST: When isAiProcessing is true, typing indicator appears with animated dots"
       ]
     },
     {
       "id": "S05",
-      "title": "Implement MetaMessagingProviderImpl class",
+      "title": "Send Meta typing status",
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/integrations/meta/provider.ts",
-        "Implement MetaMessagingProviderImpl class implementing MetaMessagingProvider interface",
-        "Constructor takes pageAccessToken, pageOrIgId, channel",
-        "Implement sendText method using POST to /{page_or_ig_id}/messages",
-        "Implement sendImage method with attachment type image",
-        "Implement sendQuickReplies method for Messenger (13 button limit)",
-        "Use messaging_type: RESPONSE for all sends",
-        "Handle API errors and return proper MessageResult",
-        "Use Authorization Bearer token header"
+        "Create helper function to send typing indicator via Meta Graph API",
+        "POST to `https://graph.facebook.com/v21.0/me/messages` with `sender_action: 'typing_on'`",
+        "Call typing API when AI processing starts for Meta channel conversations",
+        "Fire and forget - don't block AI processing on typing API response",
+        "Handle API errors gracefully (log but don't fail)",
+        "Only send for conversations with channel 'instagram' or 'messenger'"
       ]
     },
     {
       "id": "S06",
-      "title": "Create OAuth start action",
+      "title": "Send WhatsApp read receipts",
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Create packages/backend/convex/integrations/meta/actions.ts",
-        "Implement startOAuth action that takes businessId",
-        "Generate OAuth authorization URL for Facebook Login",
-        "Include scopes: instagram_basic, instagram_manage_messages, pages_messaging, pages_manage_metadata, pages_show_list",
-        "Generate and store state parameter for CSRF protection",
-        "Use META_APP_ID from environment variables",
-        "Return authorization URL for redirect"
+        "Create helper function to mark WhatsApp message as read",
+        "POST to WhatsApp Cloud API with status 'read'",
+        "Call read receipt API when customer message is received for WhatsApp conversations",
+        "Fire and forget - don't block AI processing",
+        "Handle API errors gracefully (log but don't fail)",
+        "Only send for conversations with channel 'whatsapp'"
       ]
     },
     {
       "id": "S07",
-      "title": "Create OAuth callback handler and token exchange",
+      "title": "Add timeout detection",
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Add HTTP route /meta/callback GET to packages/backend/convex/http.ts",
-        "Implement metaOAuthCallback handler",
-        "Exchange authorization code for access token via POST to /oauth/access_token",
-        "Exchange short-lived token for long-lived token",
-        "Fetch user's Pages and Instagram accounts via GET /me/accounts",
-        "Call mutation to save connection data",
-        "Redirect user back to settings page with success/error status",
-        "Handle OAuth errors gracefully"
+        "Subscribe to `processingStartedAt` field in conversation view",
+        "Calculate elapsed time client-side using `Date.now() - processingStartedAt`",
+        "After 30 seconds of processing, set local `isTimedOut` state to true",
+        "Use `useEffect` with interval to check timeout every second",
+        "Clear interval when component unmounts or processing completes"
       ]
     },
     {
       "id": "S08",
-      "title": "Implement webhook verification endpoint",
+      "title": "Create timeout error state UI",
       "priority": 8,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Add HTTP route /webhook/meta GET to packages/backend/convex/http.ts",
-        "Implement metaWebhookVerify handler",
-        "Parse hub.mode, hub.verify_token, hub.challenge from query params",
-        "Verify hub.verify_token matches META_WEBHOOK_VERIFY_TOKEN env var",
-        "Return hub.challenge value on success (plain text response)",
-        "Return 403 if verification fails",
-        "Log verification attempts for debugging"
+        "When `isTimedOut` is true, show error state instead of typing indicator",
+        "Error state shows warning icon and 'AI response timed out' message",
+        "Include 'Retry' button that calls AI processing again",
+        "Include 'Respond manually' button that opens reply input",
+        "Style error state with `bg-destructive/10` and `text-destructive`",
+        "BROWSER TEST: After 30 seconds of simulated processing, timeout error appears",
+        "BROWSER TEST: Retry button is visible and clickable",
+        "BROWSER TEST: Respond manually button is visible and clickable"
       ]
     },
     {
       "id": "S09",
-      "title": "Implement Instagram DM webhook handler",
+      "title": "Clear processing state on timeout",
       "priority": 9,
-      "passes": true,
+      "passes": false,
       "ultrawork": false,
       "acceptanceCriteria": [
-        "Add HTTP route /webhook/meta POST to packages/backend/convex/http.ts",
-        "Implement metaWebhookHandler for object: 'instagram'",
-        "Verify webhook signature using X-Hub-Signature-256 header",
-        "Parse Instagram DM payload: sender IGSID, message content, mid, timestamp",
-        "Handle message types: text, image, video, audio, story_mention, story_reply",
-        "Skip is_echo messages (our own sent messages)",
-        "Look up business by Instagram account ID",
-        "Create or find conversation with channel: 'instagram'",
-        "Store message in database",
-        "Trigger AI processing for text messages",
-        "Return 200 OK response"
-      ]
-    },
-    {
-      "id": "S10",
-      "title": "Implement Messenger webhook handler",
-      "priority": 10,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Extend metaWebhookHandler to handle object: 'page'",
-        "Parse Messenger payload: sender PSID, message content, mid, timestamp",
-        "Handle message types: text, image, video, audio, file, sticker",
-        "Handle postback events (button clicks)",
-        "Look up business by Page ID",
-        "Create or find conversation with channel: 'messenger'",
-        "Store message in database",
-        "Trigger AI processing for text messages",
-        "Return 200 OK response"
-      ]
-    },
-    {
-      "id": "S11",
-      "title": "Implement sendMessage action",
-      "priority": 11,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add sendMessage action to packages/backend/convex/integrations/meta/actions.ts",
-        "Action takes conversationId, content, type (text/image)",
-        "Look up conversation to get channel and channelId (recipient)",
-        "Look up metaConnection to get pageAccessToken",
-        "Instantiate MetaMessagingProviderImpl with correct parameters",
-        "Call appropriate send method based on type",
-        "Store sent message in database with externalId (mid)",
-        "Handle and log errors",
-        "Return success/failure status"
-      ]
-    },
-    {
-      "id": "S12",
-      "title": "Implement rich message support",
-      "priority": 12,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Extend sendMessage action to support type: 'quick_replies'",
-        "Add quickReplies parameter for Messenger quick reply buttons",
-        "Implement generic template support for product cards (Messenger only)",
-        "Graceful fallback to text for unsupported types on Instagram",
-        "Handle media upload vs URL-based media",
-        "Respect 13 button limit for Messenger quick replies",
-        "Log when falling back due to platform limitations"
-      ]
-    },
-    {
-      "id": "S13",
-      "title": "Implement 24-hour messaging window tracking",
-      "priority": 13,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Track lastCustomerMessageAt timestamp in conversations table",
-        "Update timestamp when receiving customer message",
-        "Before sending: check if within 24-hour window",
-        "Within 24h: use messaging_type: RESPONSE",
-        "After 24h: log warning and optionally use Message Tag",
-        "Add isWithinMessagingWindow query that returns boolean and time remaining",
-        "Consider future OTN (One-Time Notification) request flow"
-      ]
-    },
-    {
-      "id": "S14",
-      "title": "Implement message status updates handler",
-      "priority": 14,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Extend metaWebhookHandler to handle message_deliveries events",
-        "Extend metaWebhookHandler to handle message_reads events",
-        "Parse delivery watermark and message IDs",
-        "Update message deliveryStatus to 'delivered' on delivery receipt",
-        "Update message deliveryStatus to 'read' on read receipt",
-        "Handle message_echoes for sent message confirmation",
-        "Match messages by externalId (mid)"
-      ]
-    },
-    {
-      "id": "S15",
-      "title": "Create Meta connection queries and mutations",
-      "priority": 15,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create packages/backend/convex/integrations/meta/queries.ts",
-        "Implement getConnectionStatus query returning connection details for businessId",
-        "Implement getConnectedAccounts query returning all Pages and Instagram accounts",
-        "Create packages/backend/convex/integrations/meta/mutations.ts",
-        "Implement saveConnection mutation for storing OAuth results",
-        "Implement disconnect mutation for removing connection",
-        "Implement subscribeWebhooks mutation for webhook subscription setup",
-        "All queries/mutations require authentication"
-      ]
-    },
-    {
-      "id": "S16",
-      "title": "Create Meta settings page",
-      "priority": 16,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create apps/web/src/routes/settings/integrations/meta.tsx",
-        "Page requires authentication",
-        "Display current connection status",
-        "Show MetaConnectButton when not connected",
-        "Show MetaConnectionStatus when connected",
-        "Include disconnect option with confirmation",
-        "Handle loading and error states",
-        "BROWSER TEST: Navigate to /settings/integrations/meta, verify page renders",
-        "BROWSER TEST: Page shows connect button when not connected",
-        "BROWSER TEST: Error states display correctly"
-      ]
-    },
-    {
-      "id": "S17",
-      "title": "Create MetaConnectButton component",
-      "priority": 17,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create apps/web/src/components/integrations/meta-connect-button.tsx",
-        "Button displays 'Connect with Facebook' with Facebook icon",
-        "On click, calls startOAuth action and redirects to Facebook",
-        "Show loading state during OAuth initiation",
-        "Handle errors with toast notification",
-        "Use shadcn Button component with appropriate styling",
-        "BROWSER TEST: Button renders with correct text",
-        "BROWSER TEST: Button shows loading state when clicked"
-      ]
-    },
-    {
-      "id": "S18",
-      "title": "Create MetaConnectionStatus component",
-      "priority": 18,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create apps/web/src/components/integrations/meta-connection-status.tsx",
-        "Display connected Facebook Page name",
-        "Display connected Instagram username (if linked)",
-        "Show last message timestamp",
-        "Show webhook status (Active/Inactive)",
-        "Include 'Test Connection' button",
-        "Include 'Disconnect' button",
-        "Use Card component from shadcn/ui",
-        "BROWSER TEST: Component renders with connection details",
-        "BROWSER TEST: Test Connection button is clickable",
-        "BROWSER TEST: Disconnect button is clickable"
-      ]
-    },
-    {
-      "id": "S19",
-      "title": "Create MetaDisconnectDialog component",
-      "priority": 19,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create apps/web/src/components/integrations/meta-disconnect-dialog.tsx",
-        "Use AlertDialog from shadcn/ui",
-        "Show warning about losing connection",
-        "Confirm and Cancel buttons",
-        "On confirm, call disconnect mutation",
-        "Show loading state during disconnect",
-        "Close dialog and refresh status on success",
-        "Show error toast on failure",
-        "BROWSER TEST: Dialog opens when trigger clicked",
-        "BROWSER TEST: Dialog shows warning message",
-        "BROWSER TEST: Cancel button closes dialog"
-      ]
-    },
-    {
-      "id": "S20",
-      "title": "Implement test connection functionality",
-      "priority": 20,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Add testConnection action to packages/backend/convex/integrations/meta/actions.ts",
-        "Action verifies token is still valid by calling Graph API",
-        "Update verified field and lastMessageAt in metaConnections",
-        "Return success/failure with error message if failed",
-        "Wire up to Test Connection button in MetaConnectionStatus",
-        "Show toast with test result",
-        "Update connection status display after test"
+        "Create Convex mutation to clear stale processing state",
+        "Mutation sets `isAiProcessing: false` when called",
+        "Call mutation when user clicks Retry button",
+        "Consider adding a scheduled job to auto-clear processing state after 60 seconds as safety net"
       ]
     }
   ]
