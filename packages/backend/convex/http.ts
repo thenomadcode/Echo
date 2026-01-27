@@ -270,6 +270,14 @@ http.route({
           isProcessing: true,
         });
 
+        // Fire and forget: Send typing indicator to Meta (Instagram/Messenger)
+        ctx.runAction(
+          internal.integrations.meta.actions.sendTypingIndicator,
+          { conversationId: messageResult.conversationId }
+        ).catch((err) => {
+          console.warn("[Meta typing indicator] Failed:", err);
+        });
+
         try {
           const aiResult = await ctx.runAction(api.ai.process.processMessage, {
             conversationId: messageResult.conversationId,

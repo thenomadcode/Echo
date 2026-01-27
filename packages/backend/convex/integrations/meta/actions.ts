@@ -1161,3 +1161,125 @@ export const testConnection = action({
     }
   },
 });
+
+// ============================================================================
+// Typing Indicator (Sender Actions)
+// ============================================================================
+
+/**
+ * Helper to get connection and recipient info for sending typing indicator
+ */
+export const getConnectionForTypingIndicator = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return null;
+    }
+
+    // Only for Meta channels (instagram, messenger)
+    if (conversation.channel !== "instagram" && conversation.channel !== "messenger") {
+      return null;
+    }
+
+    // Look up metaConnection for the business
+    const connection = await ctx.db
+      .query("metaConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", conversation.businessId))
+      .first();
+
+    if (!connection || !connection.pageAccessToken) {
+      return null;
+    }
+
+    // channelId format: {channel}:{senderId}:{businessAccountId}
+    const channelIdParts = conversation.channelId.split(":");
+    if (channelIdParts.length < 2) {
+      return null;
+    }
+
+    // senderId is the second part (recipient for outgoing messages)
+    const recipientId = channelIdParts[1];
+
+    // For Instagram: use instagramAccountId
+    // For Messenger: use pageId
+    const pageOrIgId = conversation.channel === "instagram"
+      ? connection.instagramAccountId
+      : connection.pageId;
+
+    if (!pageOrIgId) {
+      return null;
+    }
+
+    return {
+      pageAccessToken: connection.pageAccessToken,
+      pageOrIgId,
+      recipientId,
+      channel: conversation.channel as "instagram" | "messenger",
+    };
+  },
+});
+
+/**
+ * Send typing indicator (sender_action: typing_on) to Meta channels
+ * 
+ * Fire and forget - this action logs errors but does not throw.
+ * Used when AI processing starts to show "typing..." in the customer's chat.
+ * 
+ * Only sends for Instagram and Messenger channels.
+ * 
+ * @see https://developers.facebook.com/docs/messenger-platform/send-messages/sender-actions/
+ */
+export const sendTypingIndicator = internalAction({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<void> => {
+    const data = await ctx.runQuery(
+      internal.integrations.meta.actions.getConnectionForTypingIndicator,
+      { conversationId: args.conversationId }
+    );
+
+    if (!data) {
+      // Not a Meta channel or connection not found - silently return
+      return;
+    }
+
+    const { pageAccessToken, pageOrIgId, recipientId, channel } = data;
+
+    try {
+      const url = `${META_GRAPH_API_BASE}/${pageOrIgId}/messages`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${pageAccessToken}`,
+        },
+        body: JSON.stringify({
+          recipient: { id: recipientId },
+          sender_action: "typing_on",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn(
+          `[sendTypingIndicator] Failed for ${channel}:`,
+          errorData
+        );
+        return;
+      }
+
+      console.log(`[sendTypingIndicator] Sent typing_on for ${channel} conversation`);
+    } catch (error) {
+      // Fire and forget - log but don't fail
+      console.warn(
+        `[sendTypingIndicator] Error for ${channel}:`,
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  },
+});
