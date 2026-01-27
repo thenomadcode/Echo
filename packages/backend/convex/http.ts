@@ -434,6 +434,13 @@ async function handleIncomingMessage(
     }
   );
 
+  ctx.runAction(
+    internal.integrations.whatsapp.actions.sendReadReceipt,
+    { businessId: businessLookup.businessId, messageId: parsedMessage.externalId }
+  ).catch((err) => {
+    console.warn("[WhatsApp read receipt] Failed:", err);
+  });
+
   if (messageType === "text" && parsedMessage.content.trim()) {
     await ctx.runMutation(internal.ai.process.setAiProcessingState, {
       conversationId: messageResult.conversationId,
