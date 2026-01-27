@@ -1,3 +1,22 @@
+## 2026-01-27 15:15 - S01: Add processing state fields to conversation schema
+
+**What was implemented:**
+- Added `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts
+- Added `processingStartedAt: v.optional(v.number())` field to conversations table
+- Both fields are optional to maintain backward compatibility with existing conversations
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+4 lines - AI typing indicator state fields)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+**Learnings for future iterations:**
+- Schema fields for UI state tracking should be optional to avoid migration issues
+- Follow existing section comment pattern in schema.ts for field organization
+
+---
+
 ## 2026-01-25 20:15 - S20: Implement test connection functionality
 
 **What was implemented:**

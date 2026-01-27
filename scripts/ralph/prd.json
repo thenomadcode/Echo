@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Add processing state fields to conversation schema",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Add `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts",
