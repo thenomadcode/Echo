@@ -1,3 +1,31 @@
+## 2026-01-27 15:17 - S02: Update AI processing to track state
+
+**What was implemented:**
+- Created `setAiProcessingState` internal mutation in `packages/backend/convex/ai/process.ts`
+  - Sets `isAiProcessing` boolean and `processingStartedAt` timestamp
+  - Clears `processingStartedAt` when `isProcessing: false`
+- Updated Meta webhook handler in `packages/backend/convex/http.ts`:
+  - Calls `setAiProcessingState(true)` before `processMessage` action
+  - Calls `setAiProcessingState(false)` after AI response is stored (success)
+  - Calls `setAiProcessingState(false)` in catch block (error)
+- Updated WhatsApp webhook handler in `packages/backend/convex/http.ts`:
+  - Same pattern: set true before, set false after (success), set false on catch (error)
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (+18 lines - setAiProcessingState mutation)
+- packages/backend/convex/http.ts (+24 lines - Meta and WhatsApp webhook state tracking)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Internal mutations for state tracking keep AI-related code centralized in ai/process.ts
+- Both webhook handlers (Meta and WhatsApp) follow same pattern for consistency
+- Use try/catch with finally-style pattern: always clear processing state even on error
+
+---
+
 ## 2026-01-27 15:15 - S01: Add processing state fields to conversation schema
 
 **What was implemented:**

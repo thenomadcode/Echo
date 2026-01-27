@@ -265,6 +265,11 @@ http.route({
       }
 
       if (message.messageType === "text" && message.content.trim()) {
+        await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+          conversationId: messageResult.conversationId,
+          isProcessing: true,
+        });
+
         try {
           const aiResult = await ctx.runAction(api.ai.process.processMessage, {
             conversationId: messageResult.conversationId,
@@ -277,10 +282,19 @@ http.route({
             sender: "assistant",
           });
 
+          await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+            conversationId: messageResult.conversationId,
+            isProcessing: false,
+          });
+
           console.log(
             `Meta ${message.channel}: AI response stored for conversation ${messageResult.conversationId}`
           );
         } catch (error) {
+          await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+            conversationId: messageResult.conversationId,
+            isProcessing: false,
+          });
           console.error("AI processing failed:", error);
         }
       }
@@ -413,6 +427,11 @@ async function handleIncomingMessage(
   );
 
   if (messageType === "text" && parsedMessage.content.trim()) {
+    await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+      conversationId: messageResult.conversationId,
+      isProcessing: true,
+    });
+
     try {
       const aiResult = await ctx.runAction(api.ai.process.processMessage, {
         conversationId: messageResult.conversationId,
@@ -424,7 +443,16 @@ async function handleIncomingMessage(
         content: aiResult.response,
         type: "text",
       });
+
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: messageResult.conversationId,
+        isProcessing: false,
+      });
     } catch (error) {
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: messageResult.conversationId,
+        isProcessing: false,
+      });
       console.error("AI processing or reply failed:", error);
     }
   }

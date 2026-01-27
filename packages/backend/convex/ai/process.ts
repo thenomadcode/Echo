@@ -200,6 +200,27 @@ export const updateConversation = internalMutation({
   },
 });
 
+export const setAiProcessingState = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    isProcessing: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const updates: Record<string, unknown> = {
+      isAiProcessing: args.isProcessing,
+      updatedAt: Date.now(),
+    };
+
+    if (args.isProcessing) {
+      updates.processingStartedAt = Date.now();
+    } else {
+      updates.processingStartedAt = undefined;
+    }
+
+    await ctx.db.patch(args.conversationId, updates);
+  },
+});
+
 export const logAIInteraction = internalMutation({
   args: {
     conversationId: v.id("conversations"),

@@ -18,7 +18,7 @@
       "id": "S02",
       "title": "Update AI processing to track state",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "When customer message is received, set `isAiProcessing: true` and `processingStartedAt: Date.now()` on the conversation",
