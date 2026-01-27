@@ -265,12 +265,17 @@ http.route({
       }
 
       if (message.messageType === "text" && message.content.trim()) {
+        const processingStartedAt = Date.now();
         await ctx.runMutation(internal.ai.process.setAiProcessingState, {
           conversationId: messageResult.conversationId,
           isProcessing: true,
         });
 
-        // Fire and forget: Send typing indicator to Meta (Instagram/Messenger)
+        await ctx.runMutation(internal.ai.process.scheduleProcessingCleanup, {
+          conversationId: messageResult.conversationId,
+          startedAt: processingStartedAt,
+        });
+
         ctx.runAction(
           internal.integrations.meta.actions.sendTypingIndicator,
           { conversationId: messageResult.conversationId }
@@ -442,9 +447,15 @@ async function handleIncomingMessage(
   });
 
   if (messageType === "text" && parsedMessage.content.trim()) {
+    const processingStartedAt = Date.now();
     await ctx.runMutation(internal.ai.process.setAiProcessingState, {
       conversationId: messageResult.conversationId,
       isProcessing: true,
+    });
+
+    await ctx.runMutation(internal.ai.process.scheduleProcessingCleanup, {
+      conversationId: messageResult.conversationId,
+      startedAt: processingStartedAt,
     });
 
     try {

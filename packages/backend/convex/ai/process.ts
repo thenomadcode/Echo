@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery } from "../_generated/server";
+import { action, internalMutation, internalQuery, mutation } from "../_generated/server";
 import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
@@ -218,6 +218,76 @@ export const setAiProcessingState = internalMutation({
     }
 
     await ctx.db.patch(args.conversationId, updates);
+  },
+});
+
+const PROCESSING_TIMEOUT_MS = 60_000;
+
+export const clearStaleProcessingState = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return { success: false, error: "Conversation not found" };
+    }
+
+    if (!conversation.isAiProcessing) {
+      return { success: true, alreadyCleared: true };
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      isAiProcessing: false,
+      processingStartedAt: undefined,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+export const autoCleanupProcessingState = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    startedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return;
+    }
+
+    if (
+      conversation.isAiProcessing &&
+      conversation.processingStartedAt === args.startedAt
+    ) {
+      console.log(
+        `[CLEANUP] Auto-clearing stale processing state for conversation ${args.conversationId}`
+      );
+      await ctx.db.patch(args.conversationId, {
+        isAiProcessing: false,
+        processingStartedAt: undefined,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const scheduleProcessingCleanup = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    startedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.scheduler.runAfter(
+      PROCESSING_TIMEOUT_MS,
+      internal.ai.process.autoCleanupProcessingState,
+      {
+        conversationId: args.conversationId,
+        startedAt: args.startedAt,
+      }
+    );
   },
 });
 
