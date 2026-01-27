@@ -1,0 +1,136 @@
+{
+  "projectName": "ai-typing-indicator",
+  "branchName": "feature/ai-typing-indicator",
+  "userStories": [
+    {
+      "id": "S01",
+      "title": "Add processing state fields to conversation schema",
+      "priority": 1,
+      "passes": false,
+      "ultrawork": true,
+      "acceptanceCriteria": [
+        "Add `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts",
+        "Add `processingStartedAt: v.optional(v.number())` field to conversations table",
+        "Run `bunx convex dev` to verify schema compiles without errors"
+      ]
+    },
+    {
+      "id": "S02",
+      "title": "Update AI processing to track state",
+      "priority": 2,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "When customer message is received, set `isAiProcessing: true` and `processingStartedAt: Date.now()` on the conversation",
+        "When AI response is saved, set `isAiProcessing: false` and clear `processingStartedAt`",
+        "When AI processing fails/errors, set `isAiProcessing: false`",
+        "State updates happen atomically with message operations"
+      ]
+    },
+    {
+      "id": "S03",
+      "title": "Create TypingIndicator component",
+      "priority": 3,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create `apps/web/src/components/conversation/TypingIndicator.tsx`",
+        "Component shows three animated bouncing dots",
+        "Component shows 'Echo AI is typing...' label below the dots",
+        "Animation has staggered 0.3s delay between each dot bounce",
+        "Uses `bg-muted` background and `text-muted-foreground` colors",
+        "Component accepts `className` prop for positioning"
+      ]
+    },
+    {
+      "id": "S04",
+      "title": "Integrate typing indicator into conversation view",
+      "priority": 4,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Subscribe to `isAiProcessing` field from conversation in the conversation detail page",
+        "Show TypingIndicator below messages when `isAiProcessing === true`",
+        "Position indicator on the right side (AI message side)",
+        "Indicator disappears immediately when AI response arrives",
+        "Auto-scroll to show typing indicator when it appears",
+        "BROWSER TEST: Navigate to a conversation, verify typing indicator is NOT shown when isAiProcessing is false",
+        "BROWSER TEST: When isAiProcessing is true, typing indicator appears with animated dots"
+      ]
+    },
+    {
+      "id": "S05",
+      "title": "Send Meta typing status",
+      "priority": 5,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create helper function to send typing indicator via Meta Graph API",
+        "POST to `https://graph.facebook.com/v21.0/me/messages` with `sender_action: 'typing_on'`",
+        "Call typing API when AI processing starts for Meta channel conversations",
+        "Fire and forget - don't block AI processing on typing API response",
+        "Handle API errors gracefully (log but don't fail)",
+        "Only send for conversations with channel 'instagram' or 'messenger'"
+      ]
+    },
+    {
+      "id": "S06",
+      "title": "Send WhatsApp read receipts",
+      "priority": 6,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create helper function to mark WhatsApp message as read",
+        "POST to WhatsApp Cloud API with status 'read'",
+        "Call read receipt API when customer message is received for WhatsApp conversations",
+        "Fire and forget - don't block AI processing",
+        "Handle API errors gracefully (log but don't fail)",
+        "Only send for conversations with channel 'whatsapp'"
+      ]
+    },
+    {
+      "id": "S07",
+      "title": "Add timeout detection",
+      "priority": 7,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Subscribe to `processingStartedAt` field in conversation view",
+        "Calculate elapsed time client-side using `Date.now() - processingStartedAt`",
+        "After 30 seconds of processing, set local `isTimedOut` state to true",
+        "Use `useEffect` with interval to check timeout every second",
+        "Clear interval when component unmounts or processing completes"
+      ]
+    },
+    {
+      "id": "S08",
+      "title": "Create timeout error state UI",
+      "priority": 8,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "When `isTimedOut` is true, show error state instead of typing indicator",
+        "Error state shows warning icon and 'AI response timed out' message",
+        "Include 'Retry' button that calls AI processing again",
+        "Include 'Respond manually' button that opens reply input",
+        "Style error state with `bg-destructive/10` and `text-destructive`",
+        "BROWSER TEST: After 30 seconds of simulated processing, timeout error appears",
+        "BROWSER TEST: Retry button is visible and clickable",
+        "BROWSER TEST: Respond manually button is visible and clickable"
+      ]
+    },
+    {
+      "id": "S09",
+      "title": "Clear processing state on timeout",
+      "priority": 9,
+      "passes": false,
+      "ultrawork": false,
+      "acceptanceCriteria": [
+        "Create Convex mutation to clear stale processing state",
+        "Mutation sets `isAiProcessing: false` when called",
+        "Call mutation when user clicks Retry button",
+        "Consider adding a scheduled job to auto-clear processing state after 60 seconds as safety net"
+      ]
+    }
+  ]
+}
