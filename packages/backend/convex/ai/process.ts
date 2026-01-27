@@ -811,3 +811,68 @@ function getEscalatedConversationResponse(language: string): string {
   };
   return responses[language] ?? responses["en"] ?? "";
 }
+
+export const getLastCustomerMessage = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<string | null> => {
+    const lastMessage = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("desc")
+      .filter((q) => q.eq(q.field("sender"), "customer"))
+      .first();
+
+    return lastMessage?.content ?? null;
+  },
+});
+
+export const retryAiProcessing = action({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+      conversationId: args.conversationId,
+      isProcessing: false,
+    });
+
+    const lastMessage = await ctx.runQuery(internal.ai.process.getLastCustomerMessage, {
+      conversationId: args.conversationId,
+    });
+
+    if (!lastMessage) {
+      return { success: false, error: "No customer message found to retry" };
+    }
+
+    await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+      conversationId: args.conversationId,
+      isProcessing: true,
+    });
+
+    try {
+      await ctx.runAction(api.ai.process.processMessage, {
+        conversationId: args.conversationId,
+        message: lastMessage,
+      });
+
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: false,
+      });
+
+      return { success: true };
+    } catch (error) {
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: false,
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "AI processing failed",
+      };
+    }
+  },
+});

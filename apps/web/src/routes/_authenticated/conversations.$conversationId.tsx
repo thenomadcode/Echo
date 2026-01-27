@@ -4,7 +4,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 
 import { 
   ArrowLeft, 
@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { StatusBadge } from "@/components/composed/StatusBadge";
 import { MessageBubble } from "@/components/conversation/MessageBubble";
 import { MessageInput } from "@/components/conversation/MessageInput";
+import { TimeoutError } from "@/components/conversation/TimeoutError";
 import { TypingIndicator } from "@/components/conversation/TypingIndicator";
 import {
   AlertDialog,
@@ -251,7 +252,9 @@ function ConversationDetailPage() {
   const handBack = useMutation(api.conversations.handBack);
   const closeConversation = useMutation(api.conversations.close);
   const reopenConversation = useMutation(api.conversations.reopen);
+  const retryAiProcessing = useAction(api.ai.process.retryAiProcessing);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [showHandBackDialog, setShowHandBackDialog] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -348,6 +351,34 @@ function ConversationDetailPage() {
       toast.success("Conversation reopened");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to reopen conversation");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRetryAi = async () => {
+    setIsRetrying(true);
+    try {
+      const result = await retryAiProcessing({
+        conversationId: conversationId as Id<"conversations">,
+      });
+      if (!result.success) {
+        toast.error(result.error ?? "Failed to retry AI processing");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to retry");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const handleRespondManually = async () => {
+    setIsProcessing(true);
+    try {
+      await takeOver({ conversationId: conversationId as Id<"conversations"> });
+      toast.success("You are now handling this conversation");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to take over");
     } finally {
       setIsProcessing(false);
     }
@@ -538,6 +569,15 @@ function ConversationDetailPage() {
                     {isAiProcessing && !isTimedOut && (
                       <div className="mt-4">
                         <TypingIndicator />
+                      </div>
+                    )}
+                    {isTimedOut && (
+                      <div className="mt-4">
+                        <TimeoutError
+                          isRetrying={isRetrying}
+                          onRetry={handleRetryAi}
+                          onRespondManually={handleRespondManually}
+                        />
                       </div>
                     )}
                     <div ref={messagesEndRef} />
