@@ -31,7 +31,7 @@
       "id": "S03",
       "title": "Create TypingIndicator component",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create `apps/web/src/components/conversation/TypingIndicator.tsx`",
@@ -46,7 +46,7 @@
       "id": "S04",
       "title": "Integrate typing indicator into conversation view",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Subscribe to `isAiProcessing` field from conversation in the conversation detail page",

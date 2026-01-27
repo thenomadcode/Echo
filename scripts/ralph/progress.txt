@@ -1,3 +1,51 @@
+## 2026-01-27 15:22 - S04: Integrate typing indicator into conversation view
+
+**What was implemented:**
+- Updated `apps/web/src/routes/_authenticated/conversations.$conversationId.tsx`:
+  - Imported `TypingIndicator` component from `@/components/conversation/TypingIndicator`
+  - Added `isAiProcessing` extraction from conversation data with default `false`
+  - Display `TypingIndicator` below messages when `isAiProcessing === true`
+  - Added `isAiProcessing` to useEffect dependency array for auto-scroll on indicator appearance
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (+8 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed file
+
+**Learnings for future iterations:**
+- Convex query spread returns all schema fields including `isAiProcessing` and `processingStartedAt`
+- Auto-scroll to new content by adding relevant state to useEffect dependency array
+- TypingIndicator component already positioned on AI side (right), just needs mt-4 wrapper
+
+---
+
+## 2026-01-27 15:20 - S03: Create TypingIndicator component
+
+**What was implemented:**
+- Created `apps/web/src/components/conversation/TypingIndicator.tsx`
+- Component shows three animated bouncing dots with staggered 0.15s delays (half of 0.3s for faster animation)
+- Dots use `animate-bounce` with custom animation delay/duration via inline styles
+- Shows "Echo AI is typing..." label below the dots
+- Uses `bg-muted` background for the bubble and `text-muted-foreground` for text colors
+- Accepts `className` prop for external positioning
+- Styled to match MessageBubble component pattern (Bot icon, assistant label, rounded bubble)
+
+**Files changed:**
+- apps/web/src/components/conversation/TypingIndicator.tsx (created, ~44 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed file
+
+**Learnings for future iterations:**
+- Animation delays can be applied via inline `style` prop for staggered effects
+- Match existing MessageBubble structure: wrapper -> header -> bubble -> footer
+- Component positioned right side (AI side) using `items-end self-end`
+
+---
+
 ## 2026-01-27 15:17 - S02: Update AI processing to track state
 
 **What was implemented:**

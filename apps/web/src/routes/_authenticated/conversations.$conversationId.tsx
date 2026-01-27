@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { StatusBadge } from "@/components/composed/StatusBadge";
 import { MessageBubble } from "@/components/conversation/MessageBubble";
 import { MessageInput } from "@/components/conversation/MessageInput";
+import { TypingIndicator } from "@/components/conversation/TypingIndicator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -265,11 +266,13 @@ function ConversationDetailPage() {
     });
   };
 
+  const isAiProcessing = conversation?.isAiProcessing ?? false;
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, isAiProcessing]);
 
   const mapSender = (sender: string): "customer" | "ai" | "human" => {
     if (sender === "customer") return "customer";
@@ -491,24 +494,29 @@ function ConversationDetailPage() {
               </div>
             ) : (
               <div className="flex flex-col">
-                {messages.map((message, index) => {
-                  const prevMessage = messages[index - 1];
-                  const isSameSenderAsPrevious = prevMessage && prevMessage.sender === message.sender;
-                  return (
-                    <div
-                      key={message._id}
-                      className={isSameSenderAsPrevious ? "mt-1" : "mt-4 first:mt-0"}
-                    >
-                      <MessageBubble
-                        sender={mapSender(message.sender)}
-                        content={message.content}
-                        timestamp={message.createdAt}
-                        mediaUrl={message.mediaUrl ?? undefined}
-                      />
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
+                    {messages.map((message, index) => {
+                      const prevMessage = messages[index - 1];
+                      const isSameSenderAsPrevious = prevMessage && prevMessage.sender === message.sender;
+                      return (
+                        <div
+                          key={message._id}
+                          className={isSameSenderAsPrevious ? "mt-1" : "mt-4 first:mt-0"}
+                        >
+                          <MessageBubble
+                            sender={mapSender(message.sender)}
+                            content={message.content}
+                            timestamp={message.createdAt}
+                            mediaUrl={message.mediaUrl ?? undefined}
+                          />
+                        </div>
+                      );
+                    })}
+                    {conversation.isAiProcessing && (
+                      <div className="mt-4">
+                        <TypingIndicator />
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
               </div>
             )}
           </div>
