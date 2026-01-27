@@ -36,9 +36,6 @@ export default defineSchema({
     aiTone: v.optional(v.string()),
     aiEscalationKeywords: v.optional(v.array(v.string())),
 
-    // Data retention (optional, in days)
-    dataRetentionDays: v.optional(v.number()),
-
     // Relationships
     ownerId: v.string(),
 

@@ -15,6 +15,10 @@ export const env = createEnv({
     SHOPIFY_API_KEY: z.string().optional(),
     SHOPIFY_API_SECRET: z.string().min(32).optional(),
     SHOPIFY_SCOPES: z.string().default("read_products,write_orders,read_orders"),
+    // Meta (Facebook/Instagram) integration
+    META_APP_ID: z.string().optional(),
+    META_APP_SECRET: z.string().optional(),
+    META_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

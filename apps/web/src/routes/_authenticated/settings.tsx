@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   ChevronRight,
   Loader2,
+  Facebook,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type SettingsSection = "general" | "ai" | "integrations" | "privacy";
+type SettingsSection = "general" | "ai" | "integrations";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -73,13 +74,8 @@ const SIDEBAR_SECTIONS: { title: string; items: SidebarItem[] }[] = [
     title: "Integrations",
     items: [
       { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, section: "integrations" },
+      { id: "meta", label: "Meta", icon: Facebook, section: "integrations" },
       { id: "shopify", label: "Shopify", icon: ShoppingBag, section: "integrations" },
-    ],
-  },
-  {
-    title: "Privacy",
-    items: [
-      { id: "data-retention", label: "Data Retention", icon: Clock, section: "privacy" },
     ],
   },
 ];
@@ -179,9 +175,6 @@ function SettingsPage() {
             <AISettings business={activeBusiness} updateBusiness={updateBusiness} />
           )}
           {section === "integrations" && <IntegrationsSettings />}
-          {section === "privacy" && (
-            <PrivacySettings business={activeBusiness} updateBusiness={updateBusiness} />
-          )}
         </main>
       </div>
     </div>
@@ -203,7 +196,6 @@ interface Business {
   aiGreeting?: string;
   aiPersonality?: string;
   escalationKeywords?: string[];
-  dataRetentionDays?: number;
 }
 
 interface SettingsFormProps {
@@ -722,93 +714,64 @@ function IntegrationsSettings() {
         </CardContent>
       </Card>
 
+      <MetaIntegrationCard />
+
       <ShopifyIntegrationCard />
     </div>
   );
 }
 
-const RETENTION_OPTIONS = [
-  { value: "", label: "Never (keep forever)" },
-  { value: "30", label: "30 days" },
-  { value: "60", label: "60 days" },
-  { value: "90", label: "90 days" },
-  { value: "180", label: "180 days" },
-  { value: "365", label: "1 year" },
-];
+function MetaIntegrationCard() {
+  const businesses = useQuery(api.businesses.list);
+  const activeBusiness = businesses?.[0];
+  const metaStatus = useQuery(
+    api.integrations.meta.queries.getConnectionStatus,
+    activeBusiness ? { businessId: activeBusiness._id } : "skip"
+  );
 
-function PrivacySettings({ business, updateBusiness }: SettingsFormProps) {
-  const form = useForm({
-    defaultValues: {
-      dataRetentionDays: business.dataRetentionDays?.toString() || "",
-    },
-    onSubmit: async ({ value }) => {
-      try {
-        const retentionDays = value.dataRetentionDays 
-          ? parseInt(value.dataRetentionDays, 10) 
-          : undefined;
-        await updateBusiness({
-          businessId: business._id,
-          dataRetentionDays: retentionDays,
-        });
-        toast.success("Privacy settings saved");
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to save");
-      }
-    },
-  });
+  const isConnected = metaStatus?.connected === true;
 
   return (
-    <div className="space-y-6">
-      <Card id="data-retention">
-        <CardHeader>
-          <CardTitle>Data Retention</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Configure how long to keep customer data. Inactive customers (no activity for the specified period) 
-            will be automatically anonymized. Their order history is preserved but personal information is removed.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              form.handleSubmit();
-            }}
-          >
-            <form.Field name="dataRetentionDays">
-              {(field) => (
-                <div className="space-y-2 max-w-xs">
-                  <Label htmlFor={field.name}>Retention Period</Label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(value) => field.handleChange(value ?? "")}
-                  >
-                    <SelectTrigger id={field.name}>
-                      <SelectValue placeholder="Select retention period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RETENTION_OPTIONS.map((option) => (
-                        <SelectItem key={option.value || "never"} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Customers will be warned 7 days before anonymization.
-                  </p>
-                </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Facebook className="h-5 w-5" />
+          Meta (Messenger & Instagram)
+        </CardTitle>
+        <CardDescription>Connect Facebook Messenger and Instagram DMs</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "p-2 rounded-full",
+                isConnected ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-muted text-muted-foreground"
               )}
-            </form.Field>
-
-            <div className="mt-6">
-              <Button type="submit" disabled={form.state.isSubmitting}>
-                {form.state.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
+            >
+              <Facebook className="h-5 w-5" />
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            <div>
+              <p className="font-medium">
+                {isConnected ? "Connected" : "Not Connected"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {isConnected
+                  ? `${metaStatus.pageName}${metaStatus.instagramUsername ? ` • @${metaStatus.instagramUsername}` : ""}`
+                  : "Connect to receive Messenger and Instagram messages"}
+              </p>
+            </div>
+          </div>
+          <Link to="/settings/integrations/meta" search={{ connected: false, error: undefined }}>
+            <Button variant={isConnected ? "outline" : "default"}>
+              {isConnected ? "Configure" : "Connect"}
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
+
+
