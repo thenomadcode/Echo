@@ -62,7 +62,7 @@
       "id": "S05",
       "title": "Send Meta typing status",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create helper function to send typing indicator via Meta Graph API",

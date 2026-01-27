@@ -1,3 +1,31 @@
+## 2026-01-27 15:25 - S05: Send Meta typing status
+
+**What was implemented:**
+- Created `sendTypingIndicator` internal action in `packages/backend/convex/integrations/meta/actions.ts`:
+  - POSTs to Meta Graph API `/{pageOrIgId}/messages` with `sender_action: typing_on`
+  - Looks up conversation channel and Meta connection to get tokens/IDs
+  - Only sends for `instagram` and `messenger` channels (returns silently for others)
+  - Fire and forget: catches errors and logs warnings, never throws
+- Created `getConnectionForTypingIndicator` internal query to fetch required data
+- Updated `packages/backend/convex/http.ts` Meta webhook handler:
+  - Calls `sendTypingIndicator` after `setAiProcessingState(true)` without awaiting
+  - Errors caught and logged, don't block AI processing
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (+118 lines - typing indicator action and query)
+- packages/backend/convex/http.ts (+8 lines - call typing indicator in webhook handler)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta sender_action API: POST to `/{pageOrIgId}/messages` with `{ recipient: { id }, sender_action: "typing_on" }`
+- Fire-and-forget pattern: call without `await`, add `.catch()` handler for logging
+- Reuse `getConversationWithConnection` pattern but simplified for single-purpose queries
+
+---
+
 ## 2026-01-27 15:22 - S04: Integrate typing indicator into conversation view
 
 **What was implemented:**
