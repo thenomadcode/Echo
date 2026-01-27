@@ -180,6 +180,10 @@ export default defineSchema({
     // Escalation reason - why AI escalated to human
     escalationReason: v.optional(v.string()),
 
+    // AI typing indicator state
+    isAiProcessing: v.optional(v.boolean()),
+    processingStartedAt: v.optional(v.number()),
+
     createdAt: v.number(),
     updatedAt: v.number(),
   })
