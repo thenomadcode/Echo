@@ -101,8 +101,8 @@ function LandingPage() {
 
       <div className="container mx-auto px-6 py-20">
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <div className="mb-4 rounded-xl bg-primary/10 p-3 w-fit">
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 rounded-lg bg-primary/10 p-3 w-fit">
               <Clock className="h-6 w-6 text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-2 font-heading">24/7 Support</h3>
@@ -111,8 +111,8 @@ function LandingPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <div className="mb-4 rounded-xl bg-primary/10 p-3 w-fit">
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 rounded-lg bg-primary/10 p-3 w-fit">
               <Brain className="h-6 w-6 text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-2 font-heading">Smart AI</h3>
@@ -121,8 +121,8 @@ function LandingPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <div className="mb-4 rounded-xl bg-primary/10 p-3 w-fit">
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 rounded-lg bg-primary/10 p-3 w-fit">
               <Zap className="h-6 w-6 text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-2 font-heading">Easy Setup</h3>

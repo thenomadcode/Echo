@@ -32,9 +32,7 @@ export default defineSchema({
     ),
 
     // AI configuration (optional)
-    aiGreeting: v.optional(v.string()),
     aiTone: v.optional(v.string()),
-    aiEscalationKeywords: v.optional(v.array(v.string())),
 
     // Relationships
     ownerId: v.string(),

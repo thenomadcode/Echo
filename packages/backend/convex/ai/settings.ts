@@ -4,8 +4,6 @@ import { authComponent } from "../auth";
 
 interface AISettings {
   aiTone: string;
-  aiGreeting: string;
-  aiEscalationKeywords: string[];
 }
 
 interface UsageStats {
@@ -36,8 +34,6 @@ export const getSettings = query({
 
     return {
       aiTone: business.aiTone ?? "",
-      aiGreeting: business.aiGreeting ?? "",
-      aiEscalationKeywords: business.aiEscalationKeywords ?? [],
     };
   },
 });
@@ -46,8 +42,6 @@ export const updateSettings = mutation({
   args: {
     businessId: v.id("businesses"),
     aiTone: v.optional(v.string()),
-    aiGreeting: v.optional(v.string()),
-    aiEscalationKeywords: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args): Promise<void> => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
@@ -70,12 +64,6 @@ export const updateSettings = mutation({
 
     if (args.aiTone !== undefined) {
       updates.aiTone = args.aiTone;
-    }
-    if (args.aiGreeting !== undefined) {
-      updates.aiGreeting = args.aiGreeting;
-    }
-    if (args.aiEscalationKeywords !== undefined) {
-      updates.aiEscalationKeywords = args.aiEscalationKeywords;
     }
 
     await ctx.db.patch(args.businessId, updates);

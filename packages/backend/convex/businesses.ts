@@ -92,7 +92,6 @@ export const update = mutation({
         days: v.array(v.number()),
       })
     ),
-    aiGreeting: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
@@ -123,7 +122,6 @@ export const update = mutation({
     if (args.timezone !== undefined) updates.timezone = args.timezone;
     if (args.businessHours !== undefined)
       updates.businessHours = args.businessHours;
-    if (args.aiGreeting !== undefined) updates.aiGreeting = args.aiGreeting;
 
     await ctx.db.patch(args.businessId, updates);
 

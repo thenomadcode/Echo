@@ -3,7 +3,9 @@ type LanguageCode = "en" | "es" | "pt";
 interface BusinessInfo {
   name: string;
   type: string;
+  description?: string;
   address?: string;
+  timezone?: string;
   businessHours?: {
     open: string;
     close: string;
@@ -251,8 +253,9 @@ export function buildAgentPrompt(params: AgentPromptParams): string {
   const productCatalog = formatProductCatalog(products);
   const productCount = products.length;
 
+  const tz = business.timezone ? ` (${business.timezone})` : "";
   const businessHours = business.businessHours
-    ? `${business.businessHours.open} - ${business.businessHours.close} (${business.businessHours.days.map((d) => DAYS_MAP[d]).join(", ")})`
+    ? `${business.businessHours.open} - ${business.businessHours.close} ${business.businessHours.days.map((d) => DAYS_MAP[d]).join(", ")}${tz}`
     : "Not specified";
 
   const orderSummary = currentOrder
@@ -284,7 +287,7 @@ ${formatCustomerContext(customerContext)}`
 - ${languageInstruction}
 
 ## Business
-- ${business.name}
+- ${business.name}${business.description ? `: ${business.description}` : ""}
 - Location: ${business.address ?? "Not specified"}
 - Hours: ${businessHours}
 

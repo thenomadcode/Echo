@@ -35,7 +35,9 @@ const messageValidator = v.object({
 const businessContextValidator = v.object({
   name: v.string(),
   type: v.string(),
+  description: v.optional(v.string()),
   address: v.optional(v.string()),
+  timezone: v.optional(v.string()),
   businessHours: v.optional(
     v.object({
       open: v.string(),
@@ -43,7 +45,6 @@ const businessContextValidator = v.object({
       days: v.array(v.number()),
     })
   ),
-  aiGreeting: v.optional(v.string()),
   aiTone: v.optional(v.string()),
 });
 

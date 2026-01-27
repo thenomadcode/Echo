@@ -306,7 +306,9 @@ export const processWithAgent = action({
       business: {
         name: business.name,
         type: business.type,
+        description: business.description,
         address: business.address,
+        timezone: business.timezone,
         businessHours: business.businessHours,
       },
       products: products.map((p: Doc<"products">) => ({
@@ -366,7 +368,9 @@ export const processWithAgent = action({
           business: {
             name: business.name,
             type: business.type,
+            description: business.description,
             address: business.address,
+            timezone: business.timezone,
             businessHours: business.businessHours,
           },
           products: products.map((p: Doc<"products">) => ({

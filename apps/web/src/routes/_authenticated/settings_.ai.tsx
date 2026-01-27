@@ -9,7 +9,6 @@ import { useEffect } from "react";
 
 import UsageStats from "@/components/ai/usage-stats";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,21 +44,12 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
   const form = useForm({
     defaultValues: {
       aiTone: "",
-      aiGreeting: "",
-      escalationKeywords: "",
     },
     onSubmit: async ({ value }) => {
       try {
-        const keywords = value.escalationKeywords
-          .split(",")
-          .map((k) => k.trim())
-          .filter((k) => k.length > 0);
-
         await updateSettings({
           businessId,
           aiTone: value.aiTone || undefined,
-          aiGreeting: value.aiGreeting || undefined,
-          aiEscalationKeywords: keywords.length > 0 ? keywords : undefined,
         });
 
         toast.success("AI settings saved successfully");
@@ -73,8 +63,6 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
   useEffect(() => {
     if (settings) {
       form.setFieldValue("aiTone", settings.aiTone);
-      form.setFieldValue("aiGreeting", settings.aiGreeting);
-      form.setFieldValue("escalationKeywords", settings.aiEscalationKeywords.join(", "));
     }
   }, [settings, form]);
 
@@ -112,60 +100,16 @@ function AISettingsForm({ businessId }: { businessId: Id<"businesses"> }) {
               <form.Field name="aiTone">
                 {(field) => (
                   <div className="space-y-2">
-                    <Label htmlFor="aiTone">AI Tone / Personality</Label>
-                    <Input
-                      id="aiTone"
-                      placeholder="e.g., friendly and professional, casual, formal"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Describe the tone you want your AI to use when responding to customers
-                    </p>
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="aiGreeting">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor="aiGreeting">Custom Greeting Message</Label>
+                    <Label htmlFor="aiTone">Tone & Style</Label>
                     <Textarea
-                      id="aiGreeting"
-                      placeholder="e.g., Hello! Welcome to our store. How can I help you today?"
-                      rows={3}
+                      id="aiTone"
+                      placeholder="Be friendly and helpful. Use casual language. Always recommend our daily specials."
+                      rows={4}
                       value={field.state.value}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => field.handleChange(e.target.value)}
                     />
                     <p className="text-sm text-muted-foreground">
-                      The greeting message shown when a customer starts a conversation
-                    </p>
-                  </div>
-                )}
-              </form.Field>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Escalation Settings</CardTitle>
-              <CardDescription>
-                Configure when conversations should be escalated to humans
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form.Field name="escalationKeywords">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor="escalationKeywords">Escalation Keywords</Label>
-                    <Input
-                      id="escalationKeywords"
-                      placeholder="e.g., urgent, complaint, refund, manager"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Comma-separated keywords that will trigger escalation to a human agent
+                      Custom instructions to shape how the AI responds to customers
                     </p>
                   </div>
                 )}

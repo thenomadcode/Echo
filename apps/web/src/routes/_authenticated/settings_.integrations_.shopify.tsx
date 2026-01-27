@@ -213,11 +213,11 @@ function ShopifySettingsPage() {
       <div className="mb-6">
         <Link
           to="/settings"
-          search={{ section: "integrations" }}
+          search={{ section: "shops" }}
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Settings
+          Back to Shops
         </Link>
       </div>
 

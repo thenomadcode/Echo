@@ -5,13 +5,12 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Building2,
   Globe,
   Clock,
   Bot,
-  AlertTriangle,
   MessageCircle,
   ShoppingBag,
   ChevronRight,
@@ -34,13 +33,13 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type SettingsSection = "general" | "ai" | "integrations";
+type SettingsSection = "general" | "ai" | "chats" | "shops";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
   validateSearch: (search: Record<string, unknown>): { section?: SettingsSection } => {
     const section = search.section as string | undefined;
-    if (section === "general" || section === "ai" || section === "integrations") {
+    if (section === "general" || section === "ai" || section === "chats" || section === "shops") {
       return { section };
     }
     return {};
@@ -48,36 +47,16 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 interface SidebarItem {
-  id: string;
+  id: SettingsSection;
   label: string;
   icon: React.ElementType;
-  section: SettingsSection;
 }
 
-const SIDEBAR_SECTIONS: { title: string; items: SidebarItem[] }[] = [
-  {
-    title: "General",
-    items: [
-      { id: "business-info", label: "Business Info", icon: Building2, section: "general" },
-      { id: "localization", label: "Localization", icon: Globe, section: "general" },
-      { id: "business-hours", label: "Business Hours", icon: Clock, section: "general" },
-    ],
-  },
-  {
-    title: "AI & Automation",
-    items: [
-      { id: "ai-personality", label: "AI Personality", icon: Bot, section: "ai" },
-      { id: "escalation-rules", label: "Escalation Rules", icon: AlertTriangle, section: "ai" },
-    ],
-  },
-  {
-    title: "Integrations",
-    items: [
-      { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, section: "integrations" },
-      { id: "meta", label: "Meta", icon: Facebook, section: "integrations" },
-      { id: "shopify", label: "Shopify", icon: ShoppingBag, section: "integrations" },
-    ],
-  },
+const SIDEBAR_ITEMS: SidebarItem[] = [
+  { id: "general", label: "General", icon: Building2 },
+  { id: "ai", label: "AI & Automation", icon: Bot },
+  { id: "chats", label: "Chats", icon: MessageCircle },
+  { id: "shops", label: "Shops", icon: ShoppingBag },
 ];
 
 const COMMON_TIMEZONES = [
@@ -96,6 +75,12 @@ const COMMON_TIMEZONES = [
   "Asia/Tokyo",
   "Asia/Shanghai",
   "Australia/Sydney",
+];
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+  { value: "pt", label: "Portuguese" },
 ];
 
 const DAYS_OF_WEEK = [
@@ -136,34 +121,27 @@ function SettingsPage() {
       <h1 className="text-2xl font-bold font-heading mb-6">Settings</h1>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        <aside className="lg:w-64 flex-shrink-0">
-          <nav className="space-y-6">
-            {SIDEBAR_SECTIONS.map((group) => (
-              <div key={group.title}>
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-3">
-                  {group.title}
-                </h3>
-                <ul className="space-y-1">
-                  {group.items.map((item) => (
-                    <li key={item.id}>
-                      <Link
-                        to="/settings"
-                        search={{ section: item.section }}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                          section === item.section
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        )}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+        <aside className="lg:w-48 flex-shrink-0">
+          <nav>
+            <ul className="space-y-1">
+              {SIDEBAR_ITEMS.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    to="/settings"
+                    search={{ section: item.id }}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      section === item.id
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </nav>
         </aside>
 
@@ -172,9 +150,10 @@ function SettingsPage() {
             <GeneralSettings business={activeBusiness} updateBusiness={updateBusiness} />
           )}
           {section === "ai" && (
-            <AISettings business={activeBusiness} updateBusiness={updateBusiness} />
+            <AISettings business={activeBusiness} />
           )}
-          {section === "integrations" && <IntegrationsSettings />}
+          {section === "chats" && <ChatsIntegrationsSettings />}
+          {section === "shops" && <ShopsIntegrationsSettings />}
         </main>
       </div>
     </div>
@@ -193,9 +172,7 @@ interface Business {
     close: string;
     days: number[];
   };
-  aiGreeting?: string;
-  aiPersonality?: string;
-  escalationKeywords?: string[];
+  aiTone?: string;
 }
 
 interface SettingsFormProps {
@@ -208,10 +185,6 @@ interface SettingsFormProps {
     defaultLanguage?: string;
     timezone?: string;
     businessHours?: { open: string; close: string; days: number[] };
-    aiGreeting?: string;
-    aiPersonality?: string;
-    escalationKeywords?: string[];
-    dataRetentionDays?: number;
   }) => Promise<string>;
 }
 
@@ -337,12 +310,16 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
                   onValueChange={(value) => value && field.handleChange(value)}
                 >
                   <SelectTrigger className="w-full h-11">
-                    <SelectValue />
+                    <SelectValue placeholder="Select language">
+                      {LANGUAGES.find((l) => l.value === field.state.value)?.label}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="pt">Portuguese</SelectItem>
+                    {LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -447,7 +424,37 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-4 flex justify-end bg-background/80 backdrop-blur-sm p-4 -mx-4 rounded-lg border">
+      <StickySaveButton form={form} />
+    </form>
+  );
+}
+
+function StickySaveButton({ form }: { form: { state: { canSubmit: boolean; isSubmitting: boolean }; Subscribe: React.ComponentType<{ children: (state: { canSubmit: boolean; isSubmitting: boolean }) => React.ReactNode }> } }) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsStuck(!entry?.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div ref={sentinelRef} className="h-0" />
+      <div className={cn(
+        "sticky bottom-4 flex justify-end bg-background/80 backdrop-blur-sm p-4 -mx-4 rounded-lg transition-shadow",
+        isStuck && "border shadow-lg"
+      )}>
         <form.Subscribe>
           {(state) => (
             <Button type="submit" disabled={!state.canSubmit || state.isSubmitting} className="h-11">
@@ -457,29 +464,22 @@ function GeneralSettings({ business, updateBusiness }: SettingsFormProps) {
           )}
         </form.Subscribe>
       </div>
-    </form>
+    </>
   );
 }
 
-function AISettings({ business, updateBusiness }: SettingsFormProps) {
+function AISettings({ business }: { business: Business }) {
+  const updateAISettings = useMutation(api.ai.settings.updateSettings);
+  
   const form = useForm({
     defaultValues: {
-      aiGreeting: business.aiGreeting || "",
-      aiPersonality: business.aiPersonality || "",
-      escalationKeywords: (business.escalationKeywords || []).join(", "),
+      aiTone: business.aiTone || "",
     },
     onSubmit: async ({ value }) => {
       try {
-        const keywords = value.escalationKeywords
-          .split(",")
-          .map((k) => k.trim())
-          .filter((k) => k.length > 0);
-
-        await updateBusiness({
+        await updateAISettings({
           businessId: business._id,
-          aiGreeting: value.aiGreeting || undefined,
-          aiPersonality: value.aiPersonality || undefined,
-          escalationKeywords: keywords.length > 0 ? keywords : undefined,
+          aiTone: value.aiTone || undefined,
         });
         toast.success("AI settings saved successfully!");
       } catch (error) {
@@ -506,30 +506,10 @@ function AISettings({ business, updateBusiness }: SettingsFormProps) {
           <CardDescription>Customize how your AI assistant communicates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form.Field name="aiGreeting">
+          <form.Field name="aiTone">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Greeting Message</Label>
-                <Textarea
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  rows={3}
-                  placeholder="Hello! Welcome to our business. How can I help you today?"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This message will be sent when a customer starts a new conversation
-                </p>
-              </div>
-            )}
-          </form.Field>
-
-          <form.Field name="aiPersonality">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Personality Instructions</Label>
+                <Label htmlFor={field.name}>Tone & Style</Label>
                 <Textarea
                   id={field.name}
                   name={field.name}
@@ -548,47 +528,7 @@ function AISettings({ business, updateBusiness }: SettingsFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Escalation Rules
-          </CardTitle>
-          <CardDescription>Configure when conversations should be escalated to you</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form.Field name="escalationKeywords">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Escalation Keywords</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="refund, complaint, manager, urgent"
-                  className="h-11"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Comma-separated keywords that will trigger escalation to a human agent
-                </p>
-              </div>
-            )}
-          </form.Field>
-        </CardContent>
-      </Card>
-
-      <div className="sticky bottom-4 flex justify-end bg-background/80 backdrop-blur-sm p-4 -mx-4 rounded-lg border">
-        <form.Subscribe>
-          {(state) => (
-            <Button type="submit" disabled={!state.canSubmit || state.isSubmitting} className="h-11">
-              {state.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {state.isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
-          )}
-        </form.Subscribe>
-      </div>
+      <StickySaveButton form={form} />
     </form>
   );
 }
@@ -664,7 +604,7 @@ function ShopifyIntegrationCard() {
   );
 }
 
-function IntegrationsSettings() {
+function ChatsIntegrationsSettings() {
   const businesses = useQuery(api.businesses.list);
   const activeBusiness = businesses?.[0];
   const whatsappStatus = useQuery(
@@ -715,7 +655,13 @@ function IntegrationsSettings() {
       </Card>
 
       <MetaIntegrationCard />
+    </div>
+  );
+}
 
+function ShopsIntegrationsSettings() {
+  return (
+    <div className="space-y-6">
       <ShopifyIntegrationCard />
     </div>
   );

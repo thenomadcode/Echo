@@ -367,10 +367,11 @@ export const processMessage = action({
     const businessContext = {
       name: business.name,
       type: business.type,
+      description: business.description,
       address: business.address,
+      timezone: business.timezone,
       businessHours: business.businessHours,
-      aiGreeting: business.aiGreeting,
-      aiTone: undefined as string | undefined,
+      aiTone: business.aiTone,
     };
 
     const productContext = products.map((p: Doc<"products">) => ({
