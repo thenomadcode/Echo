@@ -92,7 +92,7 @@
       "id": "S07",
       "title": "Add timeout detection",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Subscribe to `processingStartedAt` field in conversation view",
@@ -106,7 +106,7 @@
       "id": "S08",
       "title": "Create timeout error state UI",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "When `isTimedOut` is true, show error state instead of typing indicator",

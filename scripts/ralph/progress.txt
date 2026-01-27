@@ -1,3 +1,39 @@
+## 2026-01-27 15:50 - S08: Create timeout error state UI
+
+**What was implemented:**
+- Created `apps/web/src/components/conversation/TimeoutError.tsx`:
+  - Shows warning icon (AlertTriangle) with "AI response timed out" message
+  - Has "Retry" button that triggers AI processing retry
+  - Has "Respond manually" button that takes over the conversation
+  - Styled with `bg-destructive/10` and `text-destructive` colors
+  - Accepts `isRetrying` prop to show loading state on Retry button
+- Created `retryAiProcessing` action in `packages/backend/convex/ai/process.ts`:
+  - Clears processing state, gets last customer message, re-triggers AI processing
+  - Returns `{ success: boolean; error?: string }`
+- Created `getLastCustomerMessage` internal query to fetch the most recent customer message
+- Updated `apps/web/src/routes/_authenticated/conversations.$conversationId.tsx`:
+  - Added `isRetrying` state and handlers for retry/respond manually
+  - Shows TimeoutError component when `isTimedOut` is true
+  - Retry button calls `retryAiProcessing` action
+  - Respond manually button calls existing `takeOver` mutation
+
+**Files changed:**
+- apps/web/src/components/conversation/TimeoutError.tsx (created, ~60 lines)
+- packages/backend/convex/ai/process.ts (+62 lines - retryAiProcessing action, getLastCustomerMessage query)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (+48 lines - TimeoutError integration)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+
+**Learnings for future iterations:**
+- Timeout error UI replaces typing indicator when `isTimedOut` is true
+- Retry pattern: clear state → get last message → re-process → clear state on completion
+- "Respond manually" reuses existing `takeOver` mutation to assign conversation to human
+- Action (not mutation) needed for retry because it calls other actions (processMessage)
+
+---
+
 ## 2026-01-27 15:40 - S06: Send WhatsApp read receipts
 
 **What was implemented:**
