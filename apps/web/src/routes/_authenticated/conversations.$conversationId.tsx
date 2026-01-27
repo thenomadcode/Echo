@@ -267,6 +267,30 @@ function ConversationDetailPage() {
   };
 
   const isAiProcessing = conversation?.isAiProcessing ?? false;
+  const processingStartedAt = conversation?.processingStartedAt ?? null;
+
+  const TIMEOUT_MS = 30_000;
+  const [isTimedOut, setIsTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!isAiProcessing || !processingStartedAt) {
+      setIsTimedOut(false);
+      return;
+    }
+
+    const checkTimeout = () => {
+      const elapsed = Date.now() - processingStartedAt;
+      if (elapsed >= TIMEOUT_MS) {
+        setIsTimedOut(true);
+      }
+    };
+
+    checkTimeout();
+
+    const intervalId = setInterval(checkTimeout, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isAiProcessing, processingStartedAt]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -511,7 +535,7 @@ function ConversationDetailPage() {
                         </div>
                       );
                     })}
-                    {conversation.isAiProcessing && (
+                    {isAiProcessing && !isTimedOut && (
                       <div className="mt-4">
                         <TypingIndicator />
                       </div>
