@@ -111,14 +111,7 @@ export const update = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this address");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		if (args.isDefault === true && !addressRecord.isDefault) {
 			const existingAddresses = await ctx.db
@@ -166,14 +159,7 @@ export const deleteAddress = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to delete this address");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		await ctx.db.delete(args.addressId);
 
@@ -201,14 +187,7 @@ export const setDefault = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this address");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		const existingAddresses = await ctx.db
 			.query("customerAddresses")

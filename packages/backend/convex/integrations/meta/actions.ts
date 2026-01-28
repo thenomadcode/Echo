@@ -91,12 +91,8 @@ export const verifyBusinessOwnership = internalQuery({
 			return { authorized: false, error: "Not authenticated" };
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return { authorized: false, error: "Business not found" };
-		}
-
-		if (business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return { authorized: false, error: "Not authorized to access this business" };
 		}
 
@@ -147,8 +143,8 @@ export const getMessagingWindowStatus = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, conversation.businessId);
+		if (!isOwner) {
 			return null;
 		}
 

@@ -56,8 +56,8 @@ export const getPendingCount = query({
 			return 0;
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return 0;
 		}
 
@@ -199,10 +199,7 @@ export const deny = mutation({
 			throw new Error("Request not found");
 		}
 
-		const business = await ctx.db.get(request.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			throw new Error("Not authorized");
-		}
+		await requireBusinessOwnership(ctx, request.businessId);
 
 		if (request.status !== "pending") {
 			throw new Error("Request already processed");
