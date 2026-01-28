@@ -1,0 +1,32 @@
+meta {
+  name: Send Message
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{CONVEX_SITE_URL}}/webhook/whatsapp
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  MessageSid: SM{{timestamp}}{{randomInt}}
+  From: whatsapp:{{CUSTOMER_PHONE}}
+  To: whatsapp:{{BUSINESS_PHONE}}
+  Body: Your message here
+  NumMedia: 0
+}
+
+script:pre-request {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 100000);
+  bru.setVar("timestamp", timestamp);
+  bru.setVar("randomInt", random);
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}
