@@ -24,6 +24,10 @@ export const getSettings = query({
 		}
 
 		const business = await ctx.db.get(args.businessId);
+		if (!business) {
+			return null;
+		}
+
 		return {
 			aiTone: business.aiTone ?? "",
 		};
