@@ -5746,3 +5746,55 @@
 - Relative time formatting has business logic (24h threshold) that should be centralized
 
 ---
+
+## 2026-01-28 17:56 - S04: Navigate Consistently Named Files
+
+**What was implemented:**
+- Renamed 23 PascalCase component files to kebab-case using `git mv`:
+  - CommandPalette.tsx → command-palette.tsx
+  - ActivityItem.tsx → activity-item.tsx
+  - MetricCard.tsx → metric-card.tsx
+  - StatusBadge.tsx → status-badge.tsx
+  - MessageBubble.tsx → message-bubble.tsx
+  - MessageInput.tsx → message-input.tsx
+  - TimeoutError.tsx → timeout-error.tsx
+  - TypingIndicator.tsx → typing-indicator.tsx
+  - AppHeader.tsx → app-header.tsx
+  - BottomNav.tsx → bottom-nav.tsx
+  - SidebarContext.tsx → sidebar-context.tsx
+  - Sidebar.tsx → sidebar.tsx
+  - NotificationBell.tsx → notification-bell.tsx
+  - OfflineIndicator.tsx → offline-indicator.tsx
+  - CategoryManager.tsx → category-manager.tsx
+  - ProductCard.tsx → product-card.tsx
+  - ProductForm.tsx → product-form.tsx
+  - ProductTable.tsx → product-table.tsx
+  - SyncStatus.tsx → sync-status.tsx
+  - ThemeToggle.tsx → theme-toggle.tsx
+  - ImageUpload.tsx → image-upload.tsx
+  - PriceInput.tsx → price-input.tsx
+  - conversation/StatusBadge.tsx → conversation/status-badge.tsx
+- Updated all imports in 15+ route files to use new kebab-case paths
+- Fixed import typo: `sidebarContext` → `sidebar-context` in _authenticated.tsx and sidebar.tsx
+- Fixed import path: `../components/OfflineIndicator` → `../components/offline-indicator` in __root.tsx
+- Ran `bun run check:fix` to fix Biome import ordering issues
+
+**Files changed:**
+- 23 component files renamed (using git mv to preserve history)
+- 15+ route files updated with new import paths
+- apps/web/src/routeTree.gen.ts (auto-generated route tree update)
+
+**Verification:**
+- Web app TypeScript: 0 errors related to S04 changes
+- LSP diagnostics: 0 errors on changed files
+- Biome lint: passes after auto-fix
+- Note: Marketing app has pre-existing type errors unrelated to S04
+
+**Learnings for future iterations:**
+- Always use `git mv` for file renames to preserve Git history
+- Fix typos in import paths immediately (e.g., camelCase vs kebab-case)
+- Use `bun run check:fix` to auto-fix Biome import ordering issues
+- Pre-commit hooks will catch import sorting issues - fix before committing
+- Type errors in one app don't block commits for changes in another app
+
+---

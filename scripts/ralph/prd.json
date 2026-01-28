@@ -58,7 +58,7 @@
 			"id": "S04",
 			"title": "Navigate Consistently Named Files",
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"acceptanceCriteria": [
 				"All 14+ PascalCase component files renamed to kebab-case: ImageUpload.tsx → image-upload.tsx, PriceInput.tsx → price-input.tsx, ProductCard.tsx → product-card.tsx, ProductForm.tsx → product-form.tsx, AppHeader.tsx → app-header.tsx, MessageBubble.tsx → message-bubble.tsx, StatusBadge.tsx → status-badge.tsx, MetricCard.tsx → metric-card.tsx, CustomerCard.tsx → customer-card.tsx, OrderCard.tsx → order-card.tsx, ConversationList.tsx → conversation-list.tsx, BusinessSelector.tsx → business-selector.tsx, LanguageSelector.tsx → language-selector.tsx, CurrencySelector.tsx → currency-selector.tsx",
