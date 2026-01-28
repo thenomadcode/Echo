@@ -8,7 +8,7 @@ import {
 	mutation,
 	query,
 } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser } from "./lib/auth";
 import { generateOrderNumber } from "./lib/orderNumber";
 
 type OrderItem = {
@@ -417,8 +417,8 @@ export const get = query({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -441,8 +441,8 @@ export const getByConversation = query({
 		conversationId: v.id("conversations"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -471,8 +471,8 @@ export const getByOrderNumber = query({
 		orderNumber: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -512,8 +512,8 @@ export const listByBusiness = query({
 		cursor: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { orders: [], nextCursor: null };
 		}
 
@@ -553,8 +553,8 @@ export const listByCustomer = query({
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { orders: [] };
 		}
 

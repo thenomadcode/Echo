@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, requireAuth } from "./lib/auth";
 
 export const create = mutation({
 	args: {
@@ -12,10 +12,7 @@ export const create = mutation({
 		imageId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const business = await ctx.db
 			.query("businesses")
@@ -74,10 +71,7 @@ export const update = mutation({
 		available: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const product = await ctx.db.get(args.productId);
 		if (!product) {
@@ -117,10 +111,7 @@ export const deleteProduct = mutation({
 		productId: v.id("products"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const product = await ctx.db.get(args.productId);
 		if (!product) {
@@ -154,8 +145,8 @@ export const get = query({
 		productId: v.id("products"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -191,8 +182,8 @@ export const list = query({
 		cursor: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { products: [], hasMore: false, nextCursor: undefined };
 		}
 
@@ -252,10 +243,7 @@ export const list = query({
 export const generateUploadUrl = mutation({
 	args: {},
 	handler: async (ctx) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		await requireAuth(ctx);
 
 		return await ctx.storage.generateUploadUrl();
 	},
@@ -266,8 +254,8 @@ export const getImageUrl = query({
 		storageId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -281,10 +269,7 @@ export const bulkUpdateAvailability = mutation({
 		available: v.boolean(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		let updatedCount = 0;
 		const now = Date.now();
@@ -325,10 +310,7 @@ export const bulkDelete = mutation({
 		productIds: v.array(v.id("products")),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		let deletedCount = 0;
 		const now = Date.now();
@@ -370,10 +352,7 @@ export const bulkUpdateCategory = mutation({
 		categoryId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		let updatedCount = 0;
 		const now = Date.now();

@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { requireAuth } from "./lib/auth";
 
 export const sendAsHuman = mutation({
 	args: {
@@ -11,10 +11,7 @@ export const sendAsHuman = mutation({
 		mediaUrl: v.optional(v.string()),
 	},
 	handler: async (ctx, args): Promise<Id<"messages">> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const conversation = await ctx.db.get(args.conversationId);
 		if (!conversation) {

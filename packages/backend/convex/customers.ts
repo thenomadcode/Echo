@@ -1,14 +1,14 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, requireAuth } from "./lib/auth";
 
 export const get = query({
 	args: {
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -32,8 +32,8 @@ export const getByPhone = query({
 		phone: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -70,8 +70,8 @@ export const list = query({
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { customers: [], hasMore: false, nextCursor: undefined };
 		}
 
@@ -134,10 +134,7 @@ export const create = mutation({
 		name: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const business = await ctx.db.get(args.businessId);
 		if (!business) {
@@ -184,10 +181,7 @@ export const update = mutation({
 		preferredLanguage: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
@@ -219,8 +213,8 @@ export const getContext = query({
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -468,10 +462,7 @@ export const deleteCustomer = mutation({
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
@@ -538,10 +529,7 @@ export const anonymize = mutation({
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
