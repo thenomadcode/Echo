@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { requireAuth } from "./lib/auth";
+import { getAuthUser, requireAuth } from "./lib/auth";
 
 export const sendAsHuman = mutation({
 	args: {
@@ -136,6 +136,9 @@ export const findMessageByContent = query({
 		sender: v.string(),
 	},
 	handler: async (ctx, args): Promise<Id<"messages"> | null> => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) return null;
+
 		const message = await ctx.db
 			.query("messages")
 			.withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))

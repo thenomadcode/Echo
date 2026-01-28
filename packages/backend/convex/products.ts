@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { getAuthUser, requireAuth } from "./lib/auth";
+import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 export const create = mutation({
 	args: {
@@ -12,20 +12,7 @@ export const create = mutation({
 		imageId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), args.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to create products for this business");
-		}
+		const { business } = await requireBusinessOwnership(ctx, args.businessId as any);
 
 		const now = Date.now();
 
@@ -71,25 +58,12 @@ export const update = mutation({
 		available: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
 		const product = await ctx.db.get(args.productId);
 		if (!product) {
 			throw new Error("Product not found");
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), product.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this product");
-		}
+		await requireBusinessOwnership(ctx, product.businessId as any);
 
 		const updates: Record<string, unknown> = { updatedAt: Date.now() };
 
@@ -111,25 +85,12 @@ export const deleteProduct = mutation({
 		productId: v.id("products"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
 		const product = await ctx.db.get(args.productId);
 		if (!product) {
 			throw new Error("Product not found");
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), product.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to delete this product");
-		}
+		await requireBusinessOwnership(ctx, product.businessId as any);
 
 		await ctx.db.patch(args.productId, {
 			deleted: true,
@@ -269,7 +230,7 @@ export const bulkUpdateAvailability = mutation({
 		available: v.boolean(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
+		await requireAuth(ctx);
 
 		let updatedCount = 0;
 		const now = Date.now();
@@ -280,18 +241,7 @@ export const bulkUpdateAvailability = mutation({
 				continue;
 			}
 
-			const business = await ctx.db
-				.query("businesses")
-				.filter((q) => q.eq(q.field("_id"), product.businessId))
-				.first();
-
-			if (!business) {
-				continue;
-			}
-
-			if (business.ownerId !== authUser._id) {
-				throw new Error("Not authorized to update products for this business");
-			}
+			await requireBusinessOwnership(ctx, product.businessId as any);
 
 			await ctx.db.patch(productId, {
 				available: args.available,
@@ -310,7 +260,7 @@ export const bulkDelete = mutation({
 		productIds: v.array(v.id("products")),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
+		await requireAuth(ctx);
 
 		let deletedCount = 0;
 		const now = Date.now();
@@ -321,18 +271,7 @@ export const bulkDelete = mutation({
 				continue;
 			}
 
-			const business = await ctx.db
-				.query("businesses")
-				.filter((q) => q.eq(q.field("_id"), product.businessId))
-				.first();
-
-			if (!business) {
-				continue;
-			}
-
-			if (business.ownerId !== authUser._id) {
-				throw new Error("Not authorized to delete products for this business");
-			}
+			await requireBusinessOwnership(ctx, product.businessId as any);
 
 			await ctx.db.patch(productId, {
 				deleted: true,
@@ -352,7 +291,7 @@ export const bulkUpdateCategory = mutation({
 		categoryId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
+		await requireAuth(ctx);
 
 		let updatedCount = 0;
 		const now = Date.now();
@@ -363,18 +302,7 @@ export const bulkUpdateCategory = mutation({
 				continue;
 			}
 
-			const business = await ctx.db
-				.query("businesses")
-				.filter((q) => q.eq(q.field("_id"), product.businessId))
-				.first();
-
-			if (!business) {
-				continue;
-			}
-
-			if (business.ownerId !== authUser._id) {
-				throw new Error("Not authorized to update products for this business");
-			}
+			await requireBusinessOwnership(ctx, product.businessId as any);
 
 			await ctx.db.patch(productId, {
 				categoryId: args.categoryId,

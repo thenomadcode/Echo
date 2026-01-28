@@ -1,23 +1,20 @@
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
-import { authComponent } from "../../auth";
+import { getAuthUser, requireBusinessOwnership } from "../../lib/auth";
 
 export const getConnectionStatus = query({
 	args: {
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return null;
-		}
-
-		if (business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, args.businessId);
+		} catch {
 			return null;
 		}
 
@@ -63,17 +60,14 @@ export const getConnectedAccounts = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return null;
-		}
-
-		if (business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, args.businessId);
+		} catch {
 			return null;
 		}
 

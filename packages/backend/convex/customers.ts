@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { getAuthUser, requireAuth } from "./lib/auth";
+import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
 
 export const get = query({
 	args: {
@@ -134,16 +134,7 @@ export const create = mutation({
 		name: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to create customers for this business");
-		}
+		await requireBusinessOwnership(ctx, args.businessId);
 
 		const existingCustomer = await ctx.db
 			.query("customers")
@@ -181,21 +172,12 @@ export const update = mutation({
 		preferredLanguage: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this customer");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		const updates: Record<string, unknown> = { updatedAt: Date.now() };
 
@@ -298,6 +280,8 @@ export const updateStats = mutation({
 		if (!customer) {
 			throw new Error("Customer not found");
 		}
+
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		const newTotalOrders = customer.totalOrders + 1;
 		const newTotalSpent = customer.totalSpent + args.orderTotal;
@@ -462,21 +446,12 @@ export const deleteCustomer = mutation({
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to delete this customer");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		const [addresses, memories, notes, summaries, orders, conversations] = await Promise.all([
 			ctx.db
@@ -529,21 +504,12 @@ export const anonymize = mutation({
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await requireAuth(ctx);
-
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to anonymize this customer");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		if (customer.isAnonymized) {
 			throw new Error("Customer is already anonymized");

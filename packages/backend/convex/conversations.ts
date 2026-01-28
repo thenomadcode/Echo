@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
 import { getWindowExpiresAt } from "./integrations/whatsapp/window";
+import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 export const list = query({
 	args: {
@@ -13,13 +13,14 @@ export const list = query({
 		cursor: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { conversations: [], nextCursor: null };
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, args.businessId);
+		} catch {
 			return { conversations: [], nextCursor: null };
 		}
 
@@ -101,8 +102,8 @@ export const listByCustomer = query({
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return [];
 		}
 
@@ -111,8 +112,9 @@ export const listByCustomer = query({
 			return [];
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, customer.businessId);
+		} catch {
 			return [];
 		}
 
@@ -133,8 +135,8 @@ export const get = query({
 		conversationId: v.id("conversations"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -143,8 +145,9 @@ export const get = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, conversation.businessId);
+		} catch {
 			return null;
 		}
 
@@ -169,8 +172,8 @@ export const messages = query({
 		cursor: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { messages: [], nextCursor: null };
 		}
 
@@ -179,8 +182,9 @@ export const messages = query({
 			return { messages: [], nextCursor: null };
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, conversation.businessId);
+		} catch {
 			return { messages: [], nextCursor: null };
 		}
 
@@ -265,19 +269,8 @@ export const create = mutation({
 		channelId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized");
-		}
+		await requireAuth(ctx);
+		await requireBusinessOwnership(ctx, args.businessId);
 
 		const now = Date.now();
 		const conversationId = await ctx.db.insert("conversations", {
@@ -302,6 +295,8 @@ export const addMessage = mutation({
 		sender: v.string(),
 	},
 	handler: async (ctx, args) => {
+		await requireAuth(ctx);
+
 		const conversation = await ctx.db.get(args.conversationId);
 		if (!conversation) {
 			throw new Error("Conversation not found");
@@ -330,20 +325,14 @@ export const takeOver = mutation({
 		conversationId: v.id("conversations"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const conversation = await ctx.db.get(args.conversationId);
 		if (!conversation) {
 			throw new Error("Conversation not found");
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			throw new Error("Not authorized");
-		}
+		await requireBusinessOwnership(ctx, conversation.businessId);
 
 		const userId = authUser._id;
 		const now = Date.now();
@@ -379,10 +368,7 @@ export const handBack = mutation({
 		conversationId: v.id("conversations"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const conversation = await ctx.db.get(args.conversationId);
 		if (!conversation) {
@@ -410,20 +396,14 @@ export const close = mutation({
 		conversationId: v.id("conversations"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		await requireAuth(ctx);
 
 		const conversation = await ctx.db.get(args.conversationId);
 		if (!conversation) {
 			throw new Error("Conversation not found");
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			throw new Error("Not authorized");
-		}
+		await requireBusinessOwnership(ctx, conversation.businessId);
 
 		await ctx.db.patch(args.conversationId, {
 			status: "closed",
@@ -444,20 +424,14 @@ export const reopen = mutation({
 		conversationId: v.id("conversations"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		await requireAuth(ctx);
 
 		const conversation = await ctx.db.get(args.conversationId);
 		if (!conversation) {
 			throw new Error("Conversation not found");
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			throw new Error("Not authorized");
-		}
+		await requireBusinessOwnership(ctx, conversation.businessId);
 
 		await ctx.db.patch(args.conversationId, {
 			status: "active",

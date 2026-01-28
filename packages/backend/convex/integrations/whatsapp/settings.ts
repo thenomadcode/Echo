@@ -2,23 +2,21 @@ import { v } from "convex/values";
 import { internal } from "../../_generated/api";
 import { action, internalMutation, internalQuery, mutation, query } from "../../_generated/server";
 import { authComponent } from "../../auth";
+import { getAuthUser, requireAuth, requireBusinessOwnership } from "../../lib/auth";
 
 export const getConnectionStatus = query({
 	args: {
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return null;
-		}
-
-		if (business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, args.businessId);
+		} catch {
 			return null;
 		}
 
@@ -66,19 +64,8 @@ export const saveCredentials = mutation({
 		apiKey: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this business");
-		}
+		await requireAuth(ctx);
+		await requireBusinessOwnership(ctx, args.businessId);
 
 		const existing = await ctx.db
 			.query("whatsappConnections")
@@ -158,6 +145,9 @@ export const testConnection = action({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+		const authUser = await authComponent.safeGetAuthUser(ctx);
+		if (!authUser) throw new Error("Not authenticated");
+
 		const connection = await ctx.runQuery(
 			internal.integrations.whatsapp.settings.getConnectionForTest,
 			{ businessId: args.businessId },

@@ -10,6 +10,7 @@ import {
 	query,
 } from "./_generated/server";
 import { authComponent } from "./auth";
+import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 function normalizeShopUrl(shop: string): string | null {
 	const trimmed = shop.trim().toLowerCase();
@@ -46,18 +47,8 @@ export const getAuthUrl = mutation({
 		shop: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to access this business");
-		}
+		await requireAuth(ctx);
+		await requireBusinessOwnership(ctx, args.businessId);
 
 		const normalizedShop = normalizeShopUrl(args.shop);
 		if (!normalizedShop) {
@@ -335,6 +326,14 @@ export const importProducts = action({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<ImportResult> => {
+		const authResult = await ctx.runQuery(internal.shopify.verifyBusinessOwnership, {
+			businessId: args.businessId,
+		});
+
+		if (!authResult.authorized) {
+			return { imported: 0, skipped: 0, errors: [authResult.error ?? "Not authorized"] };
+		}
+
 		const connection = await ctx.runQuery(internal.shopify.getConnectionInternal, {
 			businessId: args.businessId,
 		});
@@ -807,13 +806,14 @@ export const getConnectionStatus = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		try {
+			await requireBusinessOwnership(ctx, args.businessId);
+		} catch {
 			return null;
 		}
 
@@ -1334,6 +1334,17 @@ export const createOrder = action({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args): Promise<CreateDraftOrderResult> => {
+		const authUser = await authComponent.safeGetAuthUser(ctx);
+		if (!authUser) {
+			return {
+				success: false,
+				shopifyDraftOrderId: null,
+				shopifyOrderNumber: null,
+				invoiceUrl: null,
+				error: "Not authenticated",
+			};
+		}
+
 		const orderData = await ctx.runQuery(internal.shopify.getOrderForShopify, {
 			orderId: args.orderId,
 		});
@@ -1349,6 +1360,20 @@ export const createOrder = action({
 		}
 
 		const { order, products, shopifyConnection } = orderData;
+
+		const authResult = await ctx.runQuery(internal.shopify.verifyBusinessOwnership, {
+			businessId: order.businessId,
+		});
+
+		if (!authResult.authorized) {
+			return {
+				success: false,
+				shopifyDraftOrderId: null,
+				shopifyOrderNumber: null,
+				invoiceUrl: null,
+				error: authResult.error ?? "Not authorized",
+			};
+		}
 
 		if (!shopifyConnection) {
 			return {
