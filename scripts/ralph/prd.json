@@ -73,7 +73,7 @@
 			"id": "S05",
 			"title": "Work with Consistent Export Patterns",
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"All UI components use named exports (e.g., `export function Button()`)",

@@ -5925,3 +5925,39 @@
 - Auth utilities file was already 95% complete before this story - only needed action support extension
 
 ---
+
+## 2026-01-28 19:54 - S05: Work with Consistent Export Patterns
+
+**What was implemented:**
+- Changed 13 UI component files from default exports to named exports:
+  - header.tsx, user-menu.tsx, business-switcher.tsx, app-nav.tsx
+  - sign-up-form.tsx, sign-in-form.tsx, ai/usage-stats.tsx, loader.tsx
+  - products/product-form.tsx, product-card.tsx, product-table.tsx, category-manager.tsx
+  - ui/image-upload.tsx
+- Updated 15 import statements across route files to use destructured imports:
+  - signup.tsx, login.tsx, onboarding.tsx, test-ai.tsx, _authenticated.tsx
+  - settings_.ai.tsx, products/$productId.tsx, products/new.tsx, products/index.tsx (2 imports)
+  - products/categories.tsx, product-form.tsx, app-header.tsx (2 imports), router.tsx
+- Updated AGENTS.md with comprehensive export conventions documentation:
+  - UI components: ALWAYS use named exports
+  - Route components: Use named export of Route constant (TanStack Router pattern)
+  - Examples showing correct import patterns
+
+**Files changed:**
+- 13 component files (export default → export function)
+- 12 route/utility files (import statements updated)
+- AGENTS.md (+13 lines documentation)
+
+**Verification:**
+- Web app type check passes (0 errors for S05 changes)
+- LSP diagnostics clean on all changed files
+- All imports resolve correctly
+- Note: Marketing app has pre-existing errors outside scope of S05
+
+**Learnings for future iterations:**
+- TanStack Router requires routes to export `const Route = createFileRoute(...)` (not default export)
+- UI components should consistently use named exports for better tree-shaking and consistency
+- Use ast-grep for finding patterns but manual edits more reliable for precise changes
+- Always verify imports after changing exports to catch indirect dependencies
+
+---
