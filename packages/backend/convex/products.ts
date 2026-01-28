@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 export const create = mutation({
 	args: {
@@ -116,16 +116,8 @@ export const get = query({
 			return null;
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), product.businessId))
-			.first();
-
-		if (!business) {
-			return null;
-		}
-
-		if (business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, product.businessId as any);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -148,16 +140,8 @@ export const list = query({
 			return { products: [], hasMore: false, nextCursor: undefined };
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), args.businessId))
-			.first();
-
-		if (!business) {
-			return { products: [], hasMore: false, nextCursor: undefined };
-		}
-
-		if (business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId as any);
+		if (!isOwner) {
 			return { products: [], hasMore: false, nextCursor: undefined };
 		}
 
