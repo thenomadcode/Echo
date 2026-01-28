@@ -8,7 +8,7 @@ import {
 	internalQuery,
 	query,
 } from "../../_generated/server";
-import { getAuthUser } from "../../lib/auth";
+import { getAuthUser, isBusinessOwner } from "../../lib/auth";
 
 function generateStateParameter(): string {
 	const array = new Uint8Array(32);
