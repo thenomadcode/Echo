@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";
 
 export const get = query({
 	args: {
