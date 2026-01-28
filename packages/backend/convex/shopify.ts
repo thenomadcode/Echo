@@ -10,7 +10,7 @@ import {
 	query,
 } from "./_generated/server";
 import { authComponent } from "./auth";
-import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 function normalizeShopUrl(shop: string): string | null {
 	const trimmed = shop.trim().toLowerCase();
@@ -1199,12 +1199,8 @@ export const verifyBusinessOwnership = internalQuery({
 			return { authorized: false, error: "Not authenticated" };
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return { authorized: false, error: "Business not found" };
-		}
-
-		if (business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return { authorized: false, error: "Not authorized to access this business" };
 		}
 

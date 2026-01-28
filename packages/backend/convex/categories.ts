@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";
 
 export const create = mutation({
 	args: {
@@ -76,12 +76,8 @@ export const list = query({
 			return [];
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), args.businessId))
-			.first();
-
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId as any);
+		if (!isOwner) {
 			return [];
 		}
 

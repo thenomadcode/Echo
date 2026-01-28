@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";
 
 const categoryValidator = v.union(
 	v.literal("allergy"),
@@ -32,8 +32,8 @@ export const list = query({
 			return [];
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return [];
 		}
 
