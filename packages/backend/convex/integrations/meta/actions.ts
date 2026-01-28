@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action, internalAction, internalMutation, internalQuery, query } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { authComponent } from "../../auth";
+import type { Id } from "../../_generated/dataModel";
 
 function generateStateParameter(): string {
   const array = new Uint8Array(32);
@@ -530,6 +531,7 @@ const messageTagValidator = v.union(
 
 export const sendMessage = action({
   args: {
+    messageId: v.optional(v.id("messages")),
     conversationId: v.id("conversations"),
     content: v.string(),
     type: v.union(
@@ -685,19 +687,30 @@ export const sendMessage = action({
 
       console.log(`[sendMessage] ${channel} message sent. Success: ${result.success}, mid: ${result.messageId}${fallbackUsed ? " (fallback used)" : ""}`);
 
-      const storedMessageId = await ctx.runMutation(
-        internal.integrations.meta.actions.storeSentMessage,
-        {
-          conversationId: args.conversationId,
-          content: args.content,
-          messageType: fallbackUsed ? "text" : args.type,
+      let storedMessageId: Id<"messages">;
+      
+      if (args.messageId) {
+        await ctx.runMutation(internal.messages.updateMessageDelivery, {
+          messageId: args.messageId,
           externalId: result.messageId,
           deliveryStatus: result.success ? "sent" : "failed",
-          mediaUrl: args.type === "image" ? args.imageUrl : undefined,
-          mediaType: args.type === "image" ? "image/*" : undefined,
-          richContent: richContentJson,
-        }
-      );
+        });
+        storedMessageId = args.messageId;
+      } else {
+        storedMessageId = await ctx.runMutation(
+          internal.integrations.meta.actions.storeSentMessage,
+          {
+            conversationId: args.conversationId,
+            content: args.content,
+            messageType: fallbackUsed ? "text" : args.type,
+            externalId: result.messageId,
+            deliveryStatus: result.success ? "sent" : "failed",
+            mediaUrl: args.type === "image" ? args.imageUrl : undefined,
+            mediaType: args.type === "image" ? "image/*" : undefined,
+            richContent: richContentJson,
+          }
+        );
+      }
 
       if (!result.success) {
         console.error("[sendMessage] Meta API error:", {
@@ -718,18 +731,29 @@ export const sendMessage = action({
     } catch (error) {
       console.error("[sendMessage] Unexpected error:", error);
 
-      const storedMessageId = await ctx.runMutation(
-        internal.integrations.meta.actions.storeSentMessage,
-        {
-          conversationId: args.conversationId,
-          content: args.content,
-          messageType: args.type,
+      let storedMessageId: Id<"messages">;
+      
+      if (args.messageId) {
+        await ctx.runMutation(internal.messages.updateMessageDelivery, {
+          messageId: args.messageId,
           deliveryStatus: "failed",
-          mediaUrl: args.type === "image" ? args.imageUrl : undefined,
-          mediaType: args.type === "image" ? "image/*" : undefined,
-          richContent: richContentJson,
-        }
-      );
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+        });
+        storedMessageId = args.messageId;
+      } else {
+        storedMessageId = await ctx.runMutation(
+          internal.integrations.meta.actions.storeSentMessage,
+          {
+            conversationId: args.conversationId,
+            content: args.content,
+            messageType: args.type,
+            deliveryStatus: "failed",
+            mediaUrl: args.type === "image" ? args.imageUrl : undefined,
+            mediaType: args.type === "image" ? "image/*" : undefined,
+            richContent: richContentJson,
+          }
+        );
+      }
 
       return {
         success: false,

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, internalMutation } from "./_generated/server";
+import { mutation, internalMutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authComponent } from "./auth";
 import type { Id } from "./_generated/dataModel";
@@ -123,5 +123,46 @@ export const sendToWhatsApp = internalMutation({
         errorMessage: error instanceof Error ? error.message : "Unknown error",
       });
     }
+  },
+});
+
+export const findMessageByContent = query({
+  args: {
+    conversationId: v.id("conversations"),
+    content: v.string(),
+    sender: v.string(),
+  },
+  handler: async (ctx, args): Promise<Id<"messages"> | null> => {
+    const message = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("content"), args.content),
+          q.eq(q.field("sender"), args.sender)
+        )
+      )
+      .order("desc")
+      .first();
+
+    return message?._id ?? null;
+  },
+});
+
+export const updateMessageDelivery = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    externalId: v.optional(v.string()),
+    deliveryStatus: v.string(),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      externalId: args.externalId,
+      deliveryStatus: args.deliveryStatus,
+      errorCode: args.errorCode,
+      errorMessage: args.errorMessage,
+    });
   },
 });
