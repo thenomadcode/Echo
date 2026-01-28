@@ -17,7 +17,7 @@ export interface OrdersTabProps {
 }
 
 export function OrdersTab({ customerId, formatCurrency, formatDate, navigate }: OrdersTabProps) {
-	const ordersQuery = useQuery(convexQuery(api.orders.listByCustomer, { customerId }));
+	const ordersQuery = useQuery(convexQuery(api.orders.queries.listByCustomer, { customerId }));
 
 	const orders = ordersQuery.data?.orders ?? [];
 

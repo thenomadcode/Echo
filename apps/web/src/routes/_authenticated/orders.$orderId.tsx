@@ -57,22 +57,24 @@ function OrderDetailPage() {
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-	const orderQuery = useQuery(convexQuery(api.orders.get, { orderId: orderId as Id<"orders"> }));
+	const orderQuery = useQuery(
+		convexQuery(api.orders.queries.get, { orderId: orderId as Id<"orders"> }),
+	);
 
 	const order = orderQuery.data;
 
 	const shopifyQuery = useQuery(
-		convexQuery(api.shopify.getConnectionStatus, {
+		convexQuery(api.integrations.shopify.queries.getConnectionStatus, {
 			businessId: (order?.businessId ?? "placeholder") as Id<"businesses">,
 		}),
 	);
 
 	const shopifyConnection = order?.businessId ? shopifyQuery.data : null;
 
-	const markPreparing = useMutation(api.orders.markPreparing);
-	const markReady = useMutation(api.orders.markReady);
-	const markDelivered = useMutation(api.orders.markDelivered);
-	const cancelOrder = useMutation(api.orders.cancel);
+	const markPreparing = useMutation(api.orders.status.markPreparing);
+	const markReady = useMutation(api.orders.status.markReady);
+	const markDelivered = useMutation(api.orders.status.markDelivered);
+	const cancelOrder = useMutation(api.orders.status.cancel);
 
 	const handleMarkPreparing = async () => {
 		setIsProcessing(true);

@@ -30,7 +30,7 @@ http.route({
 		}
 
 		try {
-			const result = await ctx.runAction(api.shopify.handleCallback, {
+			const result = await ctx.runAction(api.integrations.shopify.oauth.handleCallback, {
 				code,
 				shop,
 				state,
@@ -461,7 +461,7 @@ http.route({
 		}
 
 		ctx
-			.runAction(internal.shopify.handleWebhook, {
+			.runAction(internal.integrations.shopify.webhooks.handleWebhook, {
 				topic,
 				shop,
 				data: payload as Record<string, unknown>,
@@ -511,7 +511,7 @@ http.route({
 				const session = event.data.object as StripeCheckoutSession;
 				const orderId = session.metadata?.orderId;
 				if (orderId) {
-					await ctx.runMutation(internal.orders.updateOrderPaymentStatus, {
+					await ctx.runMutation(internal.orders.payments.updateOrderPaymentStatus, {
 						stripeSessionId: session.id,
 						status: "paid",
 						paymentStatus: "paid",
@@ -523,7 +523,7 @@ http.route({
 				const session = event.data.object as StripeCheckoutSession;
 				const orderId = session.metadata?.orderId;
 				if (orderId) {
-					await ctx.runMutation(internal.orders.updateOrderPaymentStatus, {
+					await ctx.runMutation(internal.orders.payments.updateOrderPaymentStatus, {
 						stripeSessionId: session.id,
 						paymentStatus: "failed",
 					});

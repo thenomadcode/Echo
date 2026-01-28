@@ -30,7 +30,7 @@ export function ShopifyIntegrationCard() {
 	}, [businesses, activeBusinessId]);
 
 	const shopifyStatus = useQuery(
-		api.shopify.getConnectionStatus,
+		api.integrations.shopify.queries.getConnectionStatus,
 		activeBusinessId ? { businessId: activeBusinessId as Id<"businesses"> } : "skip",
 	);
 

@@ -31,7 +31,7 @@ function IntegrationsPage() {
 	}, [businesses, activeBusinessId]);
 
 	const shopifyStatus = useQuery(
-		api.shopify.getConnectionStatus,
+		api.integrations.shopify.queries.getConnectionStatus,
 		activeBusinessId ? { businessId: activeBusinessId as never } : "skip",
 	);
 

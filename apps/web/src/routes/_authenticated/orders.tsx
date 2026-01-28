@@ -81,7 +81,7 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	const ordersQuery = useQuery(
-		convexQuery(api.orders.listByBusiness, {
+		convexQuery(api.orders.queries.listByBusiness, {
 			businessId,
 			status: statusFilter === "all" ? undefined : statusFilter,
 			limit: 50,

@@ -798,7 +798,7 @@ async function handleCheckoutIntent(
 		}
 
 		try {
-			const orderId = await ctx.runMutation(api.orders.create, {
+			const orderId = await ctx.runMutation(api.orders.mutations.create, {
 				businessId: conversation.businessId,
 				conversationId: conversation._id,
 				items: validItems.map((item) => ({
@@ -809,7 +809,7 @@ async function handleCheckoutIntent(
 			});
 
 			if (pendingDelivery) {
-				await ctx.runMutation(api.orders.setDeliveryInfo, {
+				await ctx.runMutation(api.orders.delivery.setDeliveryInfo, {
 					orderId,
 					deliveryType: pendingDelivery.type,
 					deliveryAddress: pendingDelivery.address,
@@ -817,14 +817,14 @@ async function handleCheckoutIntent(
 				});
 			}
 
-			await ctx.runMutation(api.orders.setPaymentMethod, {
+			await ctx.runMutation(api.orders.delivery.setPaymentMethod, {
 				orderId,
 				paymentMethod: intent.paymentMethod,
 			});
 
 			let paymentLink: string | undefined;
 			if (intent.paymentMethod === "card") {
-				paymentLink = await ctx.runAction(api.orders.generatePaymentLink, {
+				paymentLink = await ctx.runAction(api.orders.payments.generatePaymentLink, {
 					orderId,
 				});
 			}

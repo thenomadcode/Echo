@@ -48,10 +48,10 @@ function ShopifySettingsPage() {
 	const [shopUrl, setShopUrl] = useState("");
 	const [isConnecting, setIsConnecting] = useState(false);
 
-	const getAuthUrl = useMutation(api.shopify.getAuthUrl);
-	const importProducts = useAction(api.shopify.importProducts);
-	const syncProducts = useAction(api.shopify.syncProducts);
-	const disconnectShopify = useAction(api.shopify.disconnect);
+	const getAuthUrl = useMutation(api.integrations.shopify.oauth.getAuthUrl);
+	const importProducts = useAction(api.integrations.shopify.products.importProducts);
+	const syncProducts = useAction(api.integrations.shopify.products.syncProducts);
+	const disconnectShopify = useAction(api.integrations.shopify.disconnect.disconnect);
 	const [isImporting, setIsImporting] = useState(false);
 	const [isSyncing, setIsSyncing] = useState(false);
 	const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -82,7 +82,7 @@ function ShopifySettingsPage() {
 	}, [connected, error]);
 
 	const connectionStatus = useQuery(
-		api.shopify.getConnectionStatus,
+		api.integrations.shopify.queries.getConnectionStatus,
 		activeBusinessId ? { businessId: activeBusinessId as never } : "skip",
 	);
 
