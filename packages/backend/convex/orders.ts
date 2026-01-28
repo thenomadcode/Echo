@@ -8,7 +8,7 @@ import {
 	mutation,
 	query,
 } from "./_generated/server";
-import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";
 import { generateOrderNumber } from "./lib/orderNumber";
 
 type OrderItem = {
@@ -433,8 +433,8 @@ export const get = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(order.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, order.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -457,8 +457,8 @@ export const getByConversation = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, conversation.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -491,8 +491,8 @@ export const getByOrderNumber = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(order.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, order.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -523,8 +523,8 @@ export const listByBusiness = query({
 			return { orders: [], nextCursor: null };
 		}
 
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return { orders: [], nextCursor: null };
 		}
 
@@ -569,8 +569,8 @@ export const listByCustomer = query({
 			return { orders: [] };
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return { orders: [] };
 		}
 
