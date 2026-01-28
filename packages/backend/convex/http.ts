@@ -265,6 +265,24 @@ http.route({
       }
 
       if (message.messageType === "text" && message.content.trim()) {
+        const processingStartedAt = Date.now();
+        await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+          conversationId: messageResult.conversationId,
+          isProcessing: true,
+        });
+
+        await ctx.runMutation(internal.ai.process.scheduleProcessingCleanup, {
+          conversationId: messageResult.conversationId,
+          startedAt: processingStartedAt,
+        });
+
+        ctx.runAction(
+          internal.integrations.meta.actions.sendTypingIndicator,
+          { conversationId: messageResult.conversationId }
+        ).catch((err) => {
+          console.warn("[Meta typing indicator] Failed:", err);
+        });
+
         try {
           const aiResult = await ctx.runAction(api.ai.process.processMessage, {
             conversationId: messageResult.conversationId,
@@ -277,10 +295,19 @@ http.route({
             sender: "assistant",
           });
 
+          await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+            conversationId: messageResult.conversationId,
+            isProcessing: false,
+          });
+
           console.log(
             `Meta ${message.channel}: AI response stored for conversation ${messageResult.conversationId}`
           );
         } catch (error) {
+          await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+            conversationId: messageResult.conversationId,
+            isProcessing: false,
+          });
           console.error("AI processing failed:", error);
         }
       }
@@ -412,7 +439,25 @@ async function handleIncomingMessage(
     }
   );
 
+  ctx.runAction(
+    internal.integrations.whatsapp.actions.sendReadReceipt,
+    { businessId: businessLookup.businessId, messageId: parsedMessage.externalId }
+  ).catch((err) => {
+    console.warn("[WhatsApp read receipt] Failed:", err);
+  });
+
   if (messageType === "text" && parsedMessage.content.trim()) {
+    const processingStartedAt = Date.now();
+    await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+      conversationId: messageResult.conversationId,
+      isProcessing: true,
+    });
+
+    await ctx.runMutation(internal.ai.process.scheduleProcessingCleanup, {
+      conversationId: messageResult.conversationId,
+      startedAt: processingStartedAt,
+    });
+
     try {
       const aiResult = await ctx.runAction(api.ai.process.processMessage, {
         conversationId: messageResult.conversationId,
@@ -424,7 +469,16 @@ async function handleIncomingMessage(
         content: aiResult.response,
         type: "text",
       });
+
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: messageResult.conversationId,
+        isProcessing: false,
+      });
     } catch (error) {
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: messageResult.conversationId,
+        isProcessing: false,
+      });
       console.error("AI processing or reply failed:", error);
     }
   }

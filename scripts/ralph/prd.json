@@ -6,7 +6,7 @@
       "id": "S01",
       "title": "Add processing state fields to conversation schema",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "ultrawork": true,
       "acceptanceCriteria": [
         "Add `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts",
@@ -18,7 +18,7 @@
       "id": "S02",
       "title": "Update AI processing to track state",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "When customer message is received, set `isAiProcessing: true` and `processingStartedAt: Date.now()` on the conversation",
@@ -31,7 +31,7 @@
       "id": "S03",
       "title": "Create TypingIndicator component",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create `apps/web/src/components/conversation/TypingIndicator.tsx`",
@@ -46,7 +46,7 @@
       "id": "S04",
       "title": "Integrate typing indicator into conversation view",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Subscribe to `isAiProcessing` field from conversation in the conversation detail page",
@@ -62,7 +62,7 @@
       "id": "S05",
       "title": "Send Meta typing status",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create helper function to send typing indicator via Meta Graph API",
@@ -77,7 +77,7 @@
       "id": "S06",
       "title": "Send WhatsApp read receipts",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create helper function to mark WhatsApp message as read",
@@ -92,7 +92,7 @@
       "id": "S07",
       "title": "Add timeout detection",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Subscribe to `processingStartedAt` field in conversation view",
@@ -106,7 +106,7 @@
       "id": "S08",
       "title": "Create timeout error state UI",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "When `isTimedOut` is true, show error state instead of typing indicator",
@@ -123,7 +123,7 @@
       "id": "S09",
       "title": "Clear processing state on timeout",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "ultrawork": false,
       "acceptanceCriteria": [
         "Create Convex mutation to clear stale processing state",

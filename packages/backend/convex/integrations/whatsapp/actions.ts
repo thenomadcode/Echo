@@ -1,11 +1,14 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery } from "../../_generated/server";
+import { action, internalAction, internalMutation, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { TwilioWhatsAppProvider } from "./twilio";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { Button, ListSection } from "./types";
 import { isWithin24HourWindow } from "./window";
 import { renderTemplate, getTemplate } from "./templates";
+
+const WHATSAPP_CLOUD_API_VERSION = "v21.0";
+const WHATSAPP_CLOUD_API_BASE = `https://graph.facebook.com/${WHATSAPP_CLOUD_API_VERSION}`;
 
 type ConversationData = {
   conversation: Doc<"conversations">;
@@ -308,3 +311,81 @@ function formatListAsFallback(
 function formatImageAsFallback(imageUrl: string, caption: string): string {
   return `${caption}\n\n[Image: ${imageUrl}]`;
 }
+
+export const getConnectionForReadReceipt = internalQuery({
+  args: {
+    businessId: v.id("businesses"),
+  },
+  handler: async (ctx, args) => {
+    const connection = await ctx.db
+      .query("whatsappConnections")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .first();
+
+    if (!connection) {
+      return null;
+    }
+
+    const hasCloudApiAccess = !!(
+      connection.credentials.apiKey && connection.phoneNumberId
+    );
+
+    if (!hasCloudApiAccess) {
+      return null;
+    }
+
+    return {
+      phoneNumberId: connection.phoneNumberId,
+      apiKey: connection.credentials.apiKey,
+    };
+  },
+});
+
+export const sendReadReceipt = internalAction({
+  args: {
+    businessId: v.id("businesses"),
+    messageId: v.string(),
+  },
+  handler: async (ctx, args): Promise<void> => {
+    const connection = await ctx.runQuery(
+      internal.integrations.whatsapp.actions.getConnectionForReadReceipt,
+      { businessId: args.businessId }
+    );
+
+    if (!connection) {
+      return;
+    }
+
+    const { phoneNumberId, apiKey } = connection;
+
+    try {
+      const url = `${WHATSAPP_CLOUD_API_BASE}/${phoneNumberId}/messages`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          status: "read",
+          message_id: args.messageId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn("[sendReadReceipt] Failed:", errorData);
+        return;
+      }
+
+      console.log(`[sendReadReceipt] Marked message ${args.messageId} as read`);
+    } catch (error) {
+      console.warn(
+        "[sendReadReceipt] Error:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  },
+});

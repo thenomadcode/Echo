@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery } from "../_generated/server";
+import { action, internalMutation, internalQuery, mutation } from "../_generated/server";
 import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
@@ -197,6 +197,97 @@ export const updateConversation = internalMutation({
     }
 
     await ctx.db.patch(args.conversationId, updates);
+  },
+});
+
+export const setAiProcessingState = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    isProcessing: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const updates: Record<string, unknown> = {
+      isAiProcessing: args.isProcessing,
+      updatedAt: Date.now(),
+    };
+
+    if (args.isProcessing) {
+      updates.processingStartedAt = Date.now();
+    } else {
+      updates.processingStartedAt = undefined;
+    }
+
+    await ctx.db.patch(args.conversationId, updates);
+  },
+});
+
+const PROCESSING_TIMEOUT_MS = 60_000;
+
+export const clearStaleProcessingState = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return { success: false, error: "Conversation not found" };
+    }
+
+    if (!conversation.isAiProcessing) {
+      return { success: true, alreadyCleared: true };
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      isAiProcessing: false,
+      processingStartedAt: undefined,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+export const autoCleanupProcessingState = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    startedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return;
+    }
+
+    if (
+      conversation.isAiProcessing &&
+      conversation.processingStartedAt === args.startedAt
+    ) {
+      console.log(
+        `[CLEANUP] Auto-clearing stale processing state for conversation ${args.conversationId}`
+      );
+      await ctx.db.patch(args.conversationId, {
+        isAiProcessing: false,
+        processingStartedAt: undefined,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const scheduleProcessingCleanup = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    startedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.scheduler.runAfter(
+      PROCESSING_TIMEOUT_MS,
+      internal.ai.process.autoCleanupProcessingState,
+      {
+        conversationId: args.conversationId,
+        startedAt: args.startedAt,
+      }
+    );
   },
 });
 
@@ -790,3 +881,68 @@ function getEscalatedConversationResponse(language: string): string {
   };
   return responses[language] ?? responses["en"] ?? "";
 }
+
+export const getLastCustomerMessage = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<string | null> => {
+    const lastMessage = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("desc")
+      .filter((q) => q.eq(q.field("sender"), "customer"))
+      .first();
+
+    return lastMessage?.content ?? null;
+  },
+});
+
+export const retryAiProcessing = action({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+      conversationId: args.conversationId,
+      isProcessing: false,
+    });
+
+    const lastMessage = await ctx.runQuery(internal.ai.process.getLastCustomerMessage, {
+      conversationId: args.conversationId,
+    });
+
+    if (!lastMessage) {
+      return { success: false, error: "No customer message found to retry" };
+    }
+
+    await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+      conversationId: args.conversationId,
+      isProcessing: true,
+    });
+
+    try {
+      await ctx.runAction(api.ai.process.processMessage, {
+        conversationId: args.conversationId,
+        message: lastMessage,
+      });
+
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: false,
+      });
+
+      return { success: true };
+    } catch (error) {
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: false,
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "AI processing failed",
+      };
+    }
+  },
+});

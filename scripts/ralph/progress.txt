@@ -1,3 +1,223 @@
+## 2026-01-27 16:00 - S09: Clear processing state on timeout
+
+**What was implemented:**
+- Created `clearStaleProcessingState` public mutation in `packages/backend/convex/ai/process.ts`:
+  - Can be called directly to clear processing state for a conversation
+  - Returns `{ success: boolean; alreadyCleared?: boolean; error?: string }`
+- Created `autoCleanupProcessingState` internal mutation:
+  - Checks if processing state still matches the original `startedAt` timestamp
+  - Only clears if the conversation is still processing with the same start time
+  - Logs when auto-cleanup occurs
+- Created `scheduleProcessingCleanup` internal mutation:
+  - Schedules `autoCleanupProcessingState` to run after 60 seconds
+  - Uses `ctx.scheduler.runAfter(PROCESSING_TIMEOUT_MS, ...)` pattern
+- Updated webhook handlers in `packages/backend/convex/http.ts`:
+  - Meta webhook: schedules cleanup after setting `isAiProcessing: true`
+  - WhatsApp webhook: same pattern for consistency
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (+65 lines - clearStaleProcessingState, autoCleanupProcessingState, scheduleProcessingCleanup)
+- packages/backend/convex/http.ts (+12 lines - schedule cleanup in both Meta and WhatsApp handlers)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+
+**Learnings for future iterations:**
+- Use `ctx.scheduler.runAfter(milliseconds, functionRef, args)` for delayed execution
+- Pass `startedAt` timestamp to scheduled job to verify state hasn't changed
+- Safety net cleanup checks `processingStartedAt === args.startedAt` to avoid clearing legitimate processing
+
+---
+
+## 2026-01-27 15:50 - S08: Create timeout error state UI
+
+**What was implemented:**
+- Created `apps/web/src/components/conversation/TimeoutError.tsx`:
+  - Shows warning icon (AlertTriangle) with "AI response timed out" message
+  - Has "Retry" button that triggers AI processing retry
+  - Has "Respond manually" button that takes over the conversation
+  - Styled with `bg-destructive/10` and `text-destructive` colors
+  - Accepts `isRetrying` prop to show loading state on Retry button
+- Created `retryAiProcessing` action in `packages/backend/convex/ai/process.ts`:
+  - Clears processing state, gets last customer message, re-triggers AI processing
+  - Returns `{ success: boolean; error?: string }`
+- Created `getLastCustomerMessage` internal query to fetch the most recent customer message
+- Updated `apps/web/src/routes/_authenticated/conversations.$conversationId.tsx`:
+  - Added `isRetrying` state and handlers for retry/respond manually
+  - Shows TimeoutError component when `isTimedOut` is true
+  - Retry button calls `retryAiProcessing` action
+  - Respond manually button calls existing `takeOver` mutation
+
+**Files changed:**
+- apps/web/src/components/conversation/TimeoutError.tsx (created, ~60 lines)
+- packages/backend/convex/ai/process.ts (+62 lines - retryAiProcessing action, getLastCustomerMessage query)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (+48 lines - TimeoutError integration)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+
+**Learnings for future iterations:**
+- Timeout error UI replaces typing indicator when `isTimedOut` is true
+- Retry pattern: clear state → get last message → re-process → clear state on completion
+- "Respond manually" reuses existing `takeOver` mutation to assign conversation to human
+- Action (not mutation) needed for retry because it calls other actions (processMessage)
+
+---
+
+## 2026-01-27 15:40 - S06: Send WhatsApp read receipts
+
+**What was implemented:**
+- Created `sendReadReceipt` internal action in `packages/backend/convex/integrations/whatsapp/actions.ts`:
+  - POSTs to WhatsApp Cloud API `/{phoneNumberId}/messages` with `status: "read"` and `message_id`
+  - Looks up WhatsApp connection to get `phoneNumberId` and `apiKey` (Cloud API token)
+  - Only sends if connection has Cloud API credentials (returns silently for Twilio-only connections)
+  - Fire and forget: catches errors and logs warnings, never throws
+- Created `getConnectionForReadReceipt` internal query to fetch required data
+- Updated `packages/backend/convex/http.ts` WhatsApp webhook handler:
+  - Calls `sendReadReceipt` after `processIncomingMessage` without awaiting
+  - Errors caught and logged, don't block AI processing
+  - Only processes for WhatsApp channel conversations
+
+**Files changed:**
+- packages/backend/convex/integrations/whatsapp/actions.ts (+81 lines - read receipt action and query)
+- packages/backend/convex/http.ts (+6 lines - call read receipt in webhook handler)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- WhatsApp Cloud API read receipt: POST to `/{phoneNumberId}/messages` with `{ messaging_product: "whatsapp", status: "read", message_id: "<wamid>" }`
+- The codebase supports both Twilio and WhatsApp Cloud API - check for `apiKey` to determine if Cloud API is available
+- Fire-and-forget pattern same as Meta typing indicator: call without `await`, add `.catch()` handler
+
+---
+
+## 2026-01-27 15:25 - S05: Send Meta typing status
+
+**What was implemented:**
+- Created `sendTypingIndicator` internal action in `packages/backend/convex/integrations/meta/actions.ts`:
+  - POSTs to Meta Graph API `/{pageOrIgId}/messages` with `sender_action: typing_on`
+  - Looks up conversation channel and Meta connection to get tokens/IDs
+  - Only sends for `instagram` and `messenger` channels (returns silently for others)
+  - Fire and forget: catches errors and logs warnings, never throws
+- Created `getConnectionForTypingIndicator` internal query to fetch required data
+- Updated `packages/backend/convex/http.ts` Meta webhook handler:
+  - Calls `sendTypingIndicator` after `setAiProcessingState(true)` without awaiting
+  - Errors caught and logged, don't block AI processing
+
+**Files changed:**
+- packages/backend/convex/integrations/meta/actions.ts (+118 lines - typing indicator action and query)
+- packages/backend/convex/http.ts (+8 lines - call typing indicator in webhook handler)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Meta sender_action API: POST to `/{pageOrIgId}/messages` with `{ recipient: { id }, sender_action: "typing_on" }`
+- Fire-and-forget pattern: call without `await`, add `.catch()` handler for logging
+- Reuse `getConversationWithConnection` pattern but simplified for single-purpose queries
+
+---
+
+## 2026-01-27 15:22 - S04: Integrate typing indicator into conversation view
+
+**What was implemented:**
+- Updated `apps/web/src/routes/_authenticated/conversations.$conversationId.tsx`:
+  - Imported `TypingIndicator` component from `@/components/conversation/TypingIndicator`
+  - Added `isAiProcessing` extraction from conversation data with default `false`
+  - Display `TypingIndicator` below messages when `isAiProcessing === true`
+  - Added `isAiProcessing` to useEffect dependency array for auto-scroll on indicator appearance
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (+8 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed file
+
+**Learnings for future iterations:**
+- Convex query spread returns all schema fields including `isAiProcessing` and `processingStartedAt`
+- Auto-scroll to new content by adding relevant state to useEffect dependency array
+- TypingIndicator component already positioned on AI side (right), just needs mt-4 wrapper
+
+---
+
+## 2026-01-27 15:20 - S03: Create TypingIndicator component
+
+**What was implemented:**
+- Created `apps/web/src/components/conversation/TypingIndicator.tsx`
+- Component shows three animated bouncing dots with staggered 0.15s delays (half of 0.3s for faster animation)
+- Dots use `animate-bounce` with custom animation delay/duration via inline styles
+- Shows "Echo AI is typing..." label below the dots
+- Uses `bg-muted` background for the bubble and `text-muted-foreground` for text colors
+- Accepts `className` prop for external positioning
+- Styled to match MessageBubble component pattern (Bot icon, assistant label, rounded bubble)
+
+**Files changed:**
+- apps/web/src/components/conversation/TypingIndicator.tsx (created, ~44 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed file
+
+**Learnings for future iterations:**
+- Animation delays can be applied via inline `style` prop for staggered effects
+- Match existing MessageBubble structure: wrapper -> header -> bubble -> footer
+- Component positioned right side (AI side) using `items-end self-end`
+
+---
+
+## 2026-01-27 15:17 - S02: Update AI processing to track state
+
+**What was implemented:**
+- Created `setAiProcessingState` internal mutation in `packages/backend/convex/ai/process.ts`
+  - Sets `isAiProcessing` boolean and `processingStartedAt` timestamp
+  - Clears `processingStartedAt` when `isProcessing: false`
+- Updated Meta webhook handler in `packages/backend/convex/http.ts`:
+  - Calls `setAiProcessingState(true)` before `processMessage` action
+  - Calls `setAiProcessingState(false)` after AI response is stored (success)
+  - Calls `setAiProcessingState(false)` in catch block (error)
+- Updated WhatsApp webhook handler in `packages/backend/convex/http.ts`:
+  - Same pattern: set true before, set false after (success), set false on catch (error)
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (+18 lines - setAiProcessingState mutation)
+- packages/backend/convex/http.ts (+24 lines - Meta and WhatsApp webhook state tracking)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Internal mutations for state tracking keep AI-related code centralized in ai/process.ts
+- Both webhook handlers (Meta and WhatsApp) follow same pattern for consistency
+- Use try/catch with finally-style pattern: always clear processing state even on error
+
+---
+
+## 2026-01-27 15:15 - S01: Add processing state fields to conversation schema
+
+**What was implemented:**
+- Added `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts
+- Added `processingStartedAt: v.optional(v.number())` field to conversations table
+- Both fields are optional to maintain backward compatibility with existing conversations
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+4 lines - AI typing indicator state fields)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+
+**Learnings for future iterations:**
+- Schema fields for UI state tracking should be optional to avoid migration issues
+- Follow existing section comment pattern in schema.ts for field organization
+
+---
+
 ## 2026-01-25 20:15 - S20: Implement test connection functionality
 
 **What was implemented:**
