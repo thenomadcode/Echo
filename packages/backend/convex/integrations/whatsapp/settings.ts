@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "../../_generated/api";
 import { action, internalMutation, internalQuery, mutation, query } from "../../_generated/server";
-import { authComponent } from "../../auth";
 import { getAuthUser, requireAuth, requireBusinessOwnership } from "../../lib/auth";
 
 export const getConnectionStatus = query({
@@ -145,8 +144,7 @@ export const testConnection = action({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser) throw new Error("Not authenticated");
+		await requireAuth(ctx);
 
 		const connection = await ctx.runQuery(
 			internal.integrations.whatsapp.settings.getConnectionForTest,

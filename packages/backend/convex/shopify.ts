@@ -9,7 +9,6 @@ import {
 	mutation,
 	query,
 } from "./_generated/server";
-import { authComponent } from "./auth";
 import { getAuthUser, isBusinessOwner, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 function normalizeShopUrl(shop: string): string | null {
@@ -1330,7 +1329,7 @@ export const createOrder = action({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args): Promise<CreateDraftOrderResult> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
+		const authUser = await getAuthUser(ctx);
 		if (!authUser) {
 			return {
 				success: false,

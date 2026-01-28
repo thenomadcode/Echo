@@ -5894,3 +5894,34 @@
 - ✅ Backend typecheck passes
 - ✅ Code is more maintainable and DRY
 
+
+## 2026-01-28 19:44 - S03: Use Shared Auth Utilities
+
+**What was implemented:**
+- Extended `lib/auth.ts` to support actions by adding `ConvexCtxWithActions` type
+  - Updated `getAuthUser()` and `requireAuth()` to accept `GenericActionCtx` in addition to queries/mutations
+  - `isBusinessOwner()` and `requireBusinessOwnership()` remain mutation/query-only (require ctx.db access)
+- Replaced 2 remaining direct `authComponent.safeGetAuthUser()` calls:
+  - `shopify.ts` (line 1333): Changed to `getAuthUser(ctx)` for soft auth check
+  - `whatsapp/settings.ts` (line 148): Changed to `requireAuth(ctx)` for hard auth check
+- Removed unused `authComponent` imports from both files
+- All other backend files (40+ functions) already used the helpers from prior work
+
+**Files changed:**
+- packages/backend/convex/lib/auth.ts (+4 lines - added ConvexCtxWithActions type, updated 2 function signatures)
+- packages/backend/convex/shopify.ts (-2 lines - replaced authComponent call with getAuthUser, removed unused import)
+- packages/backend/convex/integrations/whatsapp/settings.ts (-3 lines - replaced authComponent call + manual throw with requireAuth, removed unused import)
+
+**Verification:**
+- `bunx convex typecheck` in packages/backend: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+- All auth helpers now work in queries, mutations, AND actions
+
+**Learnings for future iterations:**
+- Actions have `GenericActionCtx` (no ctx.db), queries/mutations have `GenericQueryCtx`/`GenericMutationCtx` (with ctx.db)
+- Helper functions that only use `authComponent.safeGetAuthUser()` can support all 3 contexts
+- Helpers that need database access (`isBusinessOwner`, `requireBusinessOwnership`) must remain mutation/query-only
+- Type unions enable flexible context support: `ConvexCtxWithActions = GenericQueryCtx | GenericMutationCtx | GenericActionCtx`
+- Auth utilities file was already 95% complete before this story - only needed action support extension
+
+---

@@ -41,7 +41,7 @@
 			"id": "S03",
 			"title": "Use Shared Auth Utilities",
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"acceptanceCriteria": [
 				"`packages/backend/convex/lib/auth.ts` created with `requireAuth(ctx)` - throws if not authenticated",
