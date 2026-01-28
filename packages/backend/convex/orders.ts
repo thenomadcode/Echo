@@ -8,7 +8,7 @@ import {
 	mutation,
 	query,
 } from "./_generated/server";
-import { getAuthUser } from "./lib/auth";
+import { getAuthUser, requireAuth } from "./lib/auth";
 import { generateOrderNumber } from "./lib/orderNumber";
 
 type OrderItem = {
@@ -32,9 +32,14 @@ export const create = mutation({
 		contactPhone: v.string(),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const business = await ctx.db.get(args.businessId);
 		if (!business) {
 			throw new Error("Business not found");
+		}
+		if (business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to create orders for this business");
 		}
 
 		const orderItems: {
@@ -101,9 +106,15 @@ export const addItem = mutation({
 		quantity: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 		if (order.status !== "draft") {
 			throw new Error("Can only add items to draft orders");
@@ -167,9 +178,15 @@ export const removeItem = mutation({
 		productId: v.id("products"),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 		if (order.status !== "draft") {
 			throw new Error("Can only remove items from draft orders");
@@ -198,9 +215,15 @@ export const updateItemQuantity = mutation({
 		quantity: v.number(),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 		if (order.status !== "draft") {
 			throw new Error("Can only update items in draft orders");
@@ -244,9 +267,15 @@ export const setDeliveryInfo = mutation({
 		contactPhone: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 
 		if (args.deliveryType === "delivery" && !args.deliveryAddress) {
@@ -281,9 +310,15 @@ export const setPaymentMethod = mutation({
 		paymentMethod: v.union(v.literal("card"), v.literal("cash")),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 
 		const updates: Record<string, unknown> = {
@@ -321,9 +356,15 @@ export const cancel = mutation({
 		reason: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 
 		const nonCancellableStatuses = ["paid", "preparing", "ready", "delivered"];
@@ -348,9 +389,15 @@ export const markPreparing = mutation({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 
 		if (order.status !== "confirmed" && order.status !== "paid") {
@@ -371,9 +418,15 @@ export const markReady = mutation({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 
 		if (order.status !== "preparing") {
@@ -394,9 +447,15 @@ export const markDelivered = mutation({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
 		const order = await ctx.db.get(args.orderId);
 		if (!order) {
 			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
 		}
 
 		if (order.status !== "ready") {
@@ -588,6 +647,17 @@ export const updatePaymentLink = mutation({
 		paymentLinkExpiresAt: v.number(),
 	},
 	handler: async (ctx, args) => {
+		const authUser = await requireAuth(ctx);
+
+		const order = await ctx.db.get(args.orderId);
+		if (!order) {
+			throw new Error("Order not found");
+		}
+		const business = await ctx.db.get(order.businessId);
+		if (!business || business.ownerId !== authUser._id) {
+			throw new Error("Not authorized to modify this order");
+		}
+
 		await ctx.db.patch(args.orderId, {
 			stripeSessionId: args.stripeSessionId,
 			paymentLinkUrl: args.paymentLinkUrl,
