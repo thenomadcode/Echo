@@ -5798,3 +5798,36 @@
 - Type errors in one app don't block commits for changes in another app
 
 ---
+
+## 2026-01-28 19:10 - S03: Use Shared Auth Utilities (IN PROGRESS)
+- What was implemented so far:
+  - Wave 1: Added missing auth imports to customerAddresses.ts and deletionRequests.ts
+  - Wave 2 completed: businesses.ts (1 check), dashboard.ts (2 checks), ai/settings.ts (2 checks), customers.ts (4 checks)
+  - Fixed import errors and added null checks where needed
+  - Backend typecheck passes with 0 errors
+
+- Files changed:
+  - packages/backend/convex/lib/auth.ts (already existed with all 4 helpers) ✅
+  - packages/backend/convex/businesses.ts (1 check replaced)
+  - packages/backend/convex/dashboard.ts (2 checks replaced)
+  - packages/backend/convex/ai/settings.ts (2 checks replaced)  
+  - packages/backend/convex/customers.ts (4 checks replaced)
+  - packages/backend/convex/customerAddresses.ts (imports added)
+  - packages/backend/convex/deletionRequests.ts (imports added)
+
+- Remaining work:
+  - customerNotes.ts (4 checks)
+  - conversationSummaries.ts (4 checks)
+  - customerAddresses.ts (3 checks - mutations)
+  - deletionRequests.ts (3 checks)
+  - integrations/meta/actions.ts (2 checks)
+  Total remaining: 16 manual checks
+
+- **Learnings for future iterations:**
+  - `isBusinessOwner()` for queries (returns boolean, allows graceful null/empty returns)
+  - `requireBusinessOwnership()` for mutations (throws errors, returns {user, business})
+  - Import edit pattern: Must ensure import is added before refactoring code that uses it
+  - Null checks needed after refactoring when business object is still accessed
+  - Backend typecheck caught all issues early
+
+---
