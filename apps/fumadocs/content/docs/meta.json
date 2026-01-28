@@ -1,14 +1,14 @@
 {
-  "title": "Echo Documentation",
-  "pages": [
-    "index",
-    "getting-started",
-    "products",
-    "orders",
-    "conversations",
-    "customers",
-    "integrations",
-    "settings",
-    "faq"
-  ]
+	"title": "Echo Documentation",
+	"pages": [
+		"index",
+		"getting-started",
+		"products",
+		"orders",
+		"conversations",
+		"customers",
+		"integrations",
+		"settings",
+		"faq"
+	]
 }

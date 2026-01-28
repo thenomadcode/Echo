@@ -111,6 +111,10 @@ bun run dev:setup        # Initial Convex project setup
 ```bash
 bun run build            # Build all packages
 bun run check-types      # TypeScript type-checking across monorepo
+bun run check            # Biome linter + formatter check
+bun run check:fix        # Fix all auto-fixable issues
+bun run lint             # Run Biome linter only
+bun run lint:fix         # Fix auto-fixable lint issues
 ```
 
 ### Deployment (Cloudflare)
@@ -128,6 +132,39 @@ turbo -F @echo/backend <command>  # Run command in backend
 
 ### Tests
 No test framework is currently configured. When adding tests, prefer Vitest.
+
+---
+
+## Linting & Formatting
+
+### Biome
+
+Echo uses [Biome](https://biomejs.dev/) for linting and formatting. Biome is a fast, all-in-one toolchain for JavaScript/TypeScript.
+
+**Configuration**: See `biome.json` in the project root.
+
+**VS Code Integration**: Auto-format on save is configured in `.vscode/settings.json`. Install the Biome extension (recommended in `.vscode/extensions.json`).
+
+**Ignored Files**:
+- Third-party UI components (`apps/web/src/components/ui/**`)
+- Generated files (`**/*.gen.ts`, `**/_generated/**`)
+- Documentation apps (`apps/fumadocs/**`, `apps/marketing/**`)
+- Deployment scripts (`packages/infra/**`)
+
+### Git Hooks
+
+**Pre-commit** (runs on `git commit`):
+- `biome check` on staged files
+- `bun run check-types` on TypeScript files
+
+**Pre-push** (runs on `git push`):
+- Full `bun run check` (linter + formatter)
+- Full `bun run check-types`
+- Full `bun run build`
+
+**Managed by**: [Lefthook](https://github.com/evilmartians/lefthook) - see `lefthook.yml` for configuration.
+
+**Bypass hooks** (use sparingly): `git commit --no-verify`
 
 ---
 
@@ -319,6 +356,8 @@ export const Route = createFileRoute("/dashboard")({
 |------|---------|
 | Start dev | `bun run dev` |
 | Type check | `bun run check-types` |
+| Lint + format check | `bun run check` |
+| Lint + format fix | `bun run check:fix` |
 | Build | `bun run build` |
 | Add dependency | `bun add <pkg>` in workspace |
 | Convex deploy | `bunx convex deploy` in backend |

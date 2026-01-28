@@ -1,25 +1,24 @@
 ---
-import { getCollection, render, type CollectionEntry } from "astro:content";
-import PageLayout from "../../layouts/PageLayout.astro";
+import { type CollectionEntry, getCollection, render } from "astro:content";
 
 const { slug } = Astro.params;
 if (!slug) {
-  return Astro.redirect("/changelog");
+	return Astro.redirect("/changelog");
 }
 
 const changelogEntries = await getCollection("changelog");
 const entry = changelogEntries.find((e: CollectionEntry<"changelog">) => e.id === slug);
 
 if (!entry) {
-  return Astro.redirect("/404");
+	return Astro.redirect("/404");
 }
 
 const { Content } = await render(entry);
 
-const formattedDate = entry.data.date.toLocaleDateString("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
+const _formattedDate = entry.data.date.toLocaleDateString("en-US", {
+	year: "numeric",
+	month: "long",
+	day: "numeric",
 });
 ---
 

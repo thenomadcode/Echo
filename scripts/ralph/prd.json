@@ -1,126 +1,126 @@
 {
-  "projectName": "code-quality-refactor",
-  "branchName": "tnc-249-code-improvement-for-maintainability",
-  "userStories": [
-    {
-      "id": "S01",
-      "title": "Set Up Automated Code Quality Checks",
-      "priority": 1,
-      "passes": false,
-      "ultrawork": true,
-      "acceptanceCriteria": [
-        "Biome installed and configured based on better-t-stack template",
-        "VS Code auto-formats on save",
-        "Pre-commit hooks run Biome checks on staged files",
-        "Pre-commit hooks run TypeScript type checking",
-        "Pre-push hooks run full build validation",
-        "`bun run check` passes with 0 errors across entire codebase",
-        "Team documentation updated with linting workflows"
-      ]
-    },
-    {
-      "id": "S02",
-      "title": "Use Shared Formatting Utilities",
-      "priority": 2,
-      "passes": false,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "`apps/web/src/lib/formatting.ts` created with CURRENCY_LOCALES constant (COP, BRL, MXN, USD)",
-        "`apps/web/src/lib/formatting.ts` created with CURRENCY_SYMBOLS constant",
-        "`formatCurrency(amountInCents, currency)` function implemented",
-        "`formatDate(date, locale, options)` function implemented",
-        "`formatDateTime(date, locale)` function implemented",
-        "`formatRelativeTime(date)` function implemented",
-        "8+ files updated to import from shared module: routes/dashboard/index.tsx, routes/orders/index.tsx, routes/customers/$customerId.tsx, routes/products/index.tsx, components/ProductCard.tsx, components/PriceInput.tsx, and 2+ more files",
-        "All duplicate formatting implementations removed",
-        "All imports resolve correctly",
-        "No runtime errors in dev environment"
-      ]
-    },
-    {
-      "id": "S03",
-      "title": "Use Shared Auth Utilities",
-      "priority": 3,
-      "passes": false,
-      "ultrawork": true,
-      "acceptanceCriteria": [
-        "`packages/backend/convex/lib/auth.ts` created with `requireAuth(ctx)` - throws if not authenticated",
-        "`requireBusinessOwnership(ctx, businessId)` - throws if user doesn't own business",
-        "`getAuthUser(ctx)` - returns user or null (no throw)",
-        "`isBusinessOwner(ctx, businessId)` - boolean check",
-        "50+ manual auth checks replaced across all backend files: businesses.ts (12 checks), products.ts (15 checks), orders.ts (18 checks), customers.ts (8 checks), conversations.ts (10 checks), messages.ts (6 checks), whatsapp.ts (5 checks), shopify.ts (8 checks)",
-        "All mutations using new helpers",
-        "All tests pass",
-        "TypeScript compilation succeeds"
-      ]
-    },
-    {
-      "id": "S04",
-      "title": "Navigate Consistently Named Files",
-      "priority": 4,
-      "passes": false,
-      "ultrawork": true,
-      "acceptanceCriteria": [
-        "All 14+ PascalCase component files renamed to kebab-case: ImageUpload.tsx → image-upload.tsx, PriceInput.tsx → price-input.tsx, ProductCard.tsx → product-card.tsx, ProductForm.tsx → product-form.tsx, AppHeader.tsx → app-header.tsx, MessageBubble.tsx → message-bubble.tsx, StatusBadge.tsx → status-badge.tsx, MetricCard.tsx → metric-card.tsx, CustomerCard.tsx → customer-card.tsx, OrderCard.tsx → order-card.tsx, ConversationList.tsx → conversation-list.tsx, BusinessSelector.tsx → business-selector.tsx, LanguageSelector.tsx → language-selector.tsx, CurrencySelector.tsx → currency-selector.tsx",
-        "All imports updated automatically using ast-grep",
-        "Git history preserved using `git mv`",
-        "`bun run check-types` passes with 0 errors",
-        "`bun run dev` starts without errors",
-        "Manual smoke test confirms all routes load"
-      ]
-    },
-    {
-      "id": "S05",
-      "title": "Work with Consistent Export Patterns",
-      "priority": 5,
-      "passes": false,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "All UI components use named exports (e.g., `export function Button()`)",
-        "All route components use default exports (TanStack Router requirement)",
-        "All utility modules use named exports",
-        "Documentation updated with export conventions in AGENTS.md",
-        "No import errors after standardization"
-      ]
-    },
-    {
-      "id": "S06",
-      "title": "Work with Smaller, Focused Files",
-      "priority": 6,
-      "passes": false,
-      "ultrawork": true,
-      "acceptanceCriteria": [
-        "Frontend: `customers/$customerId.tsx` (1,451 lines) split into: $customerId.tsx (100 lines) - Route + layout, $customerId/components/customer-header.tsx (150 lines), $customerId/components/orders-tab.tsx (400 lines), $customerId/components/conversations-tab.tsx (350 lines), $customerId/components/profile-tab.tsx (300 lines), $customerId/components/activity-tab.tsx (200 lines)",
-        "Frontend: `settings.tsx` (723 lines) split into: settings/index.tsx (80 lines), settings/components/general-settings.tsx (200 lines), settings/components/whatsapp-settings.tsx (180 lines), settings/components/ai-settings.tsx (150 lines), settings/components/billing-settings.tsx (120 lines)",
-        "Frontend: `conversations.$conversationId.tsx` (607 lines) split into: $conversationId.tsx (80 lines), $conversationId/components/conversation-header.tsx (100 lines), $conversationId/components/message-list.tsx (250 lines), $conversationId/components/message-input.tsx (150 lines)",
-        "Backend: `shopify.ts` (56KB, ~1,800 lines) split into: shopify/oauth.ts (200 lines), shopify/webhooks.ts (400 lines), shopify/sync-products.ts (600 lines), shopify/sync-orders.ts (300 lines), shopify/sync-customers.ts (200 lines), shopify/lib.ts (100 lines)",
-        "Backend: `http.ts` (24KB, ~800 lines) split into: http/auth.ts (200 lines), http/webhooks.ts (300 lines), http/shopify.ts (200 lines), http/index.ts (100 lines)",
-        "Backend: `orders.ts` (21KB, ~700 lines) split into: orders/queries.ts (200 lines), orders/mutations.ts (300 lines), orders/lib.ts (200 lines), orders/index.ts (50 lines)",
-        "All files <500 lines",
-        "Each module has single responsibility",
-        "All imports resolve correctly",
-        "All tests pass",
-        "No runtime errors",
-        "BROWSER TEST: Navigate to /customers/[id], verify all tabs render and switch correctly",
-        "BROWSER TEST: Navigate to /settings, verify all settings sections render",
-        "BROWSER TEST: Navigate to /conversations/[id], verify message list and input render"
-      ]
-    },
-    {
-      "id": "S07",
-      "title": "Use Reusable Custom Hooks",
-      "priority": 7,
-      "passes": false,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "`use-business-context.tsx` - Context provider for business ID, currency, timezone",
-        "`use-convex-mutation.ts` - Wraps mutations with automatic toast error handling",
-        "`use-debounce.ts` - Debounces values (e.g., search inputs)",
-        "`use-pagination.ts` - Pagination state management",
-        "All hooks have JSDoc comments",
-        "Usage examples in comments",
-        "Duplicate logic replaced with hooks in 10+ components"
-      ]
-    }
-  ]
+	"projectName": "code-quality-refactor",
+	"branchName": "tnc-249-code-improvement-for-maintainability",
+	"userStories": [
+		{
+			"id": "S01",
+			"title": "Set Up Automated Code Quality Checks",
+			"priority": 1,
+			"passes": false,
+			"ultrawork": true,
+			"acceptanceCriteria": [
+				"Biome installed and configured based on better-t-stack template",
+				"VS Code auto-formats on save",
+				"Pre-commit hooks run Biome checks on staged files",
+				"Pre-commit hooks run TypeScript type checking",
+				"Pre-push hooks run full build validation",
+				"`bun run check` passes with 0 errors across entire codebase",
+				"Team documentation updated with linting workflows"
+			]
+		},
+		{
+			"id": "S02",
+			"title": "Use Shared Formatting Utilities",
+			"priority": 2,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"`apps/web/src/lib/formatting.ts` created with CURRENCY_LOCALES constant (COP, BRL, MXN, USD)",
+				"`apps/web/src/lib/formatting.ts` created with CURRENCY_SYMBOLS constant",
+				"`formatCurrency(amountInCents, currency)` function implemented",
+				"`formatDate(date, locale, options)` function implemented",
+				"`formatDateTime(date, locale)` function implemented",
+				"`formatRelativeTime(date)` function implemented",
+				"8+ files updated to import from shared module: routes/dashboard/index.tsx, routes/orders/index.tsx, routes/customers/$customerId.tsx, routes/products/index.tsx, components/ProductCard.tsx, components/PriceInput.tsx, and 2+ more files",
+				"All duplicate formatting implementations removed",
+				"All imports resolve correctly",
+				"No runtime errors in dev environment"
+			]
+		},
+		{
+			"id": "S03",
+			"title": "Use Shared Auth Utilities",
+			"priority": 3,
+			"passes": false,
+			"ultrawork": true,
+			"acceptanceCriteria": [
+				"`packages/backend/convex/lib/auth.ts` created with `requireAuth(ctx)` - throws if not authenticated",
+				"`requireBusinessOwnership(ctx, businessId)` - throws if user doesn't own business",
+				"`getAuthUser(ctx)` - returns user or null (no throw)",
+				"`isBusinessOwner(ctx, businessId)` - boolean check",
+				"50+ manual auth checks replaced across all backend files: businesses.ts (12 checks), products.ts (15 checks), orders.ts (18 checks), customers.ts (8 checks), conversations.ts (10 checks), messages.ts (6 checks), whatsapp.ts (5 checks), shopify.ts (8 checks)",
+				"All mutations using new helpers",
+				"All tests pass",
+				"TypeScript compilation succeeds"
+			]
+		},
+		{
+			"id": "S04",
+			"title": "Navigate Consistently Named Files",
+			"priority": 4,
+			"passes": false,
+			"ultrawork": true,
+			"acceptanceCriteria": [
+				"All 14+ PascalCase component files renamed to kebab-case: ImageUpload.tsx → image-upload.tsx, PriceInput.tsx → price-input.tsx, ProductCard.tsx → product-card.tsx, ProductForm.tsx → product-form.tsx, AppHeader.tsx → app-header.tsx, MessageBubble.tsx → message-bubble.tsx, StatusBadge.tsx → status-badge.tsx, MetricCard.tsx → metric-card.tsx, CustomerCard.tsx → customer-card.tsx, OrderCard.tsx → order-card.tsx, ConversationList.tsx → conversation-list.tsx, BusinessSelector.tsx → business-selector.tsx, LanguageSelector.tsx → language-selector.tsx, CurrencySelector.tsx → currency-selector.tsx",
+				"All imports updated automatically using ast-grep",
+				"Git history preserved using `git mv`",
+				"`bun run check-types` passes with 0 errors",
+				"`bun run dev` starts without errors",
+				"Manual smoke test confirms all routes load"
+			]
+		},
+		{
+			"id": "S05",
+			"title": "Work with Consistent Export Patterns",
+			"priority": 5,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"All UI components use named exports (e.g., `export function Button()`)",
+				"All route components use default exports (TanStack Router requirement)",
+				"All utility modules use named exports",
+				"Documentation updated with export conventions in AGENTS.md",
+				"No import errors after standardization"
+			]
+		},
+		{
+			"id": "S06",
+			"title": "Work with Smaller, Focused Files",
+			"priority": 6,
+			"passes": false,
+			"ultrawork": true,
+			"acceptanceCriteria": [
+				"Frontend: `customers/$customerId.tsx` (1,451 lines) split into: $customerId.tsx (100 lines) - Route + layout, $customerId/components/customer-header.tsx (150 lines), $customerId/components/orders-tab.tsx (400 lines), $customerId/components/conversations-tab.tsx (350 lines), $customerId/components/profile-tab.tsx (300 lines), $customerId/components/activity-tab.tsx (200 lines)",
+				"Frontend: `settings.tsx` (723 lines) split into: settings/index.tsx (80 lines), settings/components/general-settings.tsx (200 lines), settings/components/whatsapp-settings.tsx (180 lines), settings/components/ai-settings.tsx (150 lines), settings/components/billing-settings.tsx (120 lines)",
+				"Frontend: `conversations.$conversationId.tsx` (607 lines) split into: $conversationId.tsx (80 lines), $conversationId/components/conversation-header.tsx (100 lines), $conversationId/components/message-list.tsx (250 lines), $conversationId/components/message-input.tsx (150 lines)",
+				"Backend: `shopify.ts` (56KB, ~1,800 lines) split into: shopify/oauth.ts (200 lines), shopify/webhooks.ts (400 lines), shopify/sync-products.ts (600 lines), shopify/sync-orders.ts (300 lines), shopify/sync-customers.ts (200 lines), shopify/lib.ts (100 lines)",
+				"Backend: `http.ts` (24KB, ~800 lines) split into: http/auth.ts (200 lines), http/webhooks.ts (300 lines), http/shopify.ts (200 lines), http/index.ts (100 lines)",
+				"Backend: `orders.ts` (21KB, ~700 lines) split into: orders/queries.ts (200 lines), orders/mutations.ts (300 lines), orders/lib.ts (200 lines), orders/index.ts (50 lines)",
+				"All files <500 lines",
+				"Each module has single responsibility",
+				"All imports resolve correctly",
+				"All tests pass",
+				"No runtime errors",
+				"BROWSER TEST: Navigate to /customers/[id], verify all tabs render and switch correctly",
+				"BROWSER TEST: Navigate to /settings, verify all settings sections render",
+				"BROWSER TEST: Navigate to /conversations/[id], verify message list and input render"
+			]
+		},
+		{
+			"id": "S07",
+			"title": "Use Reusable Custom Hooks",
+			"priority": 7,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"`use-business-context.tsx` - Context provider for business ID, currency, timezone",
+				"`use-convex-mutation.ts` - Wraps mutations with automatic toast error handling",
+				"`use-debounce.ts` - Debounces values (e.g., search inputs)",
+				"`use-pagination.ts` - Pagination state management",
+				"All hooks have JSDoc comments",
+				"Usage examples in comments",
+				"Duplicate logic replaced with hooks in 10+ components"
+			]
+		}
+	]
 }

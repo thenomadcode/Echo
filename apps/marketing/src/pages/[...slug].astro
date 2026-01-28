@@ -1,17 +1,16 @@
 ---
-import { getCollection, render, type CollectionEntry } from "astro:content";
-import PageLayout from "../layouts/PageLayout.astro";
+import { type CollectionEntry, getCollection, render } from "astro:content";
 
 const { slug } = Astro.params;
 if (!slug) {
-  return Astro.redirect("/");
+	return Astro.redirect("/");
 }
 
 const pages = await getCollection("pages");
 const page = pages.find((p: CollectionEntry<"pages">) => p.id === slug);
 
 if (!page || page.data.draft) {
-  return Astro.redirect("/404");
+	return Astro.redirect("/404");
 }
 
 const { Content } = await render(page);

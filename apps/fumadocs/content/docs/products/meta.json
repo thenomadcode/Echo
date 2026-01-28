@@ -1,4 +1,4 @@
 {
-  "title": "Products",
-  "pages": ["index", "categories"]
+	"title": "Products",
+	"pages": ["index", "categories"]
 }
