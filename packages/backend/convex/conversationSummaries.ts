@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { getAuthUser } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";
 
 export const get = query({
 	args: {
@@ -17,8 +17,8 @@ export const get = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, conversation.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -45,8 +45,8 @@ export const listByCustomer = query({
 			return [];
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return [];
 		}
 
@@ -79,8 +79,8 @@ export const search = query({
 			return [];
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return [];
 		}
 
@@ -123,14 +123,7 @@ export const create = mutation({
 			throw new Error("Conversation not found");
 		}
 
-		const business = await ctx.db.get(conversation.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to create summaries for this conversation");
-		}
+		await requireBusinessOwnership(ctx, conversation.businessId);
 
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {

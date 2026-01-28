@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUser } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 export const list = query({
 	args: {
@@ -17,8 +17,8 @@ export const list = query({
 			return [];
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return [];
 		}
 
@@ -38,24 +38,14 @@ export const add = mutation({
 		staffOnly: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to add notes for this customer");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		const noteId = await ctx.db.insert("customerNotes", {
 			customerId: args.customerId,
@@ -91,14 +81,7 @@ export const update = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this note");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		const updates: Record<string, unknown> = {};
 		if (args.note !== undefined) updates.note = args.note;
@@ -132,14 +115,7 @@ export const deleteNote = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to delete this note");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId);
 
 		await ctx.db.delete(args.noteId);
 
