@@ -7,18 +7,13 @@ export const get = query({
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
-			return null;
-		}
-
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
 			return null;
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -32,13 +27,8 @@ export const getByPhone = query({
 		phone: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
-			return null;
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
@@ -70,13 +60,8 @@ export const list = query({
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
-			return { customers: [], hasMore: false, nextCursor: undefined };
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return { customers: [], hasMore: false, nextCursor: undefined };
 		}
 
@@ -205,8 +190,8 @@ export const getContext = query({
 			return null;
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
