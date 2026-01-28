@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";
+import { getAuthUser, isBusinessOwner, requireAuth, requireBusinessOwnership } from "./lib/auth";
 
 function generateSlug(name: string): string {
 	return name
@@ -136,16 +136,12 @@ export const get = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
 		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			return null;
-		}
-
 		return business;
 	},
 });
