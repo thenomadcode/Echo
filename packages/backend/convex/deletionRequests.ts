@@ -116,10 +116,7 @@ export const approve = mutation({
 			throw new Error("Request not found");
 		}
 
-		const business = await ctx.db.get(request.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			throw new Error("Not authorized");
-		}
+		await requireBusinessOwnership(ctx, request.businessId);
 
 		if (request.status !== "pending") {
 			throw new Error("Request already processed");
