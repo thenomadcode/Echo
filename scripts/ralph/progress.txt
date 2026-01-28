@@ -5831,3 +5831,66 @@
   - Backend typecheck caught all issues early
 
 ---
+
+## 2026-01-28 19:10 - S03: Use Shared Auth Utilities (COMPLETED ✅)
+
+**Summary:** Successfully refactored ALL manual authentication checks across the Echo backend to use centralized helper functions from `lib/auth.ts`. Replaced 50+ manual `business.ownerId !== authUser._id` checks with `isBusinessOwner()` and `requireBusinessOwnership()` helpers.
+
+**Wave 2 Completion - Additional Files Refactored:**
+- products.ts (2 manual checks → isBusinessOwner with `as any` casts for string IDs)
+- orders.ts (5 manual checks → isBusinessOwner)
+- customerNotes.ts (4 checks: 1 query → isBusinessOwner, 3 mutations → requireBusinessOwnership)
+- conversationSummaries.ts (4 checks: 3 queries → isBusinessOwner, 1 mutation → requireBusinessOwnership)
+- customerAddresses.ts (3 mutation checks → requireBusinessOwnership)
+- deletionRequests.ts (3 checks: 1 query → isBusinessOwner, 2 mutations → requireBusinessOwnership)
+- integrations/meta/actions.ts (2 checks → isBusinessOwner)
+- customerMemory.ts (1 query check → isBusinessOwner)
+- categories.ts (1 query check → isBusinessOwner with `as any` cast for string ID)
+- shopify.ts (1 check in authorization query → isBusinessOwner)
+
+**Total Files Refactored:** 18 files
+**Total Manual Checks Replaced:** ~50+ (only 1 remains - inside the helper function itself, which is intentional)
+
+**Commits Made:** 15 commits total
+1. fix(backend): add missing auth imports to customerAddresses and deletionRequests
+2. refactor(backend): use isBusinessOwner in businesses.ts get query
+3. refactor(backend): use isBusinessOwner in dashboard.ts
+4. refactor(backend): use isBusinessOwner in ai/settings.ts
+5. refactor(backend): use isBusinessOwner helper in customers.ts queries
+6. fix(backend): add missing isBusinessOwner imports
+7. fix(backend): add null check for business in ai/settings
+8. docs: update S03 progress log with completed work
+9. refactor(backend): use auth helpers in products.ts
+10. refactor(backend): use auth helpers in orders.ts
+11. refactor(backend): use auth helpers in customerNotes and conversationSummaries
+12. refactor(backend): use auth helpers in customerAddresses, deletionRequests, and meta actions
+13. fix(backend): replace missed manual check in deletionRequests approve function
+14. fix(backend): add missing auth helper imports
+15. refactor(backend): use auth helpers in customerMemory, categories, and shopify
+
+**Verification:**
+- ✅ Backend typecheck: PASSES (0 errors)
+- ✅ LSP diagnostics: Clean on all changed files
+- ✅ Manual check count: 1 remaining (intentional - inside helper function)
+- ✅ All imports properly added to files
+- ✅ Git history: clean commit messages
+
+**Patterns Applied:**
+- **Queries:** `business.ownerId !== authUser._id` → `isBusinessOwner(ctx, businessId)` + return null/empty on failure
+- **Mutations:** manual checks + throws → `requireBusinessOwnership(ctx, businessId)` (throws automatically)
+- **String IDs:** Added `as any` casts where schema uses `v.string()` instead of `v.id("businesses")`
+- **Import Pattern:** Always add helpers to imports before refactoring usage
+
+**Key Learnings:**
+- Import edits must include full import statement (not just the added function)
+- LSP diagnostics during editing show interim errors - final `lsp_diagnostics` call is source of truth
+- Some schema fields use `v.string()` for IDs (products.businessId, categories.businessId) requiring `as any` casts
+- Typecheck catches missing imports that LSP might miss during editing
+- Backend typecheck must pass before considering work complete
+
+**Outcome:** S03 story is COMPLETE and ready for PRD pass update. All acceptance criteria met:
+- ✅ Created/verified lib/auth.ts with all 4 helper functions
+- ✅ Replaced 50+ manual authentication checks across backend
+- ✅ Backend typecheck passes
+- ✅ Code is more maintainable and DRY
+
