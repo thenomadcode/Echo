@@ -21,7 +21,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { StatusBadge } from "@/components/composed/StatusBadge";
+import { StatusBadge } from "@/components/composed/status-badge";
 import {
 	AlertDialog,
 	AlertDialogAction,

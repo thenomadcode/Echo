@@ -21,11 +21,11 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { StatusBadge } from "@/components/composed/StatusBadge";
-import { MessageBubble } from "@/components/conversation/MessageBubble";
-import { MessageInput } from "@/components/conversation/MessageInput";
-import { TimeoutError } from "@/components/conversation/TimeoutError";
-import { TypingIndicator } from "@/components/conversation/TypingIndicator";
+import { StatusBadge } from "@/components/composed/status-badge";
+import { MessageBubble } from "@/components/conversation/message-bubble";
+import { MessageInput } from "@/components/conversation/message-input";
+import { TimeoutError } from "@/components/conversation/timeout-error";
+import { TypingIndicator } from "@/components/conversation/typing-indicator";
 import {
 	AlertDialog,
 	AlertDialogAction,

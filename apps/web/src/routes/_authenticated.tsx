@@ -4,10 +4,10 @@ import { AuthLoading, Authenticated, Unauthenticated, useQuery } from "convex/re
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
-import { AppHeader } from "@/components/layout/AppHeader";
-import { BottomNav } from "@/components/layout/BottomNav";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { SidebarProvider, useSidebar } from "@/components/layout/SidebarContext";
+import { AppHeader } from "@/components/layout/app-header";
+import { BottomNav } from "@/components/layout/bottom-nav";
+import { Sidebar } from "@/components/layout/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
 import SignInForm from "@/components/sign-in-form";
 import { cn } from "@/lib/utils";
 

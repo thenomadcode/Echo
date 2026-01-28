@@ -10,9 +10,9 @@ import { Loader2, MessageCircle, MessageSquare, Search, ShoppingCart } from "luc
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { StatusBadge } from "@/components/composed/StatusBadge";
-import { MessageBubble } from "@/components/conversation/MessageBubble";
-import { MessageInput } from "@/components/conversation/MessageInput";
+import { StatusBadge } from "@/components/composed/status-badge";
+import { MessageBubble } from "@/components/conversation/message-bubble";
+import { MessageInput } from "@/components/conversation/message-input";
 import {
 	AlertDialog,
 	AlertDialogAction,

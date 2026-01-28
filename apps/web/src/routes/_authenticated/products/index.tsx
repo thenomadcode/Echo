@@ -18,8 +18,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import ProductCard from "@/components/products/ProductCard";
-import ProductTable from "@/components/products/ProductTable";
+import ProductCard from "@/components/products/product-card";
+import ProductTable from "@/components/products/product-table";
 import {
 	AlertDialog,
 	AlertDialogAction,

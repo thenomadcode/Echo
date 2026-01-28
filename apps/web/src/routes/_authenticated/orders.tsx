@@ -8,7 +8,7 @@ import { useQuery as useConvexQuery } from "convex/react";
 import { ChevronLeft, ChevronRight, Search, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { StatusBadge } from "@/components/composed/StatusBadge";
+import { StatusBadge } from "@/components/composed/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

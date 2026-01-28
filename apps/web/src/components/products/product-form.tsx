@@ -7,8 +7,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import ImageUpload from "@/components/ui/ImageUpload";
-import { PriceInput } from "@/components/ui/PriceInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,8 +17,10 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import ImageUpload from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PriceInput } from "@/components/ui/price-input";
 import {
 	Select,
 	SelectContent,

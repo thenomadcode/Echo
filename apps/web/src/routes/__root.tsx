@@ -17,7 +17,7 @@ import { authClient } from "@/lib/auth-client";
 import { getToken } from "@/lib/auth-server";
 import { ThemeProvider, themeScript } from "@/lib/theme";
 
-import { OfflineIndicator } from "../components/OfflineIndicator";
+import { OfflineIndicator } from "../components/offline-indicator";
 import appCss from "../index.css?url";
 
 const getAuth = createServerFn({ method: "GET" }).handler(async () => {

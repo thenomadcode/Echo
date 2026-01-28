@@ -14,7 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { SyncStatus } from "@/components/shopify/SyncStatus";
+import { SyncStatus } from "@/components/shopify/sync-status";
 import {
 	AlertDialog,
 	AlertDialogAction,

@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import ProductForm from "@/components/products/ProductForm";
+import ProductForm from "@/components/products/product-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

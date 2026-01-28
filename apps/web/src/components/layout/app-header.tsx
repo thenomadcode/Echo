@@ -1,9 +1,9 @@
 import { BookOpen, Search } from "lucide-react";
 
-import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
-import { NotificationBell } from "@/components/NotificationBell";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import BusinessSwitcher from "@/components/business-switcher";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { NotificationBell } from "@/components/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import UserMenu from "@/components/user-menu";
 

@@ -13,8 +13,8 @@ import {
 	TrendingUp,
 } from "lucide-react";
 
-import { ActivityItem } from "@/components/composed/ActivityItem";
-import { MetricCard } from "@/components/composed/MetricCard";
+import { ActivityItem } from "@/components/composed/activity-item";
+import { MetricCard } from "@/components/composed/metric-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatting";
