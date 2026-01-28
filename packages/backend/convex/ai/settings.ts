@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
-import { getAuthUser, requireBusinessOwnership } from "../lib/auth";
+import { requireBusinessOwnership } from "../lib/auth";
 
 interface AISettings {
 	aiTone: string;
@@ -18,16 +18,12 @@ export const getSettings = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<AISettings | null> => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
 		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
-			return null;
-		}
-
 		return {
 			aiTone: business.aiTone ?? "",
 		};
@@ -61,13 +57,8 @@ export const getUsageStats = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<UsageStats | null> => {
-		const authUser = await getAuthUser(ctx);
-		if (!authUser) {
-			return null;
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return null;
 		}
 
