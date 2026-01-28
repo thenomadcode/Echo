@@ -104,6 +104,7 @@ const listSectionValidator = v.object({
 
 export const sendMessage = action({
   args: {
+    messageId: v.optional(v.id("messages")),
     conversationId: v.id("conversations"),
     content: v.string(),
     type: v.union(
@@ -239,18 +240,26 @@ export const sendMessage = action({
       }
 
       if (result.success) {
-        await ctx.runMutation(
-          internal.integrations.whatsapp.actions.storeOutgoingMessage,
-          {
-            conversationId,
-            content: actualContent,
+        if (args.messageId) {
+          await ctx.runMutation(internal.messages.updateMessageDelivery, {
+            messageId: args.messageId,
             externalId: result.messageId,
             deliveryStatus: "sent",
-            messageType: usedFallback ? "text" : type,
-            richContent,
-            mediaUrl,
-          }
-        );
+          });
+        } else {
+          await ctx.runMutation(
+            internal.integrations.whatsapp.actions.storeOutgoingMessage,
+            {
+              conversationId,
+              content: actualContent,
+              externalId: result.messageId,
+              deliveryStatus: "sent",
+              messageType: usedFallback ? "text" : type,
+              richContent,
+              mediaUrl,
+            }
+          );
+        }
 
         return {
           success: true,
@@ -272,15 +281,23 @@ export const sendMessage = action({
       lastError = new Error(result.error || "Rate limited");
     }
 
-    await ctx.runMutation(
-      internal.integrations.whatsapp.actions.storeOutgoingMessage,
-      {
-        conversationId,
-        content,
+    if (args.messageId) {
+      await ctx.runMutation(internal.messages.updateMessageDelivery, {
+        messageId: args.messageId,
         deliveryStatus: "failed",
-        messageType: type,
-      }
-    );
+        errorMessage: lastError?.message || "Failed to send message after retries",
+      });
+    } else {
+      await ctx.runMutation(
+        internal.integrations.whatsapp.actions.storeOutgoingMessage,
+        {
+          conversationId,
+          content,
+          deliveryStatus: "failed",
+          messageType: type,
+        }
+      );
+    }
 
     throw lastError || new Error("Failed to send message after retries");
   },

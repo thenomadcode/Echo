@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery, mutation } from "../_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation } from "../_generated/server";
 import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
@@ -11,6 +11,7 @@ type ProcessMessageResult = {
   intent: Intent;
   shouldEscalate: boolean;
   detectedLanguage: string;
+  messageId: Id<"messages">;
 };
 
 interface CustomerContextProfile {
@@ -408,11 +409,18 @@ export const processMessage = action({
     const { conversation, business, products, messages, customerContext } = context;
 
     if (conversation.state === "escalated") {
+      const messageId = await ctx.runMutation(internal.ai.process.storeMessage, {
+        conversationId: args.conversationId,
+        content: getEscalatedConversationResponse(conversation.detectedLanguage ?? "en"),
+        sender: "business",
+      });
+      
       return {
         response: getEscalatedConversationResponse(conversation.detectedLanguage ?? "en"),
         intent: { type: "unknown" },
         shouldEscalate: true,
         detectedLanguage: conversation.detectedLanguage ?? "en",
+        messageId,
       };
     }
 
@@ -569,7 +577,8 @@ export const processMessage = action({
       intent,
       shouldEscalate,
       detectedLanguage,
-    } satisfies AIResponse;
+      messageId,
+    };
   },
 });
 
@@ -943,6 +952,81 @@ export const retryAiProcessing = action({
         success: false,
         error: error instanceof Error ? error.message : "AI processing failed",
       };
+    }
+  },
+});
+
+/**
+ * Process incoming message and send AI response
+ * This action orchestrates: AI generation → storage → sending
+ * Used by webhook handlers via ctx.scheduler for non-blocking processing
+ */
+export const processAndRespond = internalAction({
+  args: {
+    conversationId: v.id("conversations"),
+    message: v.string(),
+    channel: v.union(v.literal("whatsapp"), v.literal("instagram"), v.literal("messenger")),
+  },
+  handler: async (ctx, args) => {
+    const processingStartedAt = Date.now();
+
+    try {
+      // 1. Set processing state
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: true,
+      });
+
+      // 2. Generate AI response (this also stores the message internally)
+      const aiResult = await ctx.runAction(api.ai.process.processMessage, {
+        conversationId: args.conversationId,
+        message: args.message,
+      });
+
+      // 3. Send response to customer based on channel
+      if (args.channel === "whatsapp") {
+        await ctx.runAction(api.integrations.whatsapp.actions.sendMessage, {
+          messageId: aiResult.messageId,
+          conversationId: args.conversationId,
+          content: aiResult.response,
+          type: "text",
+        });
+      } else {
+        // Meta (Instagram/Messenger)
+        await ctx.runAction(api.integrations.meta.actions.sendMessage, {
+          messageId: aiResult.messageId,
+          conversationId: args.conversationId,
+          content: aiResult.response,
+          type: "text",
+        });
+      }
+
+      // 4. Clear processing state
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: false,
+      });
+
+      console.log(
+        `[processAndRespond] Completed for conversation ${args.conversationId} in ${Date.now() - processingStartedAt}ms`
+      );
+    } catch (error) {
+      // Clear processing state on error
+      await ctx.runMutation(internal.ai.process.setAiProcessingState, {
+        conversationId: args.conversationId,
+        isProcessing: false,
+      });
+
+      console.error(`[processAndRespond] Failed for conversation ${args.conversationId}:`, error);
+
+      // Retry on rate limit errors
+      if (error instanceof Error && error.message.includes("429")) {
+        console.log(`[processAndRespond] Scheduling retry due to rate limit`);
+        await ctx.scheduler.runAfter(30000, internal.ai.process.processAndRespond, args);
+      } else {
+        // For other errors, log but don't retry automatically
+        throw error;
+      }
     }
   },
 });
