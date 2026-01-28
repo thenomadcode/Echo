@@ -5701,3 +5701,48 @@
 - Update lefthook.yml to exclude marketing app from typecheck (or fix marketing TS errors)
 
 ---
+
+## [2026-01-28 16:05] - S02: Use Shared Formatting Utilities
+
+**What was implemented:**
+- Created apps/web/src/lib/formatting.ts with comprehensive formatting utilities
+- Implemented formatCurrency(amountInCents, currency) with locale-aware formatting
+- Implemented formatDate(timestamp, locale, options) for flexible date formatting
+- Implemented formatDateTime(timestamp, locale) for date+time display
+- Implemented formatRelativeTime(timestamp) for relative time strings (e.g., "2m ago")
+- Added CURRENCY_LOCALES constant mapping (COP→es-CO, BRL→pt-BR, MXN→es-MX, USD→en-US)
+- Added CURRENCY_SYMBOLS constant mapping (COP→$, BRL→R$, MXN→$, USD→$)
+- Replaced 10+ duplicate implementations across routes and components
+- Added JSDoc documentation for all public APIs
+
+**Files changed:**
+- apps/web/src/lib/formatting.ts (created, ~130 lines)
+- apps/web/src/routes/_authenticated/dashboard.tsx (removed formatCurrency)
+- apps/web/src/routes/_authenticated/orders.tsx (removed formatCurrency + formatDate)
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (removed formatCurrency + formatDateTime)
+- apps/web/src/routes/_authenticated/customers/index.tsx (removed formatCurrency + formatDate)
+- apps/web/src/routes/_authenticated/customers/$customerId.tsx (removed formatCurrency + formatDate)
+- apps/web/src/routes/_authenticated/conversations.$conversationId.tsx (removed formatCurrency)
+- apps/web/src/components/products/ProductCard.tsx (replaced Intl.NumberFormat with formatCurrency)
+- apps/web/src/components/products/ProductTable.tsx (replaced Intl.NumberFormat with formatCurrency)
+- apps/web/src/components/ui/PriceInput.tsx (imported CURRENCY_LOCALES + CURRENCY_SYMBOLS)
+- apps/web/src/components/conversation/MessageBubble.tsx (removed formatRelativeTime)
+
+**Verification:**
+- `bun run check`: PASS (0 errors, 138 files checked)
+- `bun x tsc --noEmit` (web app): PASS (0 formatting-related errors, 6 pre-existing errors)
+- All imports resolve correctly
+- Biome auto-fixed import order in 8 files
+
+**Delegation:**
+- Delegated file updates to sisyphus-junior (category: quick) for repetitive refactoring
+- Agent successfully updated 9 files in 7m 6s with full LSP verification
+
+**Learnings for future iterations:**
+- Shared utility modules benefit from JSDoc documentation (public API)
+- Using delegate_task for repetitive refactoring saves significant context
+- Biome's import organization runs automatically but may need manual trigger
+- Currency formatting requires locale-aware Intl.NumberFormat, not just symbol concatenation
+- Relative time formatting has business logic (24h threshold) that should be centralized
+
+---

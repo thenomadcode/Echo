@@ -22,7 +22,7 @@
 			"id": "S02",
 			"title": "Use Shared Formatting Utilities",
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"`apps/web/src/lib/formatting.ts` created with CURRENCY_LOCALES constant (COP, BRL, MXN, USD)",
