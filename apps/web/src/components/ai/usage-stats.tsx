@@ -10,7 +10,7 @@ interface UsageStatsProps {
 	businessId: Id<"businesses">;
 }
 
-export default function UsageStats({ businessId }: UsageStatsProps) {
+export function UsageStats({ businessId }: UsageStatsProps) {
 	const stats = useQuery(api.ai.settings.getUsageStats, { businessId });
 
 	if (stats === undefined) {

@@ -5,7 +5,7 @@ import { Check, ChevronLeft, ChevronRight, ImageIcon, Loader2, X } from "lucide-
 import { useState } from "react";
 import { toast } from "sonner";
 
-import SignInForm from "@/components/sign-in-form";
+import { SignInForm } from "@/components/sign-in-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

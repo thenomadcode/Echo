@@ -11,7 +11,7 @@ const navItems = [
 	{ to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-export default function AppNav() {
+export function AppNav() {
 	const routerState = useRouterState();
 	const currentPath = routerState.location.pathname;
 

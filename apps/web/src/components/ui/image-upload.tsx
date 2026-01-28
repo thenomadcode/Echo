@@ -14,7 +14,7 @@ interface ImageUploadProps {
 	className?: string;
 }
 
-export default function ImageUpload({ value, onChange, disabled, className }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, disabled, className }: ImageUploadProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);

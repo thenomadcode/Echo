@@ -17,7 +17,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import ImageUpload from "@/components/ui/image-upload";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PriceInput } from "@/components/ui/price-input";
@@ -44,7 +44,7 @@ interface ProductFormProps {
 	onSuccess?: () => void;
 }
 
-export default function ProductForm({
+export function ProductForm({
 	businessId,
 	mode,
 	productId,

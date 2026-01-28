@@ -13,7 +13,7 @@ import {
 import { Brain, Cpu, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import SignInForm from "@/components/sign-in-form";
+import { SignInForm } from "@/components/sign-in-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

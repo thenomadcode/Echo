@@ -23,7 +23,7 @@ interface ProductCardProps {
 	onSelectChange?: (selected: boolean) => void;
 }
 
-export default function ProductCard({
+export function ProductCard({
 	productId,
 	businessId,
 	name,

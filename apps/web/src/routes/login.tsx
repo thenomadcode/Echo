@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageSquare } from "lucide-react";
 
-import SignInForm from "@/components/sign-in-form";
+import { SignInForm } from "@/components/sign-in-form";
 
 export const Route = createFileRoute("/login")({
 	component: LoginPage,

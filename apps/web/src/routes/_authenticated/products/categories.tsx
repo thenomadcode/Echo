@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
 
-import CategoryManager from "@/components/products/category-manager";
+import { CategoryManager } from "@/components/products/category-manager";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/products/categories")({

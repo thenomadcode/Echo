@@ -7,7 +7,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import UsageStats from "@/components/ai/usage-stats";
+import { UsageStats } from "@/components/ai/usage-stats";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";

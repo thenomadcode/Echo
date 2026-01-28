@@ -92,7 +92,7 @@ function ProductTableRow({
 	);
 }
 
-export default function ProductTable({
+export function ProductTable({
 	products,
 	businessId,
 	selectedProducts = new Set(),

@@ -17,7 +17,7 @@ import {
 
 const ACTIVE_BUSINESS_KEY = "echo:activeBusinessId";
 
-export default function BusinessSwitcher() {
+export function BusinessSwitcher() {
 	const navigate = useNavigate();
 	const businesses = useQuery(api.businesses.list);
 	const [activeBusinessId, setActiveBusinessId] = useState<string | null>(() => {

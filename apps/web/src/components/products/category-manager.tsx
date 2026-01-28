@@ -14,7 +14,7 @@ interface CategoryManagerProps {
 	businessId: string;
 }
 
-export default function CategoryManager({ businessId }: CategoryManagerProps) {
+export function CategoryManager({ businessId }: CategoryManagerProps) {
 	const categories = useQuery(api.categories.list, { businessId });
 	const products = useQuery(api.products.list, { businessId });
 	const createCategory = useMutation(api.categories.create);

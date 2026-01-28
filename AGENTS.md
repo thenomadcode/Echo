@@ -193,9 +193,11 @@ Echo uses [Biome](https://biomejs.dev/) for linting and formatting. Biome is a f
 import type { QueryClient } from "@tanstack/react-query";
 import type { VariantProps } from "class-variance-authority";
 
-// Regular imports
+// Named imports (preferred for all UI components and utilities)
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { Header } from "@/components/header";
+import { Button } from "@/components/ui/button";
 ```
 
 ### Path Aliases
@@ -207,12 +209,16 @@ import { cn } from "@/lib/utils";
 ### React Components
 ```typescript
 // Function components only (no class components)
-// Use default export for page/route components
-export default function Header() { ... }
 
-// Use named exports for UI components
+// UI components: ALWAYS use named exports
+export function Header() { ... }
 export function Button({ ... }: Props) { ... }
 export { Button, buttonVariants };
+
+// Route components: Use named export of Route constant (TanStack Router requirement)
+export const Route = createFileRoute("/path")({
+  component: RouteComponent,
+});
 ```
 
 ### Component Patterns

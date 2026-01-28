@@ -8,7 +8,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
-import SignInForm from "@/components/sign-in-form";
+import { SignInForm } from "@/components/sign-in-form";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
