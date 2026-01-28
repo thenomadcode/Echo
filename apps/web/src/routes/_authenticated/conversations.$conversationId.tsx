@@ -39,19 +39,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency as formatCurrencyUtil } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/conversations/$conversationId")({
 	component: ConversationDetailPage,
 });
 
 const PANEL_COLLAPSED_KEY = "echo-customer-panel-collapsed";
-
-function formatCurrency(cents: number): string {
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: "USD",
-	}).format(cents / 100);
-}
 
 function CustomerContextPanel({
 	customerId,
@@ -136,7 +130,9 @@ function CustomerContextPanel({
 						</div>
 						<div>
 							<span className="text-muted-foreground">Spent:</span>{" "}
-							<span className="font-medium">{formatCurrency(context.profile.totalSpent)}</span>
+							<span className="font-medium">
+								{formatCurrencyUtil(context.profile.totalSpent, "USD")}
+							</span>
 						</div>
 					</div>
 

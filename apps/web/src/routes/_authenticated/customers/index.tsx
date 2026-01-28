@@ -36,6 +36,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
 	component: CustomersPage,
@@ -117,13 +118,6 @@ function CustomersContent({ businessId }: CustomersContentProps) {
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [searchQuery, sortBy]);
-
-	const formatCurrency = (amount: number, currency = "USD") => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: currency,
-		}).format(amount / 100);
-	};
 
 	const formatSmartDate = (timestamp: number) => {
 		const date = new Date(timestamp);

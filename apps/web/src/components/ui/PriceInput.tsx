@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useState } from "react";
 
+import { CURRENCY_LOCALES, CURRENCY_SYMBOLS } from "@/lib/formatting";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -15,20 +16,6 @@ interface PriceInputProps {
 	placeholder?: string;
 	disabled?: boolean;
 }
-
-const CURRENCY_SYMBOLS: Record<Currency, string> = {
-	COP: "$",
-	BRL: "R$",
-	MXN: "$",
-	USD: "$",
-};
-
-const CURRENCY_LOCALES: Record<Currency, string> = {
-	COP: "es-CO",
-	BRL: "pt-BR",
-	MXN: "es-MX",
-	USD: "en-US",
-};
 
 function formatPriceForDisplay(valueInCents: number, currency: Currency): string {
 	const valueInMajorUnits = valueInCents / 100;

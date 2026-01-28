@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { formatCurrency } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -20,25 +21,6 @@ interface ProductCardProps {
 	available: boolean;
 	selected?: boolean;
 	onSelectChange?: (selected: boolean) => void;
-}
-
-const CURRENCY_LOCALES: Record<string, string> = {
-	COP: "es-CO",
-	BRL: "pt-BR",
-	MXN: "es-MX",
-	USD: "en-US",
-};
-
-function formatPrice(price: number, currency: string): string {
-	const locale = CURRENCY_LOCALES[currency] || "en-US";
-	const valueInMajorUnits = price / 100;
-
-	return new Intl.NumberFormat(locale, {
-		style: "currency",
-		currency: currency,
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(valueInMajorUnits);
 }
 
 export default function ProductCard({
@@ -123,7 +105,9 @@ export default function ProductCard({
 					<div className="flex items-start justify-between gap-2">
 						<h3 className="line-clamp-2 font-semibold leading-tight">{name}</h3>
 					</div>
-					<p className="font-bold text-lg text-primary">{formatPrice(price, currency)}</p>
+					<p className="font-bold text-lg text-primary">
+						{formatCurrency(price, currency as "COP" | "BRL" | "MXN" | "USD")}
+					</p>
 					{category && <p className="text-muted-foreground text-sm">{category.name}</p>}
 				</div>
 			</CardContent>

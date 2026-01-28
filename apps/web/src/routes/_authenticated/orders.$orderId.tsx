@@ -42,6 +42,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatCurrency, formatDateTime } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/orders/$orderId")({
@@ -126,17 +127,6 @@ function OrderDetailPage() {
 		}
 	};
 
-	const formatCurrency = (amount: number, currency: string) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: currency,
-		}).format(amount / 100);
-	};
-
-	const formatDateTime = (timestamp: number) => {
-		return new Date(timestamp).toLocaleString();
-	};
-
 	if (orderQuery.isLoading) {
 		return (
 			<div className="container mx-auto max-w-4xl px-6 py-8">
@@ -219,10 +209,16 @@ function OrderDetailPage() {
 											<TableCell className="font-medium">{item.name}</TableCell>
 											<TableCell className="text-center">{item.quantity}</TableCell>
 											<TableCell className="text-right">
-												{formatCurrency(item.unitPrice, order.currency)}
+												{formatCurrency(
+													item.unitPrice,
+													order.currency as "COP" | "BRL" | "MXN" | "USD",
+												)}
 											</TableCell>
 											<TableCell className="text-right">
-												{formatCurrency(item.totalPrice, order.currency)}
+												{formatCurrency(
+													item.totalPrice,
+													order.currency as "COP" | "BRL" | "MXN" | "USD",
+												)}
 											</TableCell>
 										</TableRow>
 									))}
@@ -232,17 +228,29 @@ function OrderDetailPage() {
 							<div className="mt-6 space-y-2 border-t pt-4">
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Subtotal</span>
-									<span>{formatCurrency(order.subtotal, order.currency)}</span>
+									<span>
+										{formatCurrency(
+											order.subtotal,
+											order.currency as "COP" | "BRL" | "MXN" | "USD",
+										)}
+									</span>
 								</div>
 								{order.deliveryFee !== undefined && order.deliveryFee > 0 && (
 									<div className="flex justify-between text-sm">
 										<span className="text-muted-foreground">Delivery Fee</span>
-										<span>{formatCurrency(order.deliveryFee, order.currency)}</span>
+										<span>
+											{formatCurrency(
+												order.deliveryFee,
+												order.currency as "COP" | "BRL" | "MXN" | "USD",
+											)}
+										</span>
 									</div>
 								)}
 								<div className="flex justify-between border-t pt-2 font-bold text-base">
 									<span>Total</span>
-									<span>{formatCurrency(order.total, order.currency)}</span>
+									<span>
+										{formatCurrency(order.total, order.currency as "COP" | "BRL" | "MXN" | "USD")}
+									</span>
 								</div>
 							</div>
 						</CardContent>

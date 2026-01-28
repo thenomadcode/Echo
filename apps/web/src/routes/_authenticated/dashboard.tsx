@@ -17,6 +17,7 @@ import { ActivityItem } from "@/components/composed/ActivityItem";
 import { MetricCard } from "@/components/composed/MetricCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/formatting";
 
 function OnboardingItem({
 	completed,
@@ -51,15 +52,6 @@ function getGreeting(): string {
 	if (hour < 12) return "Good morning";
 	if (hour < 18) return "Good afternoon";
 	return "Good evening";
-}
-
-function formatCurrency(cents: number, currency = "USD"): string {
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency,
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(cents / 100);
 }
 
 function DashboardPage() {

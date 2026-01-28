@@ -1,5 +1,6 @@
 import { Bot, User } from "lucide-react";
 
+import { formatRelativeTime } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
@@ -15,19 +16,6 @@ const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
 function isImageUrl(url: string): boolean {
 	const lowercaseUrl = url.toLowerCase();
 	return IMAGE_EXTENSIONS.some((ext) => lowercaseUrl.endsWith(ext));
-}
-
-function formatRelativeTime(timestamp: number): string {
-	const now = new Date();
-	const date = new Date(timestamp);
-	const diffMs = now.getTime() - date.getTime();
-	const diffMins = Math.floor(diffMs / 60000);
-	const diffHours = Math.floor(diffMs / 3600000);
-
-	if (diffMins < 1) return "Just now";
-	if (diffMins < 60) return `${diffMins}m ago`;
-	if (diffHours < 24) return `${diffHours}h ago`;
-	return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 export function MessageBubble({

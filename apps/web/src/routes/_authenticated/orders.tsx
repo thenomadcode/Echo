@@ -28,6 +28,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/orders")({
 	component: OrdersPage,
@@ -108,13 +109,6 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [searchQuery, statusFilter]);
-
-	const formatCurrency = (amount: number, currency: string) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: currency,
-		}).format(amount / 100);
-	};
 
 	const formatSmartDate = (timestamp: number) => {
 		const date = new Date(timestamp);
@@ -228,7 +222,10 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 											</TableCell>
 											<TableCell className="text-center">{order.items.length}</TableCell>
 											<TableCell className="text-right">
-												{formatCurrency(order.total, order.currency)}
+												{formatCurrency(
+													order.total,
+													order.currency as "COP" | "BRL" | "MXN" | "USD",
+												)}
 											</TableCell>
 											<TableCell className="text-right text-muted-foreground">
 												{formatSmartDate(order.createdAt)}

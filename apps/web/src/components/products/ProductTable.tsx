@@ -16,6 +16,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -49,25 +50,6 @@ interface ProductTableRowProps {
 type SortField = "name" | "price" | "category";
 type SortOrder = "asc" | "desc";
 
-const CURRENCY_LOCALES: Record<string, string> = {
-	COP: "es-CO",
-	BRL: "pt-BR",
-	MXN: "es-MX",
-	USD: "en-US",
-};
-
-function formatPrice(price: number, currency: string): string {
-	const locale = CURRENCY_LOCALES[currency] || "en-US";
-	const valueInMajorUnits = price / 100;
-
-	return new Intl.NumberFormat(locale, {
-		style: "currency",
-		currency: currency,
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(valueInMajorUnits);
-}
-
 function ProductTableRow({
 	product,
 	categoryName,
@@ -99,7 +81,9 @@ function ProductTableRow({
 				)}
 			</TableCell>
 			<TableCell className="font-medium">{product.name}</TableCell>
-			<TableCell>{formatPrice(product.price, product.currency)}</TableCell>
+			<TableCell>
+				{formatCurrency(product.price, product.currency as "COP" | "BRL" | "MXN" | "USD")}
+			</TableCell>
 			<TableCell>{categoryName}</TableCell>
 			<TableCell onClick={(e) => e.stopPropagation()}>
 				<Switch checked={product.available} onCheckedChange={onAvailabilityToggle} />

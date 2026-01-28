@@ -62,6 +62,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { formatCurrency, formatDate } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/customers/$customerId")({
@@ -117,21 +118,6 @@ function CustomerDetailPage() {
 			setIsDeleting(false);
 			setShowDeleteDialog(false);
 		}
-	};
-
-	const formatCurrency = (amount: number, currency = "USD") => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: currency,
-		}).format(amount / 100);
-	};
-
-	const formatDate = (timestamp: number) => {
-		return new Date(timestamp).toLocaleDateString("en-US", {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		});
 	};
 
 	if (customerQuery.isLoading) {
@@ -360,7 +346,7 @@ interface OverviewTabProps {
 		preferredLanguage?: string;
 	};
 	context: CustomerContext | null | undefined;
-	formatCurrency: (amount: number, currency?: string) => string;
+	formatCurrency: (amountInCents: number, currency?: "COP" | "BRL" | "MXN" | "USD") => string;
 	formatDate: (timestamp: number) => string;
 }
 
@@ -478,7 +464,7 @@ function OverviewTab({ customer, context, formatCurrency, formatDate }: Overview
 
 interface OrdersTabProps {
 	customerId: Id<"customers">;
-	formatCurrency: (amount: number, currency?: string) => string;
+	formatCurrency: (amountInCents: number, currency?: "COP" | "BRL" | "MXN" | "USD") => string;
 	formatDate: (timestamp: number) => string;
 	navigate: ReturnType<typeof useNavigate>;
 }
@@ -539,7 +525,9 @@ function OrdersTab({ customerId, formatCurrency, formatDate, navigate }: OrdersT
 										{order.status}
 									</Badge>
 								</td>
-								<td className="p-4 text-right">{formatCurrency(order.total, order.currency)}</td>
+								<td className="p-4 text-right">
+									{formatCurrency(order.total, order.currency as "COP" | "BRL" | "MXN" | "USD")}
+								</td>
 								<td className="p-4 text-right text-muted-foreground">
 									{formatDate(order.createdAt)}
 								</td>
