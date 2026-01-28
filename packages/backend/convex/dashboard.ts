@@ -1,14 +1,14 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser } from "./lib/auth";
 
 export const getMetrics = query({
 	args: {
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
@@ -94,8 +94,8 @@ export const getActivity = query({
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return [];
 		}
 

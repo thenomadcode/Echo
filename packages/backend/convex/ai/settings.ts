@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
-import { authComponent } from "../auth";
+import { getAuthUser, requireBusinessOwnership } from "../lib/auth";
 
 interface AISettings {
 	aiTone: string;
@@ -18,17 +18,13 @@ export const getSettings = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<AISettings | null> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
 		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return null;
-		}
-
-		if (business.ownerId !== authUser._id) {
+		if (!business || business.ownerId !== authUser._id) {
 			return null;
 		}
 
@@ -44,19 +40,7 @@ export const updateSettings = mutation({
 		aiTone: v.optional(v.string()),
 	},
 	handler: async (ctx, args): Promise<void> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this business");
-		}
+		await requireBusinessOwnership(ctx, args.businessId);
 
 		const updates: Record<string, unknown> = {
 			updatedAt: Date.now(),
@@ -77,17 +61,13 @@ export const getUsageStats = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<UsageStats | null> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 
 		const business = await ctx.db.get(args.businessId);
-		if (!business) {
-			return null;
-		}
-
-		if (business.ownerId !== authUser._id) {
+		if (!business || business.ownerId !== authUser._id) {
 			return null;
 		}
 

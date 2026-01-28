@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
 
 const categoryValidator = v.union(
 	v.literal("allergy"),
@@ -22,8 +22,8 @@ export const list = query({
 		category: v.optional(categoryValidator),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return [];
 		}
 
@@ -64,24 +64,12 @@ export const add = mutation({
 		extractedFrom: v.optional(v.id("conversations")),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to add memories for this customer");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId as any);
 
 		const confidence = args.confidence ?? (args.source === "manual" ? 1.0 : 0.9);
 
@@ -108,11 +96,6 @@ export const update = mutation({
 		confidence: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
 		const memory = await ctx.db.get(args.memoryId);
 		if (!memory) {
 			throw new Error("Memory not found");
@@ -123,14 +106,7 @@ export const update = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this memory");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId as any);
 
 		const updates: Record<string, unknown> = { updatedAt: Date.now() };
 		if (args.fact !== undefined) updates.fact = args.fact;
@@ -148,11 +124,6 @@ export const deleteMemory = mutation({
 		confirmAllergyDeletion: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
 		const memory = await ctx.db.get(args.memoryId);
 		if (!memory) {
 			throw new Error("Memory not found");
@@ -163,14 +134,7 @@ export const deleteMemory = mutation({
 			throw new Error("Customer not found");
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to delete this memory");
-		}
+		await requireBusinessOwnership(ctx, customer.businessId as any);
 
 		if (memory.category === "allergy" && args.confirmAllergyDeletion !== true) {
 			throw new Error(

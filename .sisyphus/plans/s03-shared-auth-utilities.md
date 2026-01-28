@@ -1,128 +1,113 @@
-# S03 - Use Shared Auth Utilities
+# S03 - Use Shared Auth Utilities (Remaining Migration)
 
 ## TL;DR
 
-> **Quick Summary**: Replace manual authentication checks across all backend files with centralized helpers from `lib/auth.ts`, fix security vulnerabilities where auth is completely missing, repair broken imports, and create internal mutations for AI-called order operations.
+> **Quick Summary**: Complete the remaining auth migration by replacing 41 direct `authComponent.safeGetAuthUser` calls across 13 backend files with the shared auth utilities from `lib/auth.ts`.
 > 
 > **Deliverables**:
-> - Fix 2 broken imports (messages.ts, shopify.ts)
-> - Add auth to 16 security gap mutations/queries (was 15, +1 conversations.addMessage)
-> - Refactor 30 manual auth checks to use helpers (was 25, +5 conversations.ts mutations)
-> - Create 3 internal mutations for AI order operations
-> - Fix businessId type in products.ts
-> - All TypeScript compilation passes
+> - 9 root-level files migrated (33 calls)
+> - 1 ai/ directory file migrated (3 calls)
+> - 3 integrations/ directory files migrated (5 calls)
+> - Zero direct `authComponent.safeGetAuthUser` calls remaining (except in lib/auth.ts)
+> - Single atomic commit: `feat: S03 - Use shared auth utilities`
 > 
-> **Estimated Effort**: Medium-Large
-> **Parallel Execution**: YES - 5 waves
-> **Critical Path**: Task 1 → Task 2 → Task 3 → Task 7 → Task 13
+> **Estimated Effort**: Short (mechanical replacements)
+> **Parallel Execution**: YES - 3 waves
+> **Critical Path**: Wave 1 (root) || Wave 2 (ai) || Wave 3 (integrations) → Verification → Commit
 
 ---
 
 ## Context
 
 ### Original Request
-Implement S03 - Use Shared Auth Utilities from the PRD. Replace 50+ manual auth checks with centralized helper functions.
+Complete S03 by migrating remaining 41 manual auth checks across 13 files to use shared auth utilities from `packages/backend/convex/lib/auth.ts`.
+
+### Prior Work Completed (9 files already migrated)
+- businesses.ts, orders.ts, products.ts, messages.ts, conversations.ts
+- customers.ts, integrations/meta/queries.ts
 
 ### Interview Summary
 **Key Discussions**:
-- Shared auth utilities in `packages/backend/convex/lib/auth.ts` already exist with 4 functions
-- PRD said 50+ checks but analysis found ~30 manual checks + 16 security gaps + 2 broken imports
-- User decided: Full scope (fix everything), fix types, TypeScript + manual verification
+- Batching: Group by directory (root, ai/, integrations/)
+- Verification: TypeScript + grep confirmation of zero remaining direct calls
+- Commit: Single atomic commit per Ralph pattern
 
 **Research Findings**:
-- `businesses.ts` already uses helpers correctly - no changes needed
-- `orders.ts` has 10 mutations with ZERO auth - but 3 are called by AI agent!
-- `messages.ts` and `shopify.ts` have broken imports causing TypeScript errors
-- `products.ts` uses `v.string()` instead of `v.id("businesses")` - prevents helper usage
-- `conversations.ts` has 9 auth patterns (not 4 as initially counted) + 1 missing auth
+- All 13 files analyzed - patterns are mechanical and consistent
+- `notifications.ts` is user-scoped (not business), needs different handling
+- 2 files already import helpers, just need direct call replacement (shopify.ts, whatsapp/settings.ts)
+- Internal functions (internalQuery/internalMutation) excluded - no user context
 
-### Momus Review Findings (CRITICAL)
-1. **Orders.ts AI Conflict**: `orders.create`, `orders.setDeliveryInfo`, `orders.setPaymentMethod` are called by AI agent. Adding auth would break AI.
-   - **Solution**: Create internal mutations for AI, auth on public mutations
-2. **Conversations.ts Undercount**: Has 9 auth patterns (4 queries + 5 mutations), not 4
-3. **Missing Security Gap**: `conversations.addMessage` has NO auth
+### Self-Review Findings
+**Potential gaps addressed**:
+- Remove `authComponent` import when no longer needed after migration
+- Ensure import paths correct for nested directories (`../lib/auth` vs `../../lib/auth`)
+- Handle the `notifications.ts` special case (user-scoped, not business-scoped)
 
 ---
 
 ## Work Objectives
 
 ### Core Objective
-Consolidate all authentication logic into shared helpers, eliminating code duplication and ensuring consistent auth patterns across the entire backend, while preserving AI functionality.
+Replace all remaining direct `authComponent.safeGetAuthUser(ctx)` calls with appropriate shared auth utilities to ensure consistent, DRY authentication patterns across the Convex backend.
 
 ### Concrete Deliverables
-- `packages/backend/convex/messages.ts` - Fixed import + auth on findMessageByContent
-- `packages/backend/convex/shopify.ts` - Fixed import + auth on importProducts/createOrder + refactored checks
-- `packages/backend/convex/orders.ts` - Internal mutations for AI + auth on public mutations
-- `packages/backend/convex/customers.ts` - Auth on updateStats + 8 refactored checks
-- `packages/backend/convex/products.ts` - Type fixed + 7 refactored checks
-- `packages/backend/convex/conversations.ts` - Auth on addMessage + 9 refactored checks
-- `packages/backend/convex/integrations/whatsapp/settings.ts` - Auth on testConnection + 2 refactored checks
+- 13 files migrated with correct auth utility usage
+- All TypeScript compilation passing
+- Zero grep matches for direct `authComponent.safeGetAuthUser` in migrated files
+- Single atomic commit
 
 ### Definition of Done
-- [ ] `bun run check-types` passes with zero errors
-- [ ] All public mutations use `requireAuth()` or `requireBusinessOwnership()`
-- [ ] All public queries use `getAuthUser()` or `isBusinessOwner()`
-- [ ] No direct `authComponent.safeGetAuthUser()` calls outside lib/auth.ts
-- [ ] No manual `business.ownerId !== authUser._id` patterns remain
-- [ ] AI agent continues to work (calls internal mutations)
+- [ ] `bun run check-types` passes with exit code 0
+- [ ] `grep -r "authComponent.safeGetAuthUser" packages/backend/convex/` returns only `auth.ts` and `lib/auth.ts`
+- [ ] Single commit created with message `feat: S03 - Use shared auth utilities`
 
 ### Must Have
-- All security vulnerabilities fixed (auth added where missing)
-- All broken imports fixed (TypeScript compiles)
-- Internal mutations for AI-called operations
-- Consistent error messages across all files
-- Type safety with `v.id("businesses")` in products.ts
+- All 41 auth checks migrated to shared utilities
+- Correct import paths for each directory level
+- Proper auth utility selection based on pattern:
+  - Queries returning null/empty → `getAuthUser`
+  - Mutations throwing → `requireAuth` or `requireBusinessOwnership`
+  - Business ownership checks → `requireBusinessOwnership`
 
 ### Must NOT Have (Guardrails)
-- DO NOT add auth to `internalMutation` or `internalQuery` functions - they're internal-only by design
-- DO NOT change auth behavior - queries return null, mutations throw
-- DO NOT add new helper functions to lib/auth.ts - use existing 4 functions only
-- DO NOT refactor businesses.ts - it's already correct
-- DO NOT add test infrastructure - verification is TypeScript + manual only
-- DO NOT change frontend code unless absolutely necessary for type safety
-- DO NOT break AI agent functionality - it must still be able to create/modify orders
+- DO NOT modify internal functions (internalQuery, internalMutation) - they have no user context
+- DO NOT change auth logic or behavior - only the implementation pattern
+- DO NOT modify `lib/auth.ts` or `auth.ts` files
+- DO NOT add unnecessary imports (remove `authComponent` import if no longer used)
+- DO NOT change function signatures or return types
+- DO NOT modify any business logic beyond auth check replacement
 
 ---
 
 ## Verification Strategy (MANDATORY)
 
 ### Test Decision
-- **Infrastructure exists**: NO
-- **User wants tests**: NO (TypeScript + manual verification)
-- **Framework**: none
+- **Infrastructure exists**: NO (no test framework configured)
+- **User wants tests**: Manual verification only
+- **Framework**: None
 
 ### Automated Verification (Agent-Executable)
 
-**For all tasks - TypeScript Compilation:**
+**TypeScript Compilation Check:**
 ```bash
-# Agent runs after each file change:
+# Agent runs:
 bun run check-types
-# Assert: Exit code 0, no errors
+# Assert: Exit code 0
+# Assert: No type errors in output
 ```
 
-**For all tasks - LSP Diagnostics:**
+**Grep Verification:**
 ```bash
-# Agent checks via LSP:
-mcp_lsp_diagnostics on changed file
-# Assert: No ERROR level diagnostics
+# Agent runs:
+grep -r "authComponent.safeGetAuthUser" packages/backend/convex/ --include="*.ts" | grep -v "auth.ts"
+# Assert: Empty output (no matches)
+# This confirms zero direct calls remain (excluding auth.ts and lib/auth.ts)
 ```
 
-**For orders.ts - AI Functionality Check:**
-```bash
-# Verify internal mutations exist and are exported:
-grep -c "export const createInternal\|export const setDeliveryInfoInternal\|export const setPaymentMethodInternal" packages/backend/convex/orders.ts
-# Assert: 3 matches
-```
-
-**Final Verification - Auth Pattern Consistency:**
-```bash
-# Search for remaining manual patterns:
-grep -r "authComponent.safeGetAuthUser" packages/backend/convex/*.ts --include="*.ts" | grep -v "lib/auth.ts"
-# Assert: No matches (all moved to helpers)
-
-grep -r "business.ownerId !== authUser._id" packages/backend/convex/
-# Assert: No matches (all using helpers)
-```
+**Evidence to Capture:**
+- [ ] TypeScript check output showing success
+- [ ] Grep output showing no remaining direct calls
 
 ---
 
@@ -131,1099 +116,317 @@ grep -r "business.ownerId !== authUser._id" packages/backend/convex/
 ### Parallel Execution Waves
 
 ```
-Wave 0 (Start Immediately - CRITICAL):
-├── Task 1: Fix messages.ts broken import
-└── Task 2: Fix shopify.ts broken import
+Wave 1 (Start Immediately):
+├── Task 1: Root-level files (9 files, 33 calls)
 
-Wave 1 (After Wave 0 - Security Fixes + Internal Mutations):
-├── Task 3: Create orders.ts internal mutations + add auth to public mutations
-├── Task 4: Add auth to customers.ts updateStats
-├── Task 5: Add auth to shopify.ts importProducts & createOrder
-├── Task 6: Add auth to whatsapp testConnection + messages findMessageByContent
-└── Task 7: Add auth to conversations.ts addMessage
+Wave 2 (Parallel with Wave 1):
+├── Task 2: ai/ directory (1 file, 3 calls)
 
-Wave 2 (After Wave 1 - Type Fix):
-└── Task 8: Fix products.ts businessId type + refactor 7 checks
+Wave 3 (Parallel with Waves 1 & 2):
+├── Task 3: integrations/ directory (3 files, 5 calls)
 
-Wave 3 (After Wave 2 - Refactoring, PARALLEL):
-├── Task 9: Refactor customers.ts 8 manual checks
-├── Task 10: Refactor conversations.ts 9 manual checks (4 queries + 5 mutations)
-├── Task 11: Refactor shopify.ts 3 manual checks
-└── Task 12: Refactor whatsapp/settings.ts 2 manual checks
+Wave 4 (After Waves 1-3):
+└── Task 4: Final verification & commit
 
-Wave 4 (After Wave 3 - Verification):
-└── Task 13: Final verification and cleanup
-
-Critical Path: Task 1 → Task 2 → Task 3 → Task 8 → Task 13
-Parallel Speedup: ~45% faster than sequential
+Critical Path: Any wave → Task 4 (verification)
+Parallel Speedup: All 3 migration waves run simultaneously
 ```
 
 ### Dependency Matrix
 
 | Task | Depends On | Blocks | Can Parallelize With |
 |------|------------|--------|---------------------|
-| 1 | None | 3, 4, 6, 7 | 2 |
-| 2 | None | 5, 11 | 1 |
-| 3 | 1 | 13 | 4, 5, 6, 7 |
-| 4 | 1 | 9, 13 | 3, 5, 6, 7 |
-| 5 | 2 | 11, 13 | 3, 4, 6, 7 |
-| 6 | 1 | 12, 13 | 3, 4, 5, 7 |
-| 7 | 1 | 10, 13 | 3, 4, 5, 6 |
-| 8 | 3, 4, 5, 6, 7 | 9, 10, 11, 12 | None |
-| 9 | 4, 8 | 13 | 10, 11, 12 |
-| 10 | 7, 8 | 13 | 9, 11, 12 |
-| 11 | 5, 8 | 13 | 9, 10, 12 |
-| 12 | 6, 8 | 13 | 9, 10, 11 |
-| 13 | 9, 10, 11, 12 | None | None (final) |
+| 1 | None | 4 | 2, 3 |
+| 2 | None | 4 | 1, 3 |
+| 3 | None | 4 | 1, 2 |
+| 4 | 1, 2, 3 | None | None (final) |
 
 ### Agent Dispatch Summary
 
-| Wave | Tasks | Recommended Dispatch |
-|------|-------|---------------------|
-| 0 | 1, 2 | Parallel, quick category |
-| 1 | 3, 4, 5, 6, 7 | Parallel, unspecified-low category (Task 3 is unspecified-high) |
-| 2 | 8 | Sequential, unspecified-low category |
-| 3 | 9, 10, 11, 12 | Parallel, quick category |
-| 4 | 13 | Sequential, quick category |
+| Wave | Tasks | Recommended Agents |
+|------|-------|-------------------|
+| 1-3 | 1, 2, 3 | `category="quick"` - mechanical replacements |
+| 4 | 4 | `category="quick"` - verification only |
 
 ---
 
 ## TODOs
 
-### Wave 0: Fix Broken Imports (CRITICAL - Blocks Compilation)
-
-- [ ] 1. Fix messages.ts broken import
+- [ ] 1. Migrate root-level files (9 files, 33 auth calls)
 
   **What to do**:
-  - Add missing import at top of file: `import { requireAuth, getAuthUser, isBusinessOwner } from "./lib/auth";`
-  - Verify the existing `requireAuth(ctx)` call on line 13 now resolves
+  
+  For each file, perform these steps:
+  1. Add import: `import { getAuthUser, requireAuth, requireBusinessOwnership } from "./lib/auth";`
+  2. Replace auth patterns:
+     - **Queries** returning null/[]/0: Replace with `const authUser = await getAuthUser(ctx);` + keep null check
+     - **Mutations** throwing: Replace with `const authUser = await requireAuth(ctx);` or `const { user, business } = await requireBusinessOwnership(ctx, businessId);`
+  3. Remove `authComponent` import if no longer used in file
+  4. For business ownership patterns, use destructured `{ user, business }` and reference `user._id` and `business` directly
+  
+  **Files to migrate**:
+  
+  | File | Calls | Patterns |
+  |------|-------|----------|
+  | `privateData.ts` | 1 | 1 query (return null → `getAuthUser`) |
+  | `categories.ts` | 5 | 4 mutations (`requireBusinessOwnership`), 1 query (`getAuthUser` + business check) |
+  | `customerMemory.ts` | 4 | 3 mutations (`requireBusinessOwnership`), 1 query (`getAuthUser`) |
+  | `dashboard.ts` | 2 | 2 queries (`getAuthUser` + business check) |
+  | `conversationSummaries.ts` | 4 | 3 queries (`getAuthUser`), 1 mutation (`requireBusinessOwnership`) |
+  | `deletionRequests.ts` | 4 | 2 queries (`getAuthUser`), 2 mutations (`requireBusinessOwnership`) |
+  | `notifications.ts` | 4 | 2 queries (`getAuthUser`), 2 mutations (`requireAuth`) - **USER-SCOPED, NOT BUSINESS** |
+  | `customerNotes.ts` | 4 | 1 query (`getAuthUser`), 3 mutations (`requireBusinessOwnership`) |
+  | `customerAddresses.ts` | 5 | 1 query (`getAuthUser`), 4 mutations (`requireBusinessOwnership`) |
 
   **Must NOT do**:
-  - Do NOT change any auth logic - just add the import
-  - Do NOT refactor the manual ownership check (that's Task 6)
+  - DO NOT modify internal functions (internalQuery, internalMutation, internalAction)
+  - DO NOT change the auth behavior or error messages
+  - DO NOT modify function return types
+  - DO NOT touch `customerMemory.ts:listByCustomerInternal`, `customerMemory.ts:addInternal`
+  - DO NOT touch `conversationSummaries.ts:createInternal`
+  - DO NOT touch `deletionRequests.ts:create` (internal mutation)
+  - DO NOT touch `notifications.ts:create` (internal mutation)
 
   **Recommended Agent Profile**:
   - **Category**: `quick`
-    - Reason: Single line import addition, trivial change
+    - Reason: Mechanical search-and-replace refactoring with clear patterns
   - **Skills**: `[]`
-    - No special skills needed for import fix
+    - Standard TypeScript editing, no specialized tooling needed
 
   **Parallelization**:
   - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 0 (with Task 2)
-  - **Blocks**: Tasks 3, 4, 6, 7
+  - **Parallel Group**: Wave 1 (with Tasks 2, 3)
+  - **Blocks**: Task 4 (verification)
   - **Blocked By**: None (can start immediately)
 
   **References**:
   
-  **Pattern References**:
-  - `packages/backend/convex/customers.ts:3` - Correct import pattern: `import { getAuthUser, requireAuth } from "./lib/auth";`
-  - `packages/backend/convex/products.ts:4` - Another example of correct import
-
-  **File to Modify**:
-  - `packages/backend/convex/messages.ts:1` - Add import after existing imports
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: No error about "Cannot find name 'requireAuth'" in messages.ts
+  **Pattern References** (existing code to follow):
+  - `packages/backend/convex/businesses.ts:1-66` - Shows correct migration pattern with `requireAuth` and `requireBusinessOwnership`
+  - `packages/backend/convex/lib/auth.ts:1-85` - The shared utilities being used
   
-  # LSP check:
-  mcp_lsp_diagnostics on packages/backend/convex/messages.ts
-  # Assert: No ERROR diagnostics
-  ```
-
-  **Commit**: YES (groups with Task 2)
-  - Message: `fix(backend): add missing auth imports in messages.ts and shopify.ts`
-  - Files: `packages/backend/convex/messages.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-- [ ] 2. Fix shopify.ts broken import
-
-  **What to do**:
-  - Add missing import at top of file: `import { authComponent } from "./auth";`
-  - Verify the 3 existing `authComponent.safeGetAuthUser(ctx)` calls (lines 48, 809, 1196) now resolve
-
-  **Must NOT do**:
-  - Do NOT change any auth logic - just add the import
-  - Do NOT refactor to use lib/auth helpers yet (that's Task 11)
-
-  **Recommended Agent Profile**:
-  - **Category**: `quick`
-    - Reason: Single line import addition, trivial change
-  - **Skills**: `[]`
-    - No special skills needed for import fix
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 0 (with Task 1)
-  - **Blocks**: Tasks 5, 11
-  - **Blocked By**: None (can start immediately)
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/conversations.ts:4` - Correct import pattern: `import { authComponent } from "./auth";`
-  - `packages/backend/convex/integrations/whatsapp/settings.ts:4` - Another example
-
-  **File to Modify**:
-  - `packages/backend/convex/shopify.ts:1-11` - Add import in the import block
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: No errors about "Cannot find name 'authComponent'" in shopify.ts
-  
-  # LSP check:
-  mcp_lsp_diagnostics on packages/backend/convex/shopify.ts
-  # Assert: No ERROR diagnostics
-  ```
-
-  **Commit**: YES (groups with Task 1)
-  - Message: `fix(backend): add missing auth imports in messages.ts and shopify.ts`
-  - Files: `packages/backend/convex/shopify.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-### Wave 1: Critical Security Fixes (Add Auth Where Missing)
-
-- [ ] 3. Create orders.ts internal mutations and add auth to public mutations (CRITICAL)
-
-  **What to do**:
-  
-  This is a complex task with TWO parts:
-
-  **Part A - Create internal mutations for AI-called operations**:
-  
-  The AI agent (`ai/agent.ts`, `ai/process.ts`) calls these mutations:
-  - `orders.create`
-  - `orders.setDeliveryInfo`
-  - `orders.setPaymentMethod`
-
-  Create internal versions that the AI will call instead:
-  ```typescript
-  export const createInternal = internalMutation({
-    args: { /* same args as create */ },
-    handler: async (ctx, args) => {
-      // Move existing create logic here (no auth check)
-    },
-  });
-  ```
-
-  **Part B - Add auth to public mutations**:
-  
-  Modify public mutations to:
-  1. Add auth check
-  2. Delegate to internal mutation
-
-  ```typescript
-  export const create = mutation({
-    args: { /* same args */ },
-    handler: async (ctx, args) => {
-      await requireBusinessOwnership(ctx, args.businessId);
-      return ctx.runMutation(internal.orders.createInternal, args);
-    },
-  });
-  ```
-
-  **Part C - Add auth to frontend-only mutations**:
-  
-  These mutations are ONLY called from frontend (not AI):
-  - `addItem` - Add auth via order.businessId
-  - `removeItem` - Add auth via order.businessId
-  - `updateItemQuantity` - Add auth via order.businessId
-  - `cancel` - Add auth via order.businessId
-  - `markPreparing` - Add auth via order.businessId
-  - `markReady` - Add auth via order.businessId
-  - `markDelivered` - Add auth via order.businessId
-
-  Pattern for mutations with orderId:
-  ```typescript
-  handler: async (ctx, args) => {
-    await requireAuth(ctx);
-    const order = await ctx.db.get(args.orderId);
-    if (!order) throw new Error("Order not found");
-    await requireBusinessOwnership(ctx, order.businessId);
-    // ... rest of handler
-  }
-  ```
-
-  **Part D - Update AI callers**:
-  
-  Update `ai/agent.ts` and `ai/process.ts` to call internal mutations:
-  ```typescript
-  // Change from:
-  await ctx.runMutation(api.orders.create, { ... });
-  // To:
-  await ctx.runMutation(internal.orders.createInternal, { ... });
-  ```
-
-  **Summary of changes**:
-  | Mutation | Current Callers | Change |
-  |----------|-----------------|--------|
-  | create | AI + (maybe frontend) | Create `createInternal`, public calls internal |
-  | setDeliveryInfo | AI | Create `setDeliveryInfoInternal`, public calls internal |
-  | setPaymentMethod | AI | Create `setPaymentMethodInternal`, public calls internal |
-  | addItem | None currently | Add auth directly |
-  | removeItem | None currently | Add auth directly |
-  | updateItemQuantity | None currently | Add auth directly |
-  | cancel | Frontend | Add auth directly |
-  | markPreparing | Frontend | Add auth directly |
-  | markReady | Frontend | Add auth directly |
-  | markDelivered | Frontend | Add auth directly |
-
-  **Must NOT do**:
-  - Do NOT modify the existing queries (get, getByConversation, etc.) - they already have auth
-  - Do NOT change the return types or error messages
-  - Do NOT forget to update AI callers to use internal mutations
-
-  **Recommended Agent Profile**:
-  - **Category**: `unspecified-high`
-    - Reason: Complex refactoring with multiple files, internal mutation creation, AI caller updates
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 1 (with Tasks 4, 5, 6, 7)
-  - **Blocks**: Task 13
-  - **Blocked By**: Task 1
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/lib/auth.ts:1-45` - The auth helper implementations
-  - `packages/backend/convex/businesses.ts:70-95` - Example of requireBusinessOwnership usage in update mutation
-  - `packages/backend/convex/shopify.ts:193` - Example of internal mutation pattern (`saveConnection`)
-
-  **AI Caller Files to Update**:
-  - `packages/backend/convex/ai/agent.ts:631-655` - Change api.orders.* to internal.orders.*Internal
-  - `packages/backend/convex/ai/process.ts:801-827` - Change api.orders.* to internal.orders.*Internal
-
-  **File to Modify**:
-  - `packages/backend/convex/orders.ts` - All 10 mutations + create 3 internal mutations
-  - `packages/backend/convex/ai/agent.ts` - Update to use internal mutations
-  - `packages/backend/convex/ai/process.ts` - Update to use internal mutations
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify internal mutations created:
-  grep -c "export const createInternal\|export const setDeliveryInfoInternal\|export const setPaymentMethodInternal" packages/backend/convex/orders.ts
-  # Assert: 3 matches
-  
-  # Verify AI uses internal mutations:
-  grep -c "internal.orders.createInternal\|internal.orders.setDeliveryInfoInternal\|internal.orders.setPaymentMethodInternal" packages/backend/convex/ai/agent.ts
-  # Assert: At least 3 matches
-  
-  grep -c "internal.orders.createInternal\|internal.orders.setDeliveryInfoInternal\|internal.orders.setPaymentMethodInternal" packages/backend/convex/ai/process.ts
-  # Assert: At least 3 matches
-  
-  # Verify auth added to public mutations:
-  grep -c "requireAuth\|requireBusinessOwnership" packages/backend/convex/orders.ts
-  # Assert: At least 10 matches
-  ```
-
-  **Commit**: YES
-  - Message: `fix(backend): add auth to orders.ts and create internal mutations for AI`
-  - Files: `packages/backend/convex/orders.ts`, `packages/backend/convex/ai/agent.ts`, `packages/backend/convex/ai/process.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-- [ ] 4. Add auth to customers.ts updateStats mutation
-
-  **What to do**:
-  - Locate `updateStats` mutation (around line 291)
-  - Add authentication check at the start of the handler:
-  ```typescript
-  handler: async (ctx, args) => {
-    await requireAuth(ctx);
-    const customer = await ctx.db.get(args.customerId);
-    if (!customer) throw new Error("Customer not found");
-    await requireBusinessOwnership(ctx, customer.businessId);
-    // ... rest of existing handler
-  }
-  ```
-
-  **Must NOT do**:
-  - Do NOT modify other functions in this file (refactoring is Task 9)
-  - Do NOT change the internal mutations (getOrCreate, updateStatsInternal)
-
-  **Recommended Agent Profile**:
-  - **Category**: `quick`
-    - Reason: Single function modification, straightforward pattern
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 1 (with Tasks 3, 5, 6, 7)
-  - **Blocks**: Tasks 9, 13
-  - **Blocked By**: Task 1
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/customers.ts:137-146` - The `create` mutation shows the correct auth pattern for this file
-  - `packages/backend/convex/lib/auth.ts:23-32` - requireBusinessOwnership implementation
-
-  **File to Modify**:
-  - `packages/backend/convex/customers.ts:291-319` - updateStats mutation
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify auth added:
-  grep -A5 "export const updateStats" packages/backend/convex/customers.ts | grep -c "requireAuth\|requireBusinessOwnership"
-  # Assert: At least 1 match
-  ```
-
-  **Commit**: YES
-  - Message: `fix(backend): add auth check to customers.ts updateStats mutation`
-  - Files: `packages/backend/convex/customers.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-- [ ] 5. Add auth to shopify.ts importProducts and createOrder actions
-
-  **What to do**:
-  - Locate `importProducts` action (around line 332)
-  - Locate `createOrder` action (around line 1331)
-  - Add auth verification using `verifyBusinessOwnership` internal query (already exists in file at line 1191)
-  
-  **Pattern for actions** (actions can't use ctx.db directly):
-  ```typescript
-  handler: async (ctx, args) => {
-    const authCheck = await ctx.runQuery(internal.shopify.verifyBusinessOwnership, {
-      businessId: args.businessId,
-    });
-    if (!authCheck.authorized) {
-      throw new Error(authCheck.error ?? "Not authorized");
-    }
-    // ... rest of handler
-  }
-  ```
-
-  **Must NOT do**:
-  - Do NOT modify the existing `verifyBusinessOwnership` internal query
-  - Do NOT refactor existing manual checks (that's Task 11)
-  - Do NOT add auth to internal actions (handleWebhook, etc.)
-
-  **Recommended Agent Profile**:
-  - **Category**: `unspecified-low`
-    - Reason: Two functions to modify, need to understand action pattern
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 1 (with Tasks 3, 4, 6, 7)
-  - **Blocks**: Tasks 11, 13
-  - **Blocked By**: Task 2
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/shopify.ts:1042-1080` - `syncProducts` action shows correct pattern using verifyBusinessOwnership
-  - `packages/backend/convex/shopify.ts:1191-1212` - The verifyBusinessOwnership internal query implementation
-  - `packages/backend/convex/shopify.ts:1554-1600` - `disconnect` action also shows correct pattern
-
-  **File to Modify**:
-  - `packages/backend/convex/shopify.ts:332` - importProducts action
-  - `packages/backend/convex/shopify.ts:1331` - createOrder action
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify auth added to importProducts:
-  grep -A10 "export const importProducts" packages/backend/convex/shopify.ts | grep -c "verifyBusinessOwnership"
-  # Assert: At least 1 match
-  
-  # Verify auth added to createOrder:
-  grep -A10 "export const createOrder" packages/backend/convex/shopify.ts | grep -c "verifyBusinessOwnership\|authorized"
-  # Assert: At least 1 match
-  ```
-
-  **Commit**: YES
-  - Message: `fix(backend): add auth checks to shopify.ts importProducts and createOrder`
-  - Files: `packages/backend/convex/shopify.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-- [ ] 6. Add auth to whatsapp testConnection and messages findMessageByContent
-
-  **What to do**:
-  
-  **Part A - whatsapp/settings.ts testConnection action** (line 156):
-  - This is an `action`, so use the existing auth check pattern from saveCredentials
-  - Add at start of handler:
-  ```typescript
-  const authUser = await authComponent.safeGetAuthUser(ctx);
-  if (!authUser || !authUser._id) {
-    throw new Error("Not authenticated");
-  }
-  // Then verify business ownership via internal query or inline check
-  ```
-
-  **Part B - messages.ts findMessageByContent query** (line 131):
-  - Add auth check that returns null if not authenticated (graceful query pattern)
-  - Need to verify user owns the business that owns the conversation:
-  ```typescript
-  handler: async (ctx, args) => {
-    const authUser = await getAuthUser(ctx);
-    if (!authUser) return null;
-    
-    const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation) return null;
-    
-    const isOwner = await isBusinessOwner(ctx, conversation.businessId);
-    if (!isOwner) return null;
-    
-    // ... rest of existing handler
-  }
-  ```
-
-  **Must NOT do**:
-  - Do NOT modify internal mutations in these files
-  - Do NOT change existing auth patterns in other functions
-
-  **Recommended Agent Profile**:
-  - **Category**: `unspecified-low`
-    - Reason: Two files, two different patterns (action vs query)
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 1 (with Tasks 3, 4, 5, 7)
-  - **Blocks**: Tasks 12, 13
-  - **Blocked By**: Task 1
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/integrations/whatsapp/settings.ts:6-30` - getConnectionStatus query shows auth pattern for this file
-  - `packages/backend/convex/integrations/whatsapp/settings.ts:58-90` - saveCredentials mutation shows auth pattern
-  - `packages/backend/convex/conversations.ts:16-24` - Query auth pattern returning null on failure
-  - `packages/backend/convex/lib/auth.ts:5-10` - getAuthUser and isBusinessOwner helpers
-
-  **Files to Modify**:
-  - `packages/backend/convex/integrations/whatsapp/settings.ts:156` - testConnection action
-  - `packages/backend/convex/messages.ts:131-149` - findMessageByContent query
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify auth in testConnection:
-  grep -A10 "export const testConnection" packages/backend/convex/integrations/whatsapp/settings.ts | grep -c "authUser\|safeGetAuthUser"
-  # Assert: At least 1 match
-  
-  # Verify auth in findMessageByContent:
-  grep -A10 "export const findMessageByContent" packages/backend/convex/messages.ts | grep -c "getAuthUser\|authUser"
-  # Assert: At least 1 match
-  ```
-
-  **Commit**: YES
-  - Message: `fix(backend): add auth to whatsapp testConnection and messages findMessageByContent`
-  - Files: `packages/backend/convex/integrations/whatsapp/settings.ts`, `packages/backend/convex/messages.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-- [ ] 7. Add auth to conversations.ts addMessage mutation (NEW - From Momus Review)
-
-  **What to do**:
-  - Locate `addMessage` mutation (around line 298)
-  - Add authentication check at the start of the handler:
-  ```typescript
-  handler: async (ctx, args) => {
-    const authUser = await getAuthUser(ctx);
-    if (!authUser) {
-      throw new Error("Not authenticated");
-    }
-    
-    const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation) {
-      throw new Error("Conversation not found");
-    }
-    
-    const business = await ctx.db.get(conversation.businessId);
-    if (!business || business.ownerId !== authUser._id) {
-      throw new Error("Not authorized");
-    }
-    
-    // ... rest of existing handler
-  }
-  ```
-
-  **Why this is needed**:
-  - Currently, `addMessage` has ZERO authentication
-  - Anyone can add messages to any conversation
-  - This is a security vulnerability
-
-  **Must NOT do**:
-  - Do NOT refactor to use helpers yet (that's Task 10)
-  - Do NOT modify other functions
-
-  **Recommended Agent Profile**:
-  - **Category**: `quick`
-    - Reason: Single function modification
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 1 (with Tasks 3, 4, 5, 6)
-  - **Blocks**: Tasks 10, 13
-  - **Blocked By**: Task 1
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/conversations.ts:268-280` - `create` mutation shows the correct auth pattern
-  - `packages/backend/convex/lib/auth.ts:5-10` - getAuthUser helper
-
-  **File to Modify**:
-  - `packages/backend/convex/conversations.ts:298-326` - addMessage mutation
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify auth added:
-  grep -A15 "export const addMessage" packages/backend/convex/conversations.ts | grep -c "getAuthUser\|authUser\|Not authenticated"
-  # Assert: At least 1 match
-  ```
-
-  **Commit**: YES
-  - Message: `fix(backend): add auth check to conversations.ts addMessage mutation`
-  - Files: `packages/backend/convex/conversations.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-### Wave 2: Type Fix
-
-- [ ] 8. Fix products.ts businessId type and refactor 7 manual checks
-
-  **What to do**:
-  
-  **Part A - Fix type** (enables helper usage):
-  - Change all `businessId: v.string()` to `businessId: v.id("businesses")` in args
-  - Update handler code to use `ctx.db.get(args.businessId)` instead of `.query().filter()`
-  - Locations: create, list mutations at minimum
-
-  **Part B - Refactor 7 manual checks**:
-  Replace this pattern:
-  ```typescript
-  const authUser = await requireAuth(ctx);
-  const business = await ctx.db
-    .query("businesses")
-    .filter((q) => q.eq(q.field("_id"), args.businessId))
-    .first();
-  if (!business) {
-    throw new Error("Business not found");
-  }
-  if (business.ownerId !== authUser._id) {
-    throw new Error("Not authorized to [ACTION] for this business");
-  }
-  ```
-  
-  With this pattern:
-  ```typescript
-  const { user, business } = await requireBusinessOwnership(ctx, args.businessId);
-  ```
-
-  **Functions to refactor**:
-  1. `create` (lines 14-28)
-  2. `update` (lines 74-92)
-  3. `deleteProduct` (lines 114-132)
-  4. `list` (lines 185-201) - Note: queries should use getAuthUser + isBusinessOwner, not requireBusinessOwnership
-  5. `bulkUpdateAvailability` (lines 272-294)
-  6. `bulkDelete` (lines 313-335)
-  7. `bulkUpdateCategory` (lines 355-377)
-
-  **Must NOT do**:
-  - Do NOT change the function signatures or return types
-  - Do NOT modify error messages (keep them consistent)
-  - Do NOT change the list query to throw - keep returning empty on auth failure
-
-  **Recommended Agent Profile**:
-  - **Category**: `unspecified-low`
-    - Reason: Multiple functions to modify, type changes, refactoring
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: NO
-  - **Parallel Group**: Wave 2 (sequential)
-  - **Blocks**: Tasks 9, 10, 11, 12
-  - **Blocked By**: Tasks 3, 4, 5, 6, 7
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/businesses.ts:70-95` - `update` mutation shows correct requireBusinessOwnership usage
-  - `packages/backend/convex/businesses.ts:48-67` - `list` query shows correct getAuthUser pattern
-  - `packages/backend/convex/lib/auth.ts:23-32` - requireBusinessOwnership returns { user, business }
-
   **Type References**:
-  - `packages/backend/convex/orders.ts:24` - Shows correct `businessId: v.id("businesses")` pattern
-  - `packages/backend/convex/customers.ts:133` - Another example of correct type
-
-  **Files to Modify**:
-  - `packages/backend/convex/products.ts` - All 7 functions listed above
+  - `packages/backend/convex/lib/auth.ts:68` - `requireBusinessOwnership` returns `{ user, business }`
+  
+  **Files to modify**:
+  - `packages/backend/convex/privateData.ts`
+  - `packages/backend/convex/categories.ts`
+  - `packages/backend/convex/customerMemory.ts`
+  - `packages/backend/convex/dashboard.ts`
+  - `packages/backend/convex/conversationSummaries.ts`
+  - `packages/backend/convex/deletionRequests.ts`
+  - `packages/backend/convex/notifications.ts`
+  - `packages/backend/convex/customerNotes.ts`
+  - `packages/backend/convex/customerAddresses.ts`
 
   **Acceptance Criteria**:
 
+  **Automated Verification:**
   ```bash
-  # Agent runs:
+  # After completing all 9 files, run:
   bun run check-types
   # Assert: Exit code 0
   
-  # Verify type changed:
-  grep 'businessId: v.string()' packages/backend/convex/products.ts
-  # Assert: No matches (all changed to v.id)
-  
-  # Verify using helpers:
-  grep -c "requireBusinessOwnership" packages/backend/convex/products.ts
-  # Assert: At least 6 matches (mutations)
-  
-  # Verify no manual pattern remains:
-  grep -c "business.ownerId !== authUser._id" packages/backend/convex/products.ts
-  # Assert: 0 matches
+  # Verify no direct calls remain in these files:
+  grep -l "authComponent.safeGetAuthUser" packages/backend/convex/{privateData,categories,customerMemory,dashboard,conversationSummaries,deletionRequests,notifications,customerNotes,customerAddresses}.ts
+  # Assert: Empty output (no files match)
   ```
 
-  **Commit**: YES
-  - Message: `refactor(backend): use auth helpers in products.ts and fix businessId type`
-  - Files: `packages/backend/convex/products.ts`
-  - Pre-commit: `bun run check-types`
+  **Evidence to Capture:**
+  - [ ] TypeScript compilation success for each modified file
+  - [ ] No grep matches for direct authComponent calls in migrated files
+
+  **Commit**: NO (groups with Task 4)
 
 ---
 
-### Wave 3: Refactor Manual Checks (Parallel)
-
-- [ ] 9. Refactor customers.ts 8 manual checks
+- [ ] 2. Migrate ai/ directory files (1 file, 3 auth calls)
 
   **What to do**:
-  - Replace 8 manual auth + ownership check patterns with helpers
-  - Queries (get, getByPhone, list, getContext) should use `getAuthUser()` + `isBusinessOwner()`
-  - Mutations (create, update, deleteCustomer, anonymize) should use `requireBusinessOwnership()`
-
-  **Pattern for queries** (return null on failure):
-  ```typescript
-  const authUser = await getAuthUser(ctx);
-  if (!authUser) return null;
   
-  const isOwner = await isBusinessOwner(ctx, args.businessId);
-  if (!isOwner) return null;
-  ```
-
-  **Pattern for mutations** (throw on failure):
-  ```typescript
-  const { user, business } = await requireBusinessOwnership(ctx, args.businessId);
-  ```
-
-  **Functions to refactor**:
-  1. `get` query (line 10-21)
-  2. `getByPhone` query (line 35-41)
-  3. `list` query (line 73-79)
-  4. `create` mutation (line 137-146) 
-  5. `update` mutation (line 184-196)
-  6. `getContext` query (line 216-227)
-  7. `deleteCustomer` mutation (line 465-477)
-  8. `anonymize` mutation (line 532-544)
+  Migrate `ai/settings.ts`:
+  1. Add import: `import { getAuthUser, requireBusinessOwnership } from "../lib/auth";` (note: `../lib/auth` path for nested directory)
+  2. Replace patterns:
+     - `getSettings` (query): Use `getAuthUser` + business ownership check returning null
+     - `updateSettings` (mutation): Use `requireBusinessOwnership`
+     - `getUsageStats` (query): Use `getAuthUser` + business ownership check returning null
+  3. Remove `authComponent` import if no longer used
 
   **Must NOT do**:
-  - Do NOT modify updateStats (already fixed in Task 4)
-  - Do NOT modify internal functions
-  - Do NOT change return types or error behavior
+  - DO NOT change auth behavior or error messages
+  - DO NOT modify return types
 
   **Recommended Agent Profile**:
   - **Category**: `quick`
-    - Reason: Repetitive pattern replacement, helpers already imported
+    - Reason: Single file, mechanical replacement
   - **Skills**: `[]`
-    - No special skills needed
+    - Standard TypeScript editing
 
   **Parallelization**:
   - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 3 (with Tasks 10, 11, 12)
-  - **Blocks**: Task 13
-  - **Blocked By**: Tasks 4, 8
+  - **Parallel Group**: Wave 2 (with Tasks 1, 3)
+  - **Blocks**: Task 4 (verification)
+  - **Blocked By**: None (can start immediately)
 
   **References**:
   
   **Pattern References**:
-  - `packages/backend/convex/lib/auth.ts:5-21` - getAuthUser, isBusinessOwner implementations
-  - `packages/backend/convex/lib/auth.ts:23-32` - requireBusinessOwnership implementation
-  - `packages/backend/convex/businesses.ts:48-67` - Query pattern with getAuthUser
-
-  **File to Modify**:
-  - `packages/backend/convex/customers.ts` - All 8 functions listed
+  - `packages/backend/convex/businesses.ts:1-66` - Migration pattern reference
+  - `packages/backend/convex/lib/auth.ts:1-85` - Shared utilities
+  
+  **Files to modify**:
+  - `packages/backend/convex/ai/settings.ts`
 
   **Acceptance Criteria**:
 
+  **Automated Verification:**
   ```bash
-  # Agent runs:
   bun run check-types
   # Assert: Exit code 0
   
-  # Verify no manual pattern remains:
-  grep -c "business.ownerId !== authUser._id" packages/backend/convex/customers.ts
-  # Assert: 0 matches
-  
-  # Verify using helpers:
-  grep -c "requireBusinessOwnership\|isBusinessOwner" packages/backend/convex/customers.ts
-  # Assert: At least 8 matches
+  grep "authComponent.safeGetAuthUser" packages/backend/convex/ai/settings.ts
+  # Assert: Empty output (no matches)
   ```
 
-  **Commit**: YES
-  - Message: `refactor(backend): use auth helpers in customers.ts`
-  - Files: `packages/backend/convex/customers.ts`
-  - Pre-commit: `bun run check-types`
+  **Evidence to Capture:**
+  - [ ] TypeScript compilation success
+  - [ ] No grep match in ai/settings.ts
+
+  **Commit**: NO (groups with Task 4)
 
 ---
 
-- [ ] 10. Refactor conversations.ts 9 manual checks (UPDATED - From Momus Review)
+- [ ] 3. Migrate integrations/ directory files (3 files, 5 auth calls)
 
   **What to do**:
-  - Change import from `import { authComponent } from "./auth";` to `import { getAuthUser, requireAuth, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";`
-  - Replace 9 manual patterns using `authComponent.safeGetAuthUser(ctx)` with helpers
-
-  **Functions to refactor (9 total)**:
   
-  **Queries (4) - use getAuthUser + isBusinessOwner, return null/empty on failure**:
-  1. `list` query (lines 16-24)
-  2. `listByCustomer` query (lines 104-116)
-  3. `get` query (lines 136-148)
-  4. `messages` query (lines 172-184)
-
-  **Mutations (5) - use requireAuth + requireBusinessOwnership, throw on failure**:
-  5. `create` mutation (lines 268-280)
-  6. `takeOver` mutation (lines 333-346)
-  7. `handBack` mutation (lines 382-396)
-  8. `close` mutation (lines 413-426)
-  9. `reopen` mutation (lines 447-460)
-
-  **Pattern for queries** (return null/empty on failure):
-  ```typescript
-  const authUser = await getAuthUser(ctx);
-  if (!authUser) return null; // or empty array
+  **3a. `integrations/meta/actions.ts` (2 calls at lines 89, 140)**:
+  1. Add import: `import { getAuthUser } from "../../lib/auth";` (note: `../../lib/auth` path)
+  2. Replace patterns in:
+     - `verifyBusinessOwnership` (internalQuery at line 89): Use `getAuthUser` + business check returning `{authorized: false}`
+     - `getMessagingWindowStatus` (query at line 140): Use `getAuthUser` + business check returning null
+  3. Remove `authComponent` import if no longer used
   
-  const isOwner = await isBusinessOwner(ctx, businessId);
-  if (!isOwner) return null;
-  ```
-
-  **Pattern for mutations** (throw on failure):
-  ```typescript
-  const { user, business } = await requireBusinessOwnership(ctx, businessId);
-  ```
-
-  **Special case: takeOver and handBack**:
-  - `takeOver`: Needs business ownership check via conversation.businessId
-  - `handBack`: Only needs auth (already checks assignedTo === userId)
+  **3b. `shopify.ts` (2 calls at lines 1197, 1337)**:
+  - Already imports helpers at line ~15
+  - Replace direct `authComponent.safeGetAuthUser` calls:
+    - `verifyBusinessOwnership` internalQuery (line 1197): Use `getAuthUser`
+    - `createOrder` action (line 1337): Use existing auth pattern via internal query
+  
+  **3c. `integrations/whatsapp/settings.ts` (1 call at line 148)**:
+  - Already imports helpers at line 5
+  - Replace direct call in `testConnection` action (line 148): Use existing auth check
 
   **Must NOT do**:
-  - Do NOT modify addMessage (already fixed in Task 7)
-  - Do NOT modify internal functions
+  - DO NOT modify internal functions that don't have auth calls
+  - DO NOT change the OAuth flow logic
+  - DO NOT modify webhook handling
+  - For actions: Note that actions can't use ctx directly for auth, they need to call internal queries
 
   **Recommended Agent Profile**:
-  - **Category**: `unspecified-low`
-    - Reason: 9 functions to refactor, import changes, multiple patterns
+  - **Category**: `quick`
+    - Reason: Mechanical replacement, 3 small files
   - **Skills**: `[]`
-    - No special skills needed
+    - Standard TypeScript editing
 
   **Parallelization**:
   - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 3 (with Tasks 9, 11, 12)
-  - **Blocks**: Task 13
-  - **Blocked By**: Tasks 7, 8
+  - **Parallel Group**: Wave 3 (with Tasks 1, 2)
+  - **Blocks**: Task 4 (verification)
+  - **Blocked By**: None (can start immediately)
 
   **References**:
   
   **Pattern References**:
-  - `packages/backend/convex/lib/auth.ts:5-32` - All helper implementations
-  - `packages/backend/convex/customers.ts` - Similar query and mutation patterns (after Task 9)
-
-  **File to Modify**:
-  - `packages/backend/convex/conversations.ts` - Import + 9 functions
+  - `packages/backend/convex/businesses.ts:1-66` - Migration pattern reference
+  - `packages/backend/convex/integrations/whatsapp/settings.ts:1-20` - Shows partial migration (already has imports)
+  
+  **Files to modify**:
+  - `packages/backend/convex/integrations/meta/actions.ts`
+  - `packages/backend/convex/shopify.ts`
+  - `packages/backend/convex/integrations/whatsapp/settings.ts`
 
   **Acceptance Criteria**:
 
+  **Automated Verification:**
   ```bash
-  # Agent runs:
   bun run check-types
   # Assert: Exit code 0
   
-  # Verify import changed:
-  grep 'from "./lib/auth"' packages/backend/convex/conversations.ts
-  # Assert: 1 match
-  
-  # Verify no direct authComponent usage:
-  grep -c "authComponent.safeGetAuthUser" packages/backend/convex/conversations.ts
-  # Assert: 0 matches
-  
-  # Verify using helpers:
-  grep -c "getAuthUser\|isBusinessOwner\|requireBusinessOwnership" packages/backend/convex/conversations.ts
-  # Assert: At least 9 matches
+  grep "authComponent.safeGetAuthUser" packages/backend/convex/integrations/meta/actions.ts packages/backend/convex/shopify.ts packages/backend/convex/integrations/whatsapp/settings.ts
+  # Assert: Empty output (no matches)
   ```
 
-  **Commit**: YES
-  - Message: `refactor(backend): use auth helpers in conversations.ts`
-  - Files: `packages/backend/convex/conversations.ts`
-  - Pre-commit: `bun run check-types`
+  **Evidence to Capture:**
+  - [ ] TypeScript compilation success
+  - [ ] No grep matches in any integrations files
+
+  **Commit**: NO (groups with Task 4)
 
 ---
 
-- [ ] 11. Refactor shopify.ts 3 manual checks
-
-  **What to do**:
-  - Add import: `import { getAuthUser, requireBusinessOwnership, isBusinessOwner } from "./lib/auth";`
-  - Keep the `authComponent` import (still needed for verifyBusinessOwnership internal query)
-  - Refactor 3 manual auth patterns to use helpers
-
-  **Functions to refactor**:
-  1. `getAuthUrl` mutation (lines 48-59) - Use `requireBusinessOwnership`
-  2. `getConnectionStatus` query (lines 809-817) - Use `getAuthUser` + `isBusinessOwner`
-  3. `verifyBusinessOwnership` internal query (lines 1196-1208) - Keep as-is (it's internal and used by actions)
-
-  **Actually only 2 need refactoring** (verifyBusinessOwnership is internal and should stay as-is):
-  1. `getAuthUrl` mutation → `requireBusinessOwnership`
-  2. `getConnectionStatus` query → `getAuthUser` + `isBusinessOwner`
-
-  **Must NOT do**:
-  - Do NOT remove authComponent import entirely (still needed for verifyBusinessOwnership internal query)
-  - Do NOT modify importProducts/createOrder (already fixed in Task 5)
-  - Do NOT change internal actions
-
-  **Recommended Agent Profile**:
-  - **Category**: `quick`
-    - Reason: 2 functions to refactor with clear patterns
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 3 (with Tasks 9, 10, 12)
-  - **Blocks**: Task 13
-  - **Blocked By**: Tasks 5, 8
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/lib/auth.ts:23-32` - requireBusinessOwnership for mutations
-  - `packages/backend/convex/businesses.ts:70-95` - Mutation pattern with requireBusinessOwnership
-  - `packages/backend/convex/businesses.ts:48-67` - Query pattern with getAuthUser
-
-  **File to Modify**:
-  - `packages/backend/convex/shopify.ts` - Import + 2 functions
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify lib/auth import added:
-  grep 'from "./lib/auth"' packages/backend/convex/shopify.ts
-  # Assert: 1 match
-  
-  # Verify using helpers in public functions:
-  grep -c "requireBusinessOwnership\|isBusinessOwner" packages/backend/convex/shopify.ts
-  # Assert: At least 2 matches (may be more from Task 5)
-  ```
-
-  **Commit**: YES
-  - Message: `refactor(backend): use auth helpers in shopify.ts`
-  - Files: `packages/backend/convex/shopify.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-- [ ] 12. Refactor whatsapp/settings.ts 2 manual checks
-
-  **What to do**:
-  - Change import from `import { authComponent } from "../../auth";` to `import { getAuthUser, requireAuth, isBusinessOwner, requireBusinessOwnership } from "../../lib/auth";`
-  - Refactor 2 manual auth patterns to use helpers
-
-  **Functions to refactor**:
-  1. `getConnectionStatus` query (lines 11-21) - Use `getAuthUser` + `isBusinessOwner`
-  2. `saveCredentials` mutation (lines 69-79) - Use `requireBusinessOwnership`
-
-  **Must NOT do**:
-  - Do NOT modify testConnection (already fixed in Task 6)
-  - Do NOT modify internal functions
-
-  **Recommended Agent Profile**:
-  - **Category**: `quick`
-    - Reason: 2 functions, simple import change + pattern replacement
-  - **Skills**: `[]`
-    - No special skills needed
-
-  **Parallelization**:
-  - **Can Run In Parallel**: YES
-  - **Parallel Group**: Wave 3 (with Tasks 9, 10, 11)
-  - **Blocks**: Task 13
-  - **Blocked By**: Tasks 6, 8
-
-  **References**:
-  
-  **Pattern References**:
-  - `packages/backend/convex/lib/auth.ts:5-32` - All helper implementations
-  - `packages/backend/convex/businesses.ts:48-95` - Query and mutation patterns
-
-  **File to Modify**:
-  - `packages/backend/convex/integrations/whatsapp/settings.ts` - Import + 2 functions
-
-  **Acceptance Criteria**:
-
-  ```bash
-  # Agent runs:
-  bun run check-types
-  # Assert: Exit code 0
-  
-  # Verify import changed:
-  grep 'from "../../lib/auth"' packages/backend/convex/integrations/whatsapp/settings.ts
-  # Assert: 1 match
-  
-  # Verify no direct authComponent usage:
-  grep -c "authComponent.safeGetAuthUser" packages/backend/convex/integrations/whatsapp/settings.ts
-  # Assert: 0 matches
-  ```
-
-  **Commit**: YES
-  - Message: `refactor(backend): use auth helpers in whatsapp/settings.ts`
-  - Files: `packages/backend/convex/integrations/whatsapp/settings.ts`
-  - Pre-commit: `bun run check-types`
-
----
-
-### Wave 4: Final Verification
-
-- [ ] 13. Final verification and cleanup
+- [ ] 4. Final verification and commit
 
   **What to do**:
   
-  **Part A - TypeScript Compilation**:
-  ```bash
-  bun run check-types
-  ```
-  Must exit with code 0, no errors.
-
-  **Part B - Verify no manual patterns remain**:
-  ```bash
-  # Check for direct authComponent usage outside lib/auth.ts:
-  grep -r "authComponent.safeGetAuthUser" packages/backend/convex/*.ts | grep -v "lib/auth.ts"
-  # Should return no matches (except shopify.ts verifyBusinessOwnership which is internal)
-  
-  # Check for manual ownership pattern:
-  grep -r "business.ownerId !== authUser._id" packages/backend/convex/
-  # Should return no matches
-  ```
-
-  **Part C - Verify AI functionality preserved**:
-  ```bash
-  # Verify AI uses internal mutations:
-  grep -c "internal.orders" packages/backend/convex/ai/agent.ts
-  # Should return at least 3 matches
-  
-  grep -c "internal.orders" packages/backend/convex/ai/process.ts
-  # Should return at least 3 matches
-  ```
-
-  **Part D - Verify all public functions have auth**:
-  - Manually review each file to ensure:
-    - All public mutations use `requireAuth()` or `requireBusinessOwnership()`
-    - All public queries use `getAuthUser()` or `isBusinessOwner()`
-    - Internal functions are unchanged (no auth needed)
-
-  **Part E - LSP Diagnostics**:
-  Run LSP diagnostics on all modified files to ensure no errors.
+  1. Run full TypeScript check across the backend
+  2. Run comprehensive grep to verify zero remaining direct calls
+  3. Create single atomic commit with message `feat: S03 - Use shared auth utilities`
 
   **Must NOT do**:
-  - Do NOT make any code changes in this task
-  - Do NOT skip any verification step
+  - DO NOT skip any verification step
+  - DO NOT modify any files in this task (verification only, then commit)
+  - DO NOT create multiple commits
 
   **Recommended Agent Profile**:
   - **Category**: `quick`
-    - Reason: Verification only, no code changes
-  - **Skills**: `[]`
-    - No special skills needed
+    - Reason: Verification and git commit only
+  - **Skills**: `['git-master']`
+    - `git-master`: Needed for proper atomic commit creation
 
   **Parallelization**:
   - **Can Run In Parallel**: NO
-  - **Parallel Group**: Wave 4 (final, sequential)
+  - **Parallel Group**: Sequential (Wave 4)
   - **Blocks**: None (final task)
-  - **Blocked By**: Tasks 9, 10, 11, 12
+  - **Blocked By**: Tasks 1, 2, 3
 
   **References**:
   
-  **Files to Verify**:
-  - `packages/backend/convex/messages.ts`
-  - `packages/backend/convex/shopify.ts`
-  - `packages/backend/convex/orders.ts`
-  - `packages/backend/convex/customers.ts`
-  - `packages/backend/convex/products.ts`
-  - `packages/backend/convex/conversations.ts`
-  - `packages/backend/convex/integrations/whatsapp/settings.ts`
-  - `packages/backend/convex/ai/agent.ts`
-  - `packages/backend/convex/ai/process.ts`
+  **Pattern References**:
+  - `packages/backend/convex/auth.ts` - Should be the ONLY file with direct authComponent usage (besides lib/auth.ts)
+  - `packages/backend/convex/lib/auth.ts` - Should contain authComponent calls (this is the wrapper)
 
   **Acceptance Criteria**:
 
+  **Automated Verification:**
   ```bash
-  # Full type check:
+  # Full TypeScript check
   bun run check-types
   # Assert: Exit code 0
   
-  # No direct authComponent usage in main files (except internal queries):
-  grep -r "authComponent.safeGetAuthUser" packages/backend/convex/*.ts | grep -v "lib/auth.ts" | grep -v "verifyBusinessOwnership" | wc -l
-  # Assert: 0
+  # Comprehensive grep - should return ONLY auth.ts and lib/auth.ts
+  grep -r "authComponent.safeGetAuthUser" packages/backend/convex/ --include="*.ts"
+  # Assert: Only matches in auth.ts and lib/auth.ts
   
-  # No manual ownership checks:
-  grep -r "business.ownerId !== authUser._id" packages/backend/convex/ | wc -l
-  # Assert: 0
+  # Verify git status shows expected changes
+  git status --porcelain packages/backend/convex/
+  # Assert: 13 modified files (M status)
   
-  # AI uses internal mutations:
-  grep -c "internal.orders" packages/backend/convex/ai/agent.ts
-  # Assert: >= 3
-  
-  # Biome check (optional):
-  bun run check
-  # Assert: Exit code 0
+  # Create commit
+  git add packages/backend/convex/
+  git commit -m "feat: S03 - Use shared auth utilities"
+  # Assert: Commit succeeds
   ```
 
-  **Commit**: NO (verification only)
+  **Evidence to Capture:**
+  - [ ] Full TypeScript check passes
+  - [ ] Grep shows only auth.ts and lib/auth.ts with direct calls
+  - [ ] Git commit created successfully
+
+  **Commit**: YES
+  - Message: `feat: S03 - Use shared auth utilities`
+  - Files: All 13 migrated files in `packages/backend/convex/`
+  - Pre-commit: `bun run check-types`
 
 ---
 
@@ -1231,17 +434,7 @@ Parallel Speedup: ~45% faster than sequential
 
 | After Task | Message | Files | Verification |
 |------------|---------|-------|--------------|
-| 1, 2 | `fix(backend): add missing auth imports in messages.ts and shopify.ts` | messages.ts, shopify.ts | bun run check-types |
-| 3 | `fix(backend): add auth to orders.ts and create internal mutations for AI` | orders.ts, ai/agent.ts, ai/process.ts | bun run check-types |
-| 4 | `fix(backend): add auth check to customers.ts updateStats mutation` | customers.ts | bun run check-types |
-| 5 | `fix(backend): add auth checks to shopify.ts importProducts and createOrder` | shopify.ts | bun run check-types |
-| 6 | `fix(backend): add auth to whatsapp testConnection and messages findMessageByContent` | settings.ts, messages.ts | bun run check-types |
-| 7 | `fix(backend): add auth check to conversations.ts addMessage mutation` | conversations.ts | bun run check-types |
-| 8 | `refactor(backend): use auth helpers in products.ts and fix businessId type` | products.ts | bun run check-types |
-| 9 | `refactor(backend): use auth helpers in customers.ts` | customers.ts | bun run check-types |
-| 10 | `refactor(backend): use auth helpers in conversations.ts` | conversations.ts | bun run check-types |
-| 11 | `refactor(backend): use auth helpers in shopify.ts` | shopify.ts | bun run check-types |
-| 12 | `refactor(backend): use auth helpers in whatsapp/settings.ts` | settings.ts | bun run check-types |
+| 4 | `feat: S03 - Use shared auth utilities` | All 13 migrated files | `bun run check-types` + grep |
 
 ---
 
@@ -1253,31 +446,19 @@ Parallel Speedup: ~45% faster than sequential
 bun run check-types
 # Expected: Exit code 0, no errors
 
-# No direct authComponent usage (except internal queries)
-grep -r "authComponent.safeGetAuthUser" packages/backend/convex/*.ts | grep -v "lib/auth.ts" | grep -v "verifyBusinessOwnership"
-# Expected: No output
+# Grep for remaining direct calls
+grep -r "authComponent.safeGetAuthUser" packages/backend/convex/ --include="*.ts" | grep -v -E "(auth\.ts|lib/auth\.ts)"
+# Expected: Empty output (no matches)
 
-# No manual ownership checks
-grep -r "business.ownerId !== authUser._id" packages/backend/convex/
-# Expected: No output
-
-# AI uses internal mutations
-grep -c "internal.orders" packages/backend/convex/ai/agent.ts
-# Expected: >= 3
-
-# Biome lint/format
-bun run check
-# Expected: Exit code 0
+# Count of remaining direct calls (should be exactly 2 - in auth.ts and lib/auth.ts)
+grep -r "authComponent.safeGetAuthUser" packages/backend/convex/ --include="*.ts" -c
+# Expected: auth.ts:0, lib/auth.ts:1 (the wrapper function)
 ```
 
 ### Final Checklist
-- [ ] All broken imports fixed (messages.ts, shopify.ts)
-- [ ] All security gaps fixed (16 mutations/queries now have auth)
-- [ ] All manual checks refactored (30 instances)
-- [ ] Internal mutations created for AI-called operations (3 in orders.ts)
-- [ ] AI callers updated to use internal mutations (agent.ts, process.ts)
-- [ ] products.ts uses v.id("businesses") type
+- [ ] All 41 auth checks replaced with shared utilities
+- [ ] All 13 files migrated
 - [ ] TypeScript compilation passes
-- [ ] No direct authComponent usage outside lib/auth.ts (except internal queries)
-- [ ] No manual business.ownerId checks remain
-- [ ] AI agent functionality preserved
+- [ ] No direct `authComponent.safeGetAuthUser` calls remain (except in auth wrapper files)
+- [ ] Single atomic commit created
+- [ ] No behavior changes introduced

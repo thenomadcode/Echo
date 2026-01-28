@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, requireAuth } from "./lib/auth";
 
 export const create = internalMutation({
 	args: {
@@ -25,8 +25,8 @@ export const list = query({
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return [];
 		}
 
@@ -47,10 +47,7 @@ export const markRead = mutation({
 		notificationId: v.id("notifications"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const notification = await ctx.db.get(args.notificationId);
 		if (!notification) {
@@ -69,10 +66,7 @@ export const markRead = mutation({
 export const markAllRead = mutation({
 	args: {},
 	handler: async (ctx) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		const authUser = await requireAuth(ctx);
 
 		const unreadNotifications = await ctx.db
 			.query("notifications")
@@ -90,8 +84,8 @@ export const markAllRead = mutation({
 export const unreadCount = query({
 	args: {},
 	handler: async (ctx) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return 0;
 		}
 

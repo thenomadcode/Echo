@@ -1194,8 +1194,8 @@ export const verifyBusinessOwnership = internalQuery({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<{ authorized: boolean; error?: string }> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { authorized: false, error: "Not authenticated" };
 		}
 

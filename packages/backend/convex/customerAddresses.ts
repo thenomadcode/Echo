@@ -1,14 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, isBusinessOwner, requireAuth } from "./lib/auth";
 
 export const list = query({
 	args: {
 		customerId: v.id("customers"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await requireAuth(ctx);
+		if (!authUser) {
 			return [];
 		}
 
@@ -17,8 +17,8 @@ export const list = query({
 			return [];
 		}
 
-		const business = await ctx.db.get(customer.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			return [];
 		}
 
@@ -43,10 +43,7 @@ export const add = mutation({
 		isDefault: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
+		await requireAuth(ctx);
 
 		const customer = await ctx.db.get(args.customerId);
 		if (!customer) {
@@ -58,7 +55,8 @@ export const add = mutation({
 			throw new Error("Business not found");
 		}
 
-		if (business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, customer.businessId);
+		if (!isOwner) {
 			throw new Error("Not authorized to add addresses for this customer");
 		}
 
@@ -98,8 +96,8 @@ export const update = mutation({
 		isDefault: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			throw new Error("Not authenticated");
 		}
 
@@ -153,8 +151,8 @@ export const deleteAddress = mutation({
 		addressId: v.id("customerAddresses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			throw new Error("Not authenticated");
 		}
 
@@ -188,8 +186,8 @@ export const setDefault = mutation({
 		addressId: v.id("customerAddresses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			throw new Error("Not authenticated");
 		}
 

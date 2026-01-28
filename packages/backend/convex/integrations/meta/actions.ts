@@ -8,7 +8,7 @@ import {
 	internalQuery,
 	query,
 } from "../../_generated/server";
-import { authComponent } from "../../auth";
+import { getAuthUser } from "../../lib/auth";
 
 function generateStateParameter(): string {
 	const array = new Uint8Array(32);
@@ -86,8 +86,8 @@ export const verifyBusinessOwnership = internalQuery({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args): Promise<{ authorized: boolean; error?: string }> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return { authorized: false, error: "Not authenticated" };
 		}
 
@@ -137,8 +137,8 @@ export const getMessagingWindowStatus = query({
 		lastCustomerMessageAt: number | null;
 		windowClosesAt: number | null;
 	} | null> => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return null;
 		}
 

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, requireBusinessOwnership } from "./lib/auth";
 
 export const create = mutation({
 	args: {
@@ -9,23 +9,7 @@ export const create = mutation({
 		order: v.number(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), args.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to create categories for this business");
-		}
+		await requireBusinessOwnership(ctx, args.businessId as any);
 
 		const now = Date.now();
 		const categoryId = await ctx.db.insert("categories", {
@@ -46,28 +30,12 @@ export const update = mutation({
 		order: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
 		const category = await ctx.db.get(args.categoryId);
 		if (!category) {
 			throw new Error("Category not found");
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), category.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to update this category");
-		}
+		await requireBusinessOwnership(ctx, category.businessId as any);
 
 		const updates: Record<string, unknown> = {};
 
@@ -85,28 +53,12 @@ export const deleteCategory = mutation({
 		categoryId: v.id("categories"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
 		const category = await ctx.db.get(args.categoryId);
 		if (!category) {
 			throw new Error("Category not found");
 		}
 
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), category.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to delete this category");
-		}
+		await requireBusinessOwnership(ctx, category.businessId as any);
 
 		await ctx.db.delete(args.categoryId);
 
@@ -119,8 +71,8 @@ export const list = query({
 		businessId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return [];
 		}
 
@@ -129,11 +81,7 @@ export const list = query({
 			.filter((q) => q.eq(q.field("_id"), args.businessId))
 			.first();
 
-		if (!business) {
-			return [];
-		}
-
-		if (business.ownerId !== authUser._id) {
+		if (!business || business.ownerId !== authUser._id) {
 			return [];
 		}
 
@@ -152,23 +100,7 @@ export const reorder = mutation({
 		orderedIds: v.array(v.id("categories")),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			throw new Error("Not authenticated");
-		}
-
-		const business = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("_id"), args.businessId))
-			.first();
-
-		if (!business) {
-			throw new Error("Business not found");
-		}
-
-		if (business.ownerId !== authUser._id) {
-			throw new Error("Not authorized to reorder categories for this business");
-		}
+		await requireBusinessOwnership(ctx, args.businessId as any);
 
 		for (let i = 0; i < args.orderedIds.length; i++) {
 			const categoryId = args.orderedIds[i];

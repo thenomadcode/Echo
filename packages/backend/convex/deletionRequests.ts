@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { getAuthUser, isBusinessOwner } from "./lib/auth";
 
 export const list = query({
 	args: {
@@ -8,13 +8,8 @@ export const list = query({
 		status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("denied"))),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
-			return [];
-		}
-
-		const business = await ctx.db.get(args.businessId);
-		if (!business || business.ownerId !== authUser._id) {
+		const isOwner = await isBusinessOwner(ctx, args.businessId);
+		if (!isOwner) {
 			return [];
 		}
 
@@ -56,8 +51,8 @@ export const getPendingCount = query({
 		businessId: v.id("businesses"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			return 0;
 		}
 
@@ -111,8 +106,8 @@ export const approve = mutation({
 		requestId: v.id("deletionRequests"),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			throw new Error("Not authenticated");
 		}
 
@@ -194,8 +189,8 @@ export const deny = mutation({
 		reason: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const authUser = await authComponent.safeGetAuthUser(ctx);
-		if (!authUser || !authUser._id) {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
 			throw new Error("Not authenticated");
 		}
 
