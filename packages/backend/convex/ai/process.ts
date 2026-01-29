@@ -962,8 +962,6 @@ export const processAndRespond = internalAction({
 		channel: v.union(v.literal("whatsapp"), v.literal("instagram"), v.literal("messenger")),
 	},
 	handler: async (ctx, args) => {
-		const _processingStartedAt = Date.now();
-
 		try {
 			// 1. Set processing state
 			await ctx.runMutation(internal.ai.process.setAiProcessingState, {

@@ -336,7 +336,7 @@ function ConversationDetailPage() {
 											onClick={() =>
 												navigate({
 													to: "/orders/$orderId",
-													params: { orderId: conversation.order?._id },
+													params: { orderId: conversation.order?._id as string },
 												})
 											}
 											className="h-auto p-0 font-medium"

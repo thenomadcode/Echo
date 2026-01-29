@@ -176,9 +176,6 @@ http.route({
 			return new Response("Invalid JSON", { status: 400 });
 		}
 
-		const data = payload as { object?: string };
-		const _objectType = data.object === "page" ? "messenger" : data.object;
-
 		const parsed = parseMetaWebhookPayloadFull(payload);
 
 		for (const statusUpdate of parsed.statusUpdates) {
@@ -531,10 +528,7 @@ http.route({
 				break;
 			}
 			case "payment_intent.payment_failed": {
-				const _paymentIntent = event.data.object as {
-					metadata?: { orderId?: string };
-					id?: string;
-				};
+				// TODO: Handle payment failure - send customer notification
 				break;
 			}
 			default:

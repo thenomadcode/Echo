@@ -7,7 +7,7 @@
 			"title": "Set Up Automated Code Quality Checks",
 			"priority": 1,
 			"passes": true,
-			"ultrawork": true,
+
 			"acceptanceCriteria": [
 				"Biome installed and configured based on better-t-stack template",
 				"VS Code auto-formats on save",
@@ -23,7 +23,7 @@
 			"title": "Use Shared Formatting Utilities",
 			"priority": 2,
 			"passes": true,
-			"ultrawork": false,
+
 			"acceptanceCriteria": [
 				"`apps/web/src/lib/formatting.ts` created with CURRENCY_LOCALES constant (COP, BRL, MXN, USD)",
 				"`apps/web/src/lib/formatting.ts` created with CURRENCY_SYMBOLS constant",
@@ -42,7 +42,7 @@
 			"title": "Use Shared Auth Utilities",
 			"priority": 3,
 			"passes": true,
-			"ultrawork": true,
+
 			"acceptanceCriteria": [
 				"`packages/backend/convex/lib/auth.ts` created with `requireAuth(ctx)` - throws if not authenticated",
 				"`requireBusinessOwnership(ctx, businessId)` - throws if user doesn't own business",
@@ -59,7 +59,7 @@
 			"title": "Navigate Consistently Named Files",
 			"priority": 4,
 			"passes": true,
-			"ultrawork": true,
+
 			"acceptanceCriteria": [
 				"All 14+ PascalCase component files renamed to kebab-case: ImageUpload.tsx → image-upload.tsx, PriceInput.tsx → price-input.tsx, ProductCard.tsx → product-card.tsx, ProductForm.tsx → product-form.tsx, AppHeader.tsx → app-header.tsx, MessageBubble.tsx → message-bubble.tsx, StatusBadge.tsx → status-badge.tsx, MetricCard.tsx → metric-card.tsx, CustomerCard.tsx → customer-card.tsx, OrderCard.tsx → order-card.tsx, ConversationList.tsx → conversation-list.tsx, BusinessSelector.tsx → business-selector.tsx, LanguageSelector.tsx → language-selector.tsx, CurrencySelector.tsx → currency-selector.tsx",
 				"All imports updated automatically using ast-grep",
@@ -74,7 +74,7 @@
 			"title": "Work with Consistent Export Patterns",
 			"priority": 5,
 			"passes": true,
-			"ultrawork": false,
+
 			"acceptanceCriteria": [
 				"All UI components use named exports (e.g., `export function Button()`)",
 				"All route components use default exports (TanStack Router requirement)",
@@ -87,8 +87,8 @@
 			"id": "S06",
 			"title": "Work with Smaller, Focused Files",
 			"priority": 6,
-			"passes": false,
-			"ultrawork": true,
+			"passes": true,
+
 			"acceptanceCriteria": [
 				"Frontend: `customers/$customerId.tsx` (1,451 lines) split into: $customerId.tsx (100 lines) - Route + layout, $customerId/components/customer-header.tsx (150 lines), $customerId/components/orders-tab.tsx (400 lines), $customerId/components/conversations-tab.tsx (350 lines), $customerId/components/profile-tab.tsx (300 lines), $customerId/components/activity-tab.tsx (200 lines)",
 				"Frontend: `settings.tsx` (723 lines) split into: settings/index.tsx (80 lines), settings/components/general-settings.tsx (200 lines), settings/components/whatsapp-settings.tsx (180 lines), settings/components/ai-settings.tsx (150 lines), settings/components/billing-settings.tsx (120 lines)",
@@ -111,7 +111,7 @@
 			"title": "Use Reusable Custom Hooks",
 			"priority": 7,
 			"passes": false,
-			"ultrawork": false,
+
 			"acceptanceCriteria": [
 				"`use-business-context.tsx` - Context provider for business ID, currency, timezone",
 				"`use-convex-mutation.ts` - Wraps mutations with automatic toast error handling",

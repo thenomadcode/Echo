@@ -169,7 +169,7 @@ export const handleWebhook = internalAction({
 
 					if (product.status !== "active") {
 						if (args.topic === "products/update") {
-							const _count = await ctx.runMutation(
+							await ctx.runMutation(
 								internal.integrations.shopify.mutations.markProductsUnavailable,
 								{
 									businessId,
@@ -241,13 +241,10 @@ export const handleWebhook = internalAction({
 					}
 
 					const shopifyProductId = `gid://shopify/Product/${deleteData.id}`;
-					const _count = await ctx.runMutation(
-						internal.integrations.shopify.mutations.markProductsUnavailable,
-						{
-							businessId,
-							shopifyProductId,
-						},
-					);
+					await ctx.runMutation(internal.integrations.shopify.mutations.markProductsUnavailable, {
+						businessId,
+						shopifyProductId,
+					});
 					break;
 				}
 
