@@ -1,5 +1,13 @@
 ---
-const _steps = [
+import StepIndicator from "./StepIndicator.astro";
+
+interface Step {
+	number: number;
+	title: string;
+	description: string;
+}
+
+const steps: Step[] = [
 	{
 		number: 1,
 		title: "Connect",

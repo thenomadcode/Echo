@@ -1,5 +1,15 @@
 ---
-const _testimonials = [
+import Testimonial from "./Testimonial.astro";
+
+interface TestimonialData {
+	quote: string;
+	name: string;
+	handle?: string;
+	company?: string;
+	followers?: string;
+}
+
+const testimonials: TestimonialData[] = [
 	{
 		quote:
 			"Echo handles 80% of my DMs now. I went from spending 3 hours a day answering questions to actually creating content. Game changer.",

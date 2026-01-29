@@ -110,7 +110,7 @@
 			"id": "S07",
 			"title": "Use Reusable Custom Hooks",
 			"priority": 7,
-			"passes": false,
+			"passes": true,
 
 			"acceptanceCriteria": [
 				"`use-business-context.tsx` - Context provider for business ID, currency, timezone",
