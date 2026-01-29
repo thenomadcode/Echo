@@ -4,7 +4,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery as useConvexQuery, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { ChevronLeft, ChevronRight, Loader2, Plus, Search, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +36,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useBusinessContext } from "@/hooks/use-business-context";
+import { usePagination } from "@/hooks/use-pagination";
 import { formatCurrency } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
@@ -45,28 +47,13 @@ export const Route = createFileRoute("/_authenticated/customers/")({
 type SortBy = "lastSeenAt" | "totalOrders" | "totalSpent" | "createdAt";
 
 function CustomersPage() {
-	const businesses = useConvexQuery(api.businesses.list, {});
+	const { activeBusinessId } = useBusinessContext();
 
-	const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (businesses === undefined) return;
-
-		if (typeof window !== "undefined") {
-			const stored = localStorage.getItem("echo:activeBusinessId");
-			if (stored && businesses.find((b) => b._id === stored)) {
-				setActiveBusinessId(stored);
-			} else {
-				setActiveBusinessId(businesses[0]?._id || null);
-			}
-		}
-	}, [businesses]);
-
-	if (businesses === undefined || !activeBusinessId) {
+	if (!activeBusinessId) {
 		return null;
 	}
 
-	return <CustomersContent businessId={activeBusinessId as Id<"businesses">} />;
+	return <CustomersContent businessId={activeBusinessId} />;
 }
 
 interface CustomersContentProps {
@@ -80,7 +67,6 @@ function CustomersContent({ businessId }: CustomersContentProps) {
 	const queryClient = useQueryClient();
 	const [sortBy, setSortBy] = useState<SortBy>("lastSeenAt");
 	const [searchQuery, setSearchQuery] = useState("");
-	const [currentPage, setCurrentPage] = useState(1);
 	const [showAddDialog, setShowAddDialog] = useState(false);
 
 	const handleAddSuccess = async (customerId: Id<"customers">) => {
@@ -109,14 +95,15 @@ function CustomersContent({ businessId }: CustomersContentProps) {
 		});
 	}, [allCustomers, searchQuery]);
 
-	const totalCustomers = filteredCustomers.length;
-	const totalPages = Math.ceil(totalCustomers / ITEMS_PER_PAGE);
-	const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-	const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalCustomers);
-	const customers = filteredCustomers.slice(startIndex, endIndex);
+	const pagination = usePagination({
+		totalItems: filteredCustomers.length,
+		itemsPerPage: ITEMS_PER_PAGE,
+	});
+
+	const customers = filteredCustomers.slice(pagination.startIndex, pagination.endIndex);
 
 	useEffect(() => {
-		setCurrentPage(1);
+		pagination.goToFirst();
 	}, [searchQuery, sortBy]);
 
 	const formatSmartDate = (timestamp: number) => {
@@ -235,29 +222,30 @@ function CustomersContent({ businessId }: CustomersContentProps) {
 								</TableBody>
 							</Table>
 
-							{totalPages > 1 && (
+							{pagination.totalPages > 1 && (
 								<div className="mt-4 flex items-center justify-between border-t pt-4">
 									<p className="text-muted-foreground text-sm">
-										Showing {startIndex + 1}-{endIndex} of {totalCustomers} customers
+										Showing {pagination.startIndex + 1}-{pagination.endIndex} of{" "}
+										{filteredCustomers.length} customers
 									</p>
 									<div className="flex items-center gap-2">
 										<Button
 											variant="outline"
 											size="sm"
-											onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-											disabled={currentPage === 1}
+											onClick={pagination.goToPrevious}
+											disabled={!pagination.hasPrevious}
 										>
 											<ChevronLeft className="mr-1 h-4 w-4" />
 											Previous
 										</Button>
 										<span className="px-2 text-muted-foreground text-sm">
-											Page {currentPage} of {totalPages}
+											Page {pagination.currentPage} of {pagination.totalPages}
 										</span>
 										<Button
 											variant="outline"
 											size="sm"
-											onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-											disabled={currentPage === totalPages}
+											onClick={pagination.goToNext}
+											disabled={!pagination.hasNext}
 										>
 											Next
 											<ChevronRight className="ml-1 h-4 w-4" />

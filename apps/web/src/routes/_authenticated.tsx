@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
 import { SignInForm } from "@/components/sign-in-form";
+import { BusinessProvider } from "@/hooks/use-business-context";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -59,9 +60,11 @@ function AuthenticatedShell() {
 	}
 
 	return (
-		<SidebarProvider>
-			<AuthenticatedContent />
-		</SidebarProvider>
+		<BusinessProvider businesses={businesses}>
+			<SidebarProvider>
+				<AuthenticatedContent />
+			</SidebarProvider>
+		</BusinessProvider>
 	);
 }
 

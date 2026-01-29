@@ -1,12 +1,10 @@
-import { api } from "@echo/backend/convex/_generated/api";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import { ProductForm } from "@/components/products/product-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useBusinessContext } from "@/hooks/use-business-context";
 
 export const Route = createFileRoute("/_authenticated/products/new")({
 	component: AddProductPageContent,
@@ -14,29 +12,9 @@ export const Route = createFileRoute("/_authenticated/products/new")({
 
 function AddProductPageContent() {
 	const navigate = useNavigate();
-	const businesses = useQuery(api.businesses.list, {});
+	const { activeBusinessId } = useBusinessContext();
 
-	const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (businesses === undefined) return;
-
-		if (businesses.length === 0) {
-			navigate({ to: "/onboarding" });
-			return;
-		}
-
-		if (typeof window !== "undefined") {
-			const stored = localStorage.getItem("echo:activeBusinessId");
-			if (stored && businesses.find((b) => b._id === stored)) {
-				setActiveBusinessId(stored);
-			} else {
-				setActiveBusinessId(businesses[0]?._id || null);
-			}
-		}
-	}, [businesses, navigate]);
-
-	if (businesses === undefined || !activeBusinessId) {
+	if (!activeBusinessId) {
 		return (
 			<div className="flex h-64 items-center justify-center">
 				<div className="text-muted-foreground">Loading...</div>

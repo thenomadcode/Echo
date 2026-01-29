@@ -4,7 +4,6 @@ import { api } from "@echo/backend/convex/_generated/api";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { Check, ChevronDown, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,28 +13,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const ACTIVE_BUSINESS_KEY = "echo:activeBusinessId";
+import { useBusinessContext } from "@/hooks/use-business-context";
 
 export function BusinessSwitcher() {
 	const navigate = useNavigate();
 	const businesses = useQuery(api.businesses.list);
-	const [activeBusinessId, setActiveBusinessId] = useState<string | null>(() => {
-		if (typeof window !== "undefined") {
-			return localStorage.getItem(ACTIVE_BUSINESS_KEY);
-		}
-		return null;
-	});
-
-	useEffect(() => {
-		if (businesses && businesses.length > 0) {
-			if (!activeBusinessId || !businesses.find((b) => b._id === activeBusinessId)) {
-				const firstBusinessId = businesses[0]._id;
-				setActiveBusinessId(firstBusinessId);
-				localStorage.setItem(ACTIVE_BUSINESS_KEY, firstBusinessId);
-			}
-		}
-	}, [businesses, activeBusinessId]);
+	const { activeBusinessId, setActiveBusinessId } = useBusinessContext();
 
 	if (!businesses || businesses.length === 0) {
 		return null;
@@ -45,7 +28,6 @@ export function BusinessSwitcher() {
 
 	const handleBusinessSwitch = (businessId: Id<"businesses">) => {
 		setActiveBusinessId(businessId);
-		localStorage.setItem(ACTIVE_BUSINESS_KEY, businessId);
 	};
 
 	const handleCreateNew = () => {

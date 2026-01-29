@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -80,16 +79,6 @@ func runIterationCmd(promptPath, projectRoot string, iteration int, storyID stri
 		promptContent, err := os.ReadFile(promptPath)
 		if err != nil {
 			return ProcessExitedMsg{ExitCode: 1, Complete: false, Err: err}
-		}
-
-		// Check if current story needs ultrawork mode
-		prdPath := filepath.Join(filepath.Dir(promptPath), "prd.json")
-		prd, _ := LoadPRD(prdPath)
-		story := GetStoryByID(prd.UserStories, storyID)
-
-		if story != nil && story.Ultrawork {
-			wrappedPrompt := "<ultrawork>\n" + string(promptContent) + "\n</ultrawork>"
-			promptContent = []byte(wrappedPrompt)
 		}
 
 		cmd := exec.Command("opencode", "run", string(promptContent))

@@ -72,10 +72,8 @@ var (
 	LogTextStyle = lipgloss.NewStyle().
 			Foreground(LightGray)
 
-	SuccessIcon   = lipgloss.NewStyle().Foreground(Green).Render("✓")
-	CurrentIcon   = lipgloss.NewStyle().Foreground(Yellow).Render("▸")
-	PendingIcon   = lipgloss.NewStyle().Foreground(DarkGray).Render(" ")
-	ErrorIcon     = lipgloss.NewStyle().Foreground(Red).Render("✗")
-	UltraworkIcon = lipgloss.NewStyle().Foreground(Yellow).Bold(true).Render("⚡")
-	NoUltrawork   = "  "
+	SuccessIcon = lipgloss.NewStyle().Foreground(Green).Render("✓")
+	CurrentIcon = lipgloss.NewStyle().Foreground(Yellow).Render("▸")
+	PendingIcon = lipgloss.NewStyle().Foreground(DarkGray).Render(" ")
+	ErrorIcon   = lipgloss.NewStyle().Foreground(Red).Render("✗")
 )

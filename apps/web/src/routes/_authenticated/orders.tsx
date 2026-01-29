@@ -4,7 +4,6 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery as useConvexQuery } from "convex/react";
 import { ChevronLeft, ChevronRight, Search, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -28,6 +27,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useBusinessContext } from "@/hooks/use-business-context";
+import { usePagination } from "@/hooks/use-pagination";
 import { formatCurrency } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/orders")({
@@ -44,28 +45,13 @@ type OrderStatus =
 	| "cancelled";
 
 function OrdersPage() {
-	const businesses = useConvexQuery(api.businesses.list, {});
+	const { activeBusinessId } = useBusinessContext();
 
-	const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (businesses === undefined) return;
-
-		if (typeof window !== "undefined") {
-			const stored = localStorage.getItem("echo:activeBusinessId");
-			if (stored && businesses.find((b) => b._id === stored)) {
-				setActiveBusinessId(stored);
-			} else {
-				setActiveBusinessId(businesses[0]?._id || null);
-			}
-		}
-	}, [businesses]);
-
-	if (businesses === undefined || !activeBusinessId) {
+	if (!activeBusinessId) {
 		return null;
 	}
 
-	return <OrdersContent businessId={activeBusinessId as Id<"businesses">} />;
+	return <OrdersContent businessId={activeBusinessId} />;
 }
 
 interface OrdersContentProps {
@@ -78,7 +64,6 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 	const navigate = useNavigate();
 	const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
 	const [searchQuery, setSearchQuery] = useState("");
-	const [currentPage, setCurrentPage] = useState(1);
 
 	const ordersQuery = useQuery(
 		convexQuery(api.orders.queries.listByBusiness, {
@@ -100,14 +85,15 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 		});
 	}, [allOrders, searchQuery]);
 
-	const totalOrders = filteredOrders.length;
-	const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE);
-	const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-	const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalOrders);
-	const orders = filteredOrders.slice(startIndex, endIndex);
+	const pagination = usePagination({
+		totalItems: filteredOrders.length,
+		itemsPerPage: ITEMS_PER_PAGE,
+	});
+
+	const orders = filteredOrders.slice(pagination.startIndex, pagination.endIndex);
 
 	useEffect(() => {
-		setCurrentPage(1);
+		pagination.goToFirst();
 	}, [searchQuery, statusFilter]);
 
 	const formatSmartDate = (timestamp: number) => {
@@ -235,29 +221,30 @@ function OrdersContent({ businessId }: OrdersContentProps) {
 								</TableBody>
 							</Table>
 
-							{totalPages > 1 && (
+							{pagination.totalPages > 1 && (
 								<div className="mt-4 flex items-center justify-between border-t pt-4">
 									<p className="text-muted-foreground text-sm">
-										Showing {startIndex + 1}-{endIndex} of {totalOrders} orders
+										Showing {pagination.startIndex + 1}-{pagination.endIndex} of{" "}
+										{filteredOrders.length} orders
 									</p>
 									<div className="flex items-center gap-2">
 										<Button
 											variant="outline"
 											size="sm"
-											onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-											disabled={currentPage === 1}
+											onClick={pagination.goToPrevious}
+											disabled={!pagination.hasPrevious}
 										>
 											<ChevronLeft className="mr-1 h-4 w-4" />
 											Previous
 										</Button>
 										<span className="px-2 text-muted-foreground text-sm">
-											Page {currentPage} of {totalPages}
+											Page {pagination.currentPage} of {pagination.totalPages}
 										</span>
 										<Button
 											variant="outline"
 											size="sm"
-											onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-											disabled={currentPage === totalPages}
+											onClick={pagination.goToNext}
+											disabled={!pagination.hasNext}
 										>
 											Next
 											<ChevronRight className="ml-1 h-4 w-4" />

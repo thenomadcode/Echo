@@ -228,6 +228,28 @@ export const Route = createFileRoute("/path")({
 - shadcn/ui components live in `apps/web/src/components/ui/`
 - Prefer using existing shadcn/ui components over building custom ones
 
+### Custom Hooks
+```typescript
+// Business context: Active business with localStorage persistence
+const { activeBusinessId, setActiveBusinessId, currency, timezone } = useBusinessContext();
+
+// Pagination: Handles currentPage, totalPages, navigation
+const pagination = usePagination({ totalItems, itemsPerPage: 10 });
+
+// Debounce: Delays value updates (search inputs, etc)
+const debouncedSearch = useDebounce(searchTerm, 300);
+
+// Convex mutations: Automatic error toast handling
+const updateProduct = useConvexMutation(api.products.update);
+await updateProduct({ id, name: "New" }, { errorMessage: "Failed to update" });
+```
+
+**Location**: `apps/web/src/hooks/`
+- `use-business-context.tsx` - BusinessProvider wraps _authenticated routes
+- `use-pagination.ts` - Replaces manual currentPage/totalPages useState
+- `use-debounce.ts` - For search inputs and frequently changing values
+- `use-convex-mutation.ts` - Wraps useMutation with toast.error
+
 ### Forms
 ```typescript
 // Use @tanstack/react-form with Zod validators
@@ -242,6 +264,7 @@ const form = useForm({
 
 ### Error Handling
 - Use `toast.error()` from `sonner` for user-facing errors
+- Use `useConvexMutation()` for automatic error toast handling
 - Never swallow errors silently
 - Validation errors displayed inline with form fields
 

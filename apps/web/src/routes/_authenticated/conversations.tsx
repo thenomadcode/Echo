@@ -4,7 +4,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery as useConvexQuery, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, MessageCircle, MessageSquare, Search, ShoppingCart } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -34,6 +34,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useBusinessContext } from "@/hooks/use-business-context";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/conversations")({
@@ -46,28 +47,13 @@ export const Route = createFileRoute("/_authenticated/conversations")({
 type ConversationStatus = "active" | "escalated" | "closed";
 
 function ConversationsPage() {
-	const businesses = useConvexQuery(api.businesses.list, {});
+	const { activeBusinessId } = useBusinessContext();
 
-	const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (businesses === undefined) return;
-
-		if (typeof window !== "undefined") {
-			const stored = localStorage.getItem("echo:activeBusinessId");
-			if (stored && businesses.find((b) => b._id === stored)) {
-				setActiveBusinessId(stored);
-			} else {
-				setActiveBusinessId(businesses[0]?._id || null);
-			}
-		}
-	}, [businesses]);
-
-	if (businesses === undefined || !activeBusinessId) {
+	if (!activeBusinessId) {
 		return null;
 	}
 
-	return <ConversationsContent businessId={activeBusinessId as Id<"businesses">} />;
+	return <ConversationsContent businessId={activeBusinessId} />;
 }
 
 interface ConversationsContentProps {
