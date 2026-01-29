@@ -1,137 +1,137 @@
 import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
+import { ArrowLeft, Facebook, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2, Facebook } from "lucide-react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetaConnectButton } from "@/components/integrations/meta-connect-button";
 import { MetaConnectionStatus } from "@/components/integrations/meta-connection-status";
 import { MetaDisconnectDialog } from "@/components/integrations/meta-disconnect-dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/settings_/integrations_/meta")({
-  component: MetaSettingsPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    connected: search.connected === "true",
-    error: typeof search.error === "string" ? search.error : undefined,
-  }),
+	component: MetaSettingsPage,
+	validateSearch: (search: Record<string, unknown>) => ({
+		connected: search.connected === "true",
+		error: typeof search.error === "string" ? search.error : undefined,
+	}),
 });
 
 function MetaSettingsPage() {
-  const { connected, error } = Route.useSearch();
-  const businesses = useQuery(api.businesses.list);
-  const [activeBusinessId, setActiveBusinessId] = useState<Id<"businesses"> | null>(null);
-  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
-  
-  const testConnectionAction = useAction(api.integrations.meta.actions.testConnection);
+	const { connected, error } = Route.useSearch();
+	const businesses = useQuery(api.businesses.list);
+	const [activeBusinessId, setActiveBusinessId] = useState<Id<"businesses"> | null>(null);
+	const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("echo:activeBusinessId");
-      if (stored) {
-        setActiveBusinessId(stored as Id<"businesses">);
-      }
-    }
-  }, []);
+	const testConnectionAction = useAction(api.integrations.meta.actions.testConnection);
 
-  useEffect(() => {
-    if (businesses && businesses.length > 0 && !activeBusinessId) {
-      setActiveBusinessId(businesses[0]._id as Id<"businesses">);
-    }
-  }, [businesses, activeBusinessId]);
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			const stored = localStorage.getItem("echo:activeBusinessId");
+			if (stored) {
+				setActiveBusinessId(stored as Id<"businesses">);
+			}
+		}
+	}, []);
 
-  useEffect(() => {
-    if (connected) {
-      toast.success("Meta connected successfully!");
-    }
-    if (error) {
-      toast.error(`Connection failed: ${error}`);
-    }
-  }, [connected, error]);
+	useEffect(() => {
+		if (businesses && businesses.length > 0 && !activeBusinessId) {
+			setActiveBusinessId(businesses[0]._id as Id<"businesses">);
+		}
+	}, [businesses, activeBusinessId]);
 
-  const connectionStatus = useQuery(
-    api.integrations.meta.queries.getConnectionStatus,
-    activeBusinessId ? { businessId: activeBusinessId as never } : "skip"
-  );
+	useEffect(() => {
+		if (connected) {
+			toast.success("Meta connected successfully!");
+		}
+		if (error) {
+			toast.error(`Connection failed: ${error}`);
+		}
+	}, [connected, error]);
 
-  if (businesses === undefined) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+	const connectionStatus = useQuery(
+		api.integrations.meta.queries.getConnectionStatus,
+		activeBusinessId ? { businessId: activeBusinessId as never } : "skip",
+	);
 
-  if (businesses.length === 0) {
-    return null;
-  }
+	if (businesses === undefined) {
+		return (
+			<div className="flex min-h-[400px] items-center justify-center">
+				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
 
-  const isConnected = connectionStatus?.connected === true;
+	if (businesses.length === 0) {
+		return null;
+	}
 
-  return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6">
-        <Link
-          to="/settings"
-          search={{ section: "chats" }}
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Chats
-        </Link>
-      </div>
+	const isConnected = connectionStatus?.connected === true;
 
-      <div className="mb-8 flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1877F2]">
-          <Facebook className="h-6 w-6 text-white" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">Meta Integration</h1>
-          <p className="text-muted-foreground">
-            Connect your Facebook Page and Instagram to receive messages
-          </p>
-        </div>
-      </div>
+	return (
+		<div className="container mx-auto max-w-4xl px-4 py-8">
+			<div className="mb-6">
+				<Link
+					to="/settings"
+					search={{ section: "chats" }}
+					className="inline-flex items-center text-muted-foreground text-sm hover:text-foreground"
+				>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Back to Chats
+				</Link>
+			</div>
 
-      {!isConnected && activeBusinessId && (
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Connect with Facebook</CardTitle>
-            <CardDescription>
-              Connect your Facebook Page to enable Messenger and Instagram DMs
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              You'll be redirected to Facebook to authorize Echo to access your Page's messaging.
-              Make sure you have admin access to the Facebook Page you want to connect.
-            </p>
-            <MetaConnectButton businessId={activeBusinessId} className="w-full" />
-          </CardContent>
-        </Card>
-      )}
+			<div className="mb-8 flex items-center gap-4">
+				<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1877F2]">
+					<Facebook className="h-6 w-6 text-white" />
+				</div>
+				<div>
+					<h1 className="font-bold text-3xl">Meta Integration</h1>
+					<p className="text-muted-foreground">
+						Connect your Facebook Page and Instagram to receive messages
+					</p>
+				</div>
+			</div>
 
-      {isConnected && connectionStatus && activeBusinessId && (
-        <div className="space-y-6 max-w-2xl">
-          <MetaConnectionStatus
-            connectionStatus={connectionStatus}
-            businessId={activeBusinessId}
-            onDisconnect={() => setShowDisconnectDialog(true)}
-            onTestConnection={async () => {
-              const result = await testConnectionAction({ businessId: activeBusinessId });
-              return result;
-            }}
-          />
+			{!isConnected && activeBusinessId && (
+				<Card className="max-w-md">
+					<CardHeader>
+						<CardTitle>Connect with Facebook</CardTitle>
+						<CardDescription>
+							Connect your Facebook Page to enable Messenger and Instagram DMs
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<p className="text-muted-foreground text-sm">
+							You'll be redirected to Facebook to authorize Echo to access your Page's messaging.
+							Make sure you have admin access to the Facebook Page you want to connect.
+						</p>
+						<MetaConnectButton businessId={activeBusinessId} className="w-full" />
+					</CardContent>
+				</Card>
+			)}
 
-          <MetaDisconnectDialog
-            businessId={activeBusinessId}
-            open={showDisconnectDialog}
-            onOpenChange={setShowDisconnectDialog}
-          />
-        </div>
-      )}
-    </div>
-  );
+			{isConnected && connectionStatus && activeBusinessId && (
+				<div className="max-w-2xl space-y-6">
+					<MetaConnectionStatus
+						connectionStatus={connectionStatus}
+						businessId={activeBusinessId}
+						onDisconnect={() => setShowDisconnectDialog(true)}
+						onTestConnection={async () => {
+							const result = await testConnectionAction({ businessId: activeBusinessId });
+							return result;
+						}}
+					/>
+
+					<MetaDisconnectDialog
+						businessId={activeBusinessId}
+						open={showDisconnectDialog}
+						onOpenChange={setShowDisconnectDialog}
+					/>
+				</div>
+			)}
+		</div>
+	);
 }

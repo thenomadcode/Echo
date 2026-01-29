@@ -2,19 +2,19 @@
 import "../styles/global.css";
 
 interface Props {
-  title?: string;
-  description?: string;
-  ogImage?: string;
-  canonicalUrl?: string;
+	title?: string;
+	description?: string;
+	ogImage?: string;
+	canonicalUrl?: string;
 }
 
 const canonicalURL = Astro.props.canonicalUrl ?? new URL(Astro.url.pathname, Astro.site).href;
 const siteUrl = Astro.site?.origin ?? "https://echo.com";
 
 const {
-  title,
-  description = "Automate your customer service with AI-powered WhatsApp conversations. Connect, add your products, and let Echo handle the rest.",
-  ogImage = "/images/og-default.svg",
+	title,
+	description = "Automate your customer service with AI-powered WhatsApp conversations. Connect, add your products, and let Echo handle the rest.",
+	ogImage = "/images/og-default.svg",
 } = Astro.props;
 
 const isHomepage = Astro.url.pathname === "/" || Astro.url.pathname === "";

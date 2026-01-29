@@ -1,12 +1,12 @@
 ---
 interface Props {
-  name: string;
-  price: string;
-  interval?: string;
-  features: string[];
-  cta: string;
-  ctaHref: string;
-  highlighted?: boolean;
+	name: string;
+	price: string;
+	interval?: string;
+	features: string[];
+	cta: string;
+	ctaHref: string;
+	highlighted?: boolean;
 }
 
 const { name, price, interval = "/mo", features, cta, ctaHref, highlighted = false } = Astro.props;

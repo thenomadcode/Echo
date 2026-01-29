@@ -2,53 +2,57 @@
 import PricingCard from "./PricingCard.astro";
 
 interface Props {
-  hideHeading?: boolean;
+	hideHeading?: boolean;
 }
 
 const { hideHeading = false } = Astro.props;
 
-const plans = [
-  {
-    name: "Free",
-    price: "$0",
-    features: [
-      "500 contacts",
-      "Basic AI conversations",
-      "WhatsApp integration",
-      "Email support",
-    ],
-    cta: "Start Free",
-    ctaHref: "https://app.echo.com/signup",
-    highlighted: false,
-  },
-  {
-    name: "Growth",
-    price: "$49",
-    features: [
-      "Unlimited contacts",
-      "Full AI capabilities",
-      "All integrations",
-      "Customer memory",
-      "Priority support",
-    ],
-    cta: "Start Free",
-    ctaHref: "https://app.echo.com/signup?plan=growth",
-    highlighted: true,
-  },
-  {
-    name: "Scale",
-    price: "$99",
-    features: [
-      "Everything in Growth",
-      "Multi-brand support",
-      "Team seats",
-      "Priority support",
-      "Custom integrations",
-    ],
-    cta: "Contact Us",
-    ctaHref: "mailto:sales@echo.com",
-    highlighted: false,
-  },
+interface Plan {
+	name: string;
+	price: string;
+	features: string[];
+	cta: string;
+	ctaHref: string;
+	highlighted: boolean;
+}
+
+const plans: Plan[] = [
+	{
+		name: "Free",
+		price: "$0",
+		features: ["500 contacts", "Basic AI conversations", "WhatsApp integration", "Email support"],
+		cta: "Start Free",
+		ctaHref: "https://app.echo.com/signup",
+		highlighted: false,
+	},
+	{
+		name: "Growth",
+		price: "$49",
+		features: [
+			"Unlimited contacts",
+			"Full AI capabilities",
+			"All integrations",
+			"Customer memory",
+			"Priority support",
+		],
+		cta: "Start Free",
+		ctaHref: "https://app.echo.com/signup?plan=growth",
+		highlighted: true,
+	},
+	{
+		name: "Scale",
+		price: "$99",
+		features: [
+			"Everything in Growth",
+			"Multi-brand support",
+			"Team seats",
+			"Priority support",
+			"Custom integrations",
+		],
+		cta: "Contact Us",
+		ctaHref: "mailto:sales@echo.com",
+		highlighted: false,
+	},
 ];
 ---
 

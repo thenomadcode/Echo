@@ -19,7 +19,6 @@ type Story struct {
 	Title              string   `json:"title"`
 	Priority           int      `json:"priority"`
 	Passes             bool     `json:"passes"`
-	Ultrawork          bool     `json:"ultrawork"`
 	AcceptanceCriteria []string `json:"acceptanceCriteria"`
 }
 

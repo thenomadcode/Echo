@@ -104,19 +104,8 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   echo -e "${YELLOW}Next story: $NEXT_STORY${NC}"
   echo ""
 
-  # Check if current story needs ultrawork mode
-  ULTRWORK=$(jq -r "[.userStories[] | select(.id == \"$NEXT_STORY_ID\")][0].ultrawork" "$PRD_FILE" 2>/dev/null || echo "false")
-
-  # Run opencode with the ralph prompt (wrapped in ultrawork tags if needed)
   cd "$PROJECT_ROOT"
-  if [ "$ULTRWORK" = "true" ]; then
-    PROMPT="<ultrawork>
-$(cat $SCRIPT_DIR/prompt.md)
-</ultrawork>"
-    echo -e "${YELLOW}Ultrawork mode enabled for this story${NC}"
-  else
-    PROMPT=$(cat $SCRIPT_DIR/prompt.md)
-  fi
+  PROMPT=$(cat $SCRIPT_DIR/prompt.md)
 
   OUTPUT=$(opencode run "$PROMPT" 2>&1 | tee /dev/stderr) || true
   

@@ -1,9 +1,9 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export function baseOptions(): BaseLayoutProps {
-  return {
-    nav: {
-      title: "Echo Docs",
-    },
-  };
+	return {
+		nav: {
+			title: "Echo Docs",
+		},
+	};
 }

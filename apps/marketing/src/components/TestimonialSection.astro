@@ -1,24 +1,35 @@
 ---
 import Testimonial from "./Testimonial.astro";
 
-const testimonials = [
-  {
-    quote: "Echo handles 80% of my DMs now. I went from spending 3 hours a day answering questions to actually creating content. Game changer.",
-    name: "Sarah Chen",
-    handle: "@sarahcreates",
-    followers: "45K",
-  },
-  {
-    quote: "Echo actually sounds like me. Customers can't tell the difference. One even thanked me for responding so fast at 3am—I was asleep!",
-    name: "Marcus Rodriguez",
-    company: "Founder, Urban Threads",
-  },
-  {
-    quote: "Setup took literally 5 minutes. Connected my Shopify store and Echo was answering product questions within the hour. So simple.",
-    name: "Priya Sharma",
-    handle: "@priyamakes",
-    company: "Etsy Seller",
-  },
+interface TestimonialData {
+	quote: string;
+	name: string;
+	handle?: string;
+	company?: string;
+	followers?: string;
+}
+
+const testimonials: TestimonialData[] = [
+	{
+		quote:
+			"Echo handles 80% of my DMs now. I went from spending 3 hours a day answering questions to actually creating content. Game changer.",
+		name: "Sarah Chen",
+		handle: "@sarahcreates",
+		followers: "45K",
+	},
+	{
+		quote:
+			"Echo actually sounds like me. Customers can't tell the difference. One even thanked me for responding so fast at 3am—I was asleep!",
+		name: "Marcus Rodriguez",
+		company: "Founder, Urban Threads",
+	},
+	{
+		quote:
+			"Setup took literally 5 minutes. Connected my Shopify store and Echo was answering product questions within the hour. So simple.",
+		name: "Priya Sharma",
+		handle: "@priyamakes",
+		company: "Etsy Seller",
+	},
 ];
 ---
 

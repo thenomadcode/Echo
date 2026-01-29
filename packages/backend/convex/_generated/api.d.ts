@@ -41,6 +41,15 @@ import type * as integrations_meta_queries from "../integrations/meta/queries.js
 import type * as integrations_meta_security from "../integrations/meta/security.js";
 import type * as integrations_meta_types from "../integrations/meta/types.js";
 import type * as integrations_meta_webhook from "../integrations/meta/webhook.js";
+import type * as integrations_shopify_disconnect from "../integrations/shopify/disconnect.js";
+import type * as integrations_shopify_mutations from "../integrations/shopify/mutations.js";
+import type * as integrations_shopify_oauth from "../integrations/shopify/oauth.js";
+import type * as integrations_shopify_orders from "../integrations/shopify/orders.js";
+import type * as integrations_shopify_products from "../integrations/shopify/products.js";
+import type * as integrations_shopify_queries from "../integrations/shopify/queries.js";
+import type * as integrations_shopify_types from "../integrations/shopify/types.js";
+import type * as integrations_shopify_utils from "../integrations/shopify/utils.js";
+import type * as integrations_shopify_webhooks from "../integrations/shopify/webhooks.js";
 import type * as integrations_whatsapp_actions from "../integrations/whatsapp/actions.js";
 import type * as integrations_whatsapp_settings from "../integrations/whatsapp/settings.js";
 import type * as integrations_whatsapp_templates from "../integrations/whatsapp/templates.js";
@@ -48,13 +57,19 @@ import type * as integrations_whatsapp_twilio from "../integrations/whatsapp/twi
 import type * as integrations_whatsapp_types from "../integrations/whatsapp/types.js";
 import type * as integrations_whatsapp_webhook from "../integrations/whatsapp/webhook.js";
 import type * as integrations_whatsapp_window from "../integrations/whatsapp/window.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_orderNumber from "../lib/orderNumber.js";
 import type * as messages from "../messages.js";
 import type * as notifications from "../notifications.js";
-import type * as orders from "../orders.js";
+import type * as orders_delivery from "../orders/delivery.js";
+import type * as orders_mutations from "../orders/mutations.js";
+import type * as orders_payments from "../orders/payments.js";
+import type * as orders_queries from "../orders/queries.js";
+import type * as orders_shopify from "../orders/shopify.js";
+import type * as orders_status from "../orders/status.js";
+import type * as orders_types from "../orders/types.js";
 import type * as privateData from "../privateData.js";
 import type * as products from "../products.js";
-import type * as shopify from "../shopify.js";
 
 import type {
   ApiFromModules,
@@ -96,6 +111,15 @@ declare const fullApi: ApiFromModules<{
   "integrations/meta/security": typeof integrations_meta_security;
   "integrations/meta/types": typeof integrations_meta_types;
   "integrations/meta/webhook": typeof integrations_meta_webhook;
+  "integrations/shopify/disconnect": typeof integrations_shopify_disconnect;
+  "integrations/shopify/mutations": typeof integrations_shopify_mutations;
+  "integrations/shopify/oauth": typeof integrations_shopify_oauth;
+  "integrations/shopify/orders": typeof integrations_shopify_orders;
+  "integrations/shopify/products": typeof integrations_shopify_products;
+  "integrations/shopify/queries": typeof integrations_shopify_queries;
+  "integrations/shopify/types": typeof integrations_shopify_types;
+  "integrations/shopify/utils": typeof integrations_shopify_utils;
+  "integrations/shopify/webhooks": typeof integrations_shopify_webhooks;
   "integrations/whatsapp/actions": typeof integrations_whatsapp_actions;
   "integrations/whatsapp/settings": typeof integrations_whatsapp_settings;
   "integrations/whatsapp/templates": typeof integrations_whatsapp_templates;
@@ -103,13 +127,19 @@ declare const fullApi: ApiFromModules<{
   "integrations/whatsapp/types": typeof integrations_whatsapp_types;
   "integrations/whatsapp/webhook": typeof integrations_whatsapp_webhook;
   "integrations/whatsapp/window": typeof integrations_whatsapp_window;
+  "lib/auth": typeof lib_auth;
   "lib/orderNumber": typeof lib_orderNumber;
   messages: typeof messages;
   notifications: typeof notifications;
-  orders: typeof orders;
+  "orders/delivery": typeof orders_delivery;
+  "orders/mutations": typeof orders_mutations;
+  "orders/payments": typeof orders_payments;
+  "orders/queries": typeof orders_queries;
+  "orders/shopify": typeof orders_shopify;
+  "orders/status": typeof orders_status;
+  "orders/types": typeof orders_types;
   privateData: typeof privateData;
   products: typeof products;
-  shopify: typeof shopify;
 }>;
 
 /**

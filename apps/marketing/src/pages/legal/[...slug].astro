@@ -1,25 +1,25 @@
 ---
-import { getCollection, render, type CollectionEntry } from "astro:content";
+import { type CollectionEntry, getCollection, render } from "astro:content";
 import LegalLayout from "../../layouts/LegalLayout.astro";
 
 const { slug } = Astro.params;
 if (!slug) {
-  return Astro.redirect("/");
+	return Astro.redirect("/");
 }
 
 const legalPages = await getCollection("legal");
 const page = legalPages.find((p: CollectionEntry<"legal">) => p.data.slug === slug);
 
 if (!page) {
-  return Astro.redirect("/404");
+	return Astro.redirect("/404");
 }
 
 const { Content } = await render(page);
 
 const formattedDate = page.data.lastUpdated.toLocaleDateString("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
+	year: "numeric",
+	month: "long",
+	day: "numeric",
 });
 ---
 

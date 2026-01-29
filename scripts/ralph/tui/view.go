@@ -152,12 +152,7 @@ func (m Model) renderStoryLine(story Story, maxWidth int) string {
 		style = StoryPendingStyle
 	}
 
-	ultraworkIcon := NoUltrawork
-	if story.Ultrawork {
-		ultraworkIcon = UltraworkIcon
-	}
-
-	titleMaxLen := maxWidth - 11
+	titleMaxLen := maxWidth - 9
 	if titleMaxLen < 10 {
 		titleMaxLen = 10
 	}
@@ -167,7 +162,7 @@ func (m Model) renderStoryLine(story Story, maxWidth int) string {
 		title = title[:titleMaxLen-3] + "..."
 	}
 
-	return fmt.Sprintf("%s %s %s %s", ultraworkIcon, statusIcon, story.ID, style.Render(title))
+	return fmt.Sprintf("%s %s %s", statusIcon, story.ID, style.Render(title))
 }
 
 func (m Model) renderOutputPanel(width, height int) string {

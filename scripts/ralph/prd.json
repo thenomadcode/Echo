@@ -1,136 +1,126 @@
 {
-  "projectName": "ai-typing-indicator",
-  "branchName": "feature/ai-typing-indicator",
-  "userStories": [
-    {
-      "id": "S01",
-      "title": "Add processing state fields to conversation schema",
-      "priority": 1,
-      "passes": true,
-      "ultrawork": true,
-      "acceptanceCriteria": [
-        "Add `isAiProcessing: v.optional(v.boolean())` field to conversations table in schema.ts",
-        "Add `processingStartedAt: v.optional(v.number())` field to conversations table",
-        "Run `bunx convex dev` to verify schema compiles without errors"
-      ]
-    },
-    {
-      "id": "S02",
-      "title": "Update AI processing to track state",
-      "priority": 2,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "When customer message is received, set `isAiProcessing: true` and `processingStartedAt: Date.now()` on the conversation",
-        "When AI response is saved, set `isAiProcessing: false` and clear `processingStartedAt`",
-        "When AI processing fails/errors, set `isAiProcessing: false`",
-        "State updates happen atomically with message operations"
-      ]
-    },
-    {
-      "id": "S03",
-      "title": "Create TypingIndicator component",
-      "priority": 3,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create `apps/web/src/components/conversation/TypingIndicator.tsx`",
-        "Component shows three animated bouncing dots",
-        "Component shows 'Echo AI is typing...' label below the dots",
-        "Animation has staggered 0.3s delay between each dot bounce",
-        "Uses `bg-muted` background and `text-muted-foreground` colors",
-        "Component accepts `className` prop for positioning"
-      ]
-    },
-    {
-      "id": "S04",
-      "title": "Integrate typing indicator into conversation view",
-      "priority": 4,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Subscribe to `isAiProcessing` field from conversation in the conversation detail page",
-        "Show TypingIndicator below messages when `isAiProcessing === true`",
-        "Position indicator on the right side (AI message side)",
-        "Indicator disappears immediately when AI response arrives",
-        "Auto-scroll to show typing indicator when it appears",
-        "BROWSER TEST: Navigate to a conversation, verify typing indicator is NOT shown when isAiProcessing is false",
-        "BROWSER TEST: When isAiProcessing is true, typing indicator appears with animated dots"
-      ]
-    },
-    {
-      "id": "S05",
-      "title": "Send Meta typing status",
-      "priority": 5,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create helper function to send typing indicator via Meta Graph API",
-        "POST to `https://graph.facebook.com/v21.0/me/messages` with `sender_action: 'typing_on'`",
-        "Call typing API when AI processing starts for Meta channel conversations",
-        "Fire and forget - don't block AI processing on typing API response",
-        "Handle API errors gracefully (log but don't fail)",
-        "Only send for conversations with channel 'instagram' or 'messenger'"
-      ]
-    },
-    {
-      "id": "S06",
-      "title": "Send WhatsApp read receipts",
-      "priority": 6,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create helper function to mark WhatsApp message as read",
-        "POST to WhatsApp Cloud API with status 'read'",
-        "Call read receipt API when customer message is received for WhatsApp conversations",
-        "Fire and forget - don't block AI processing",
-        "Handle API errors gracefully (log but don't fail)",
-        "Only send for conversations with channel 'whatsapp'"
-      ]
-    },
-    {
-      "id": "S07",
-      "title": "Add timeout detection",
-      "priority": 7,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Subscribe to `processingStartedAt` field in conversation view",
-        "Calculate elapsed time client-side using `Date.now() - processingStartedAt`",
-        "After 30 seconds of processing, set local `isTimedOut` state to true",
-        "Use `useEffect` with interval to check timeout every second",
-        "Clear interval when component unmounts or processing completes"
-      ]
-    },
-    {
-      "id": "S08",
-      "title": "Create timeout error state UI",
-      "priority": 8,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "When `isTimedOut` is true, show error state instead of typing indicator",
-        "Error state shows warning icon and 'AI response timed out' message",
-        "Include 'Retry' button that calls AI processing again",
-        "Include 'Respond manually' button that opens reply input",
-        "Style error state with `bg-destructive/10` and `text-destructive`",
-        "BROWSER TEST: After 30 seconds of simulated processing, timeout error appears",
-        "BROWSER TEST: Retry button is visible and clickable",
-        "BROWSER TEST: Respond manually button is visible and clickable"
-      ]
-    },
-    {
-      "id": "S09",
-      "title": "Clear processing state on timeout",
-      "priority": 9,
-      "passes": true,
-      "ultrawork": false,
-      "acceptanceCriteria": [
-        "Create Convex mutation to clear stale processing state",
-        "Mutation sets `isAiProcessing: false` when called",
-        "Call mutation when user clicks Retry button",
-        "Consider adding a scheduled job to auto-clear processing state after 60 seconds as safety net"
-      ]
-    }
-  ]
+	"projectName": "code-quality-refactor",
+	"branchName": "tnc-249-code-improvement-for-maintainability",
+	"userStories": [
+		{
+			"id": "S01",
+			"title": "Set Up Automated Code Quality Checks",
+			"priority": 1,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"Biome installed and configured based on better-t-stack template",
+				"VS Code auto-formats on save",
+				"Pre-commit hooks run Biome checks on staged files",
+				"Pre-commit hooks run TypeScript type checking",
+				"Pre-push hooks run full build validation",
+				"`bun run check` passes with 0 errors across entire codebase",
+				"Team documentation updated with linting workflows"
+			]
+		},
+		{
+			"id": "S02",
+			"title": "Use Shared Formatting Utilities",
+			"priority": 2,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"`apps/web/src/lib/formatting.ts` created with CURRENCY_LOCALES constant (COP, BRL, MXN, USD)",
+				"`apps/web/src/lib/formatting.ts` created with CURRENCY_SYMBOLS constant",
+				"`formatCurrency(amountInCents, currency)` function implemented",
+				"`formatDate(date, locale, options)` function implemented",
+				"`formatDateTime(date, locale)` function implemented",
+				"`formatRelativeTime(date)` function implemented",
+				"8+ files updated to import from shared module: routes/dashboard/index.tsx, routes/orders/index.tsx, routes/customers/$customerId.tsx, routes/products/index.tsx, components/ProductCard.tsx, components/PriceInput.tsx, and 2+ more files",
+				"All duplicate formatting implementations removed",
+				"All imports resolve correctly",
+				"No runtime errors in dev environment"
+			]
+		},
+		{
+			"id": "S03",
+			"title": "Use Shared Auth Utilities",
+			"priority": 3,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"`packages/backend/convex/lib/auth.ts` created with `requireAuth(ctx)` - throws if not authenticated",
+				"`requireBusinessOwnership(ctx, businessId)` - throws if user doesn't own business",
+				"`getAuthUser(ctx)` - returns user or null (no throw)",
+				"`isBusinessOwner(ctx, businessId)` - boolean check",
+				"50+ manual auth checks replaced across all backend files: businesses.ts (12 checks), products.ts (15 checks), orders.ts (18 checks), customers.ts (8 checks), conversations.ts (10 checks), messages.ts (6 checks), whatsapp.ts (5 checks), shopify.ts (8 checks)",
+				"All mutations using new helpers",
+				"All tests pass",
+				"TypeScript compilation succeeds"
+			]
+		},
+		{
+			"id": "S04",
+			"title": "Navigate Consistently Named Files",
+			"priority": 4,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"All 14+ PascalCase component files renamed to kebab-case: ImageUpload.tsx → image-upload.tsx, PriceInput.tsx → price-input.tsx, ProductCard.tsx → product-card.tsx, ProductForm.tsx → product-form.tsx, AppHeader.tsx → app-header.tsx, MessageBubble.tsx → message-bubble.tsx, StatusBadge.tsx → status-badge.tsx, MetricCard.tsx → metric-card.tsx, CustomerCard.tsx → customer-card.tsx, OrderCard.tsx → order-card.tsx, ConversationList.tsx → conversation-list.tsx, BusinessSelector.tsx → business-selector.tsx, LanguageSelector.tsx → language-selector.tsx, CurrencySelector.tsx → currency-selector.tsx",
+				"All imports updated automatically using ast-grep",
+				"Git history preserved using `git mv`",
+				"`bun run check-types` passes with 0 errors",
+				"`bun run dev` starts without errors",
+				"Manual smoke test confirms all routes load"
+			]
+		},
+		{
+			"id": "S05",
+			"title": "Work with Consistent Export Patterns",
+			"priority": 5,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"All UI components use named exports (e.g., `export function Button()`)",
+				"All route components use default exports (TanStack Router requirement)",
+				"All utility modules use named exports",
+				"Documentation updated with export conventions in AGENTS.md",
+				"No import errors after standardization"
+			]
+		},
+		{
+			"id": "S06",
+			"title": "Work with Smaller, Focused Files",
+			"priority": 6,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"Frontend: `customers/$customerId.tsx` (1,451 lines) split into: $customerId.tsx (100 lines) - Route + layout, $customerId/components/customer-header.tsx (150 lines), $customerId/components/orders-tab.tsx (400 lines), $customerId/components/conversations-tab.tsx (350 lines), $customerId/components/profile-tab.tsx (300 lines), $customerId/components/activity-tab.tsx (200 lines)",
+				"Frontend: `settings.tsx` (723 lines) split into: settings/index.tsx (80 lines), settings/components/general-settings.tsx (200 lines), settings/components/whatsapp-settings.tsx (180 lines), settings/components/ai-settings.tsx (150 lines), settings/components/billing-settings.tsx (120 lines)",
+				"Frontend: `conversations.$conversationId.tsx` (607 lines) split into: $conversationId.tsx (80 lines), $conversationId/components/conversation-header.tsx (100 lines), $conversationId/components/message-list.tsx (250 lines), $conversationId/components/message-input.tsx (150 lines)",
+				"Backend: `shopify.ts` (56KB, ~1,800 lines) split into: shopify/oauth.ts (200 lines), shopify/webhooks.ts (400 lines), shopify/sync-products.ts (600 lines), shopify/sync-orders.ts (300 lines), shopify/sync-customers.ts (200 lines), shopify/lib.ts (100 lines)",
+				"Backend: `http.ts` (24KB, ~800 lines) split into: http/auth.ts (200 lines), http/webhooks.ts (300 lines), http/shopify.ts (200 lines), http/index.ts (100 lines)",
+				"Backend: `orders.ts` (21KB, ~700 lines) split into: orders/queries.ts (200 lines), orders/mutations.ts (300 lines), orders/lib.ts (200 lines), orders/index.ts (50 lines)",
+				"All files <500 lines",
+				"Each module has single responsibility",
+				"All imports resolve correctly",
+				"All tests pass",
+				"No runtime errors",
+				"BROWSER TEST: Navigate to /customers/[id], verify all tabs render and switch correctly",
+				"BROWSER TEST: Navigate to /settings, verify all settings sections render",
+				"BROWSER TEST: Navigate to /conversations/[id], verify message list and input render"
+			]
+		},
+		{
+			"id": "S07",
+			"title": "Use Reusable Custom Hooks",
+			"priority": 7,
+			"passes": true,
+
+			"acceptanceCriteria": [
+				"`use-business-context.tsx` - Context provider for business ID, currency, timezone",
+				"`use-convex-mutation.ts` - Wraps mutations with automatic toast error handling",
+				"`use-debounce.ts` - Debounces values (e.g., search inputs)",
+				"`use-pagination.ts` - Pagination state management",
+				"All hooks have JSDoc comments",
+				"Usage examples in comments",
+				"Duplicate logic replaced with hooks in 10+ components"
+			]
+		}
+	]
 }

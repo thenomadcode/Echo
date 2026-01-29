@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.{ts,tsx,js,jsx,json}"
+      run: bunx biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: bun run check-types
+
+pre-push:
+  parallel: false
+  commands:
+    lint:
+      run: bun run check
+    
+    typecheck:
+      run: bun run check-types
+    
+    build:
+      run: bun run build

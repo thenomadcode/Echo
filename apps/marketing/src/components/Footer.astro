@@ -1,23 +1,24 @@
 ---
+interface Link {
+	href: string;
+	label: string;
+}
+
 const currentYear = new Date().getFullYear();
 
-const productLinks = [
-  { href: "/features/ai-chat", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/features/integrations", label: "Integrations" },
+const productLinks: Link[] = [
+	{ href: "/features/ai-chat", label: "Features" },
+	{ href: "/pricing", label: "Pricing" },
+	{ href: "/features/integrations", label: "Integrations" },
 ];
 
-const resourceLinks = [
-  { href: "http://localhost:4000", label: "Documentation" },
-];
+const resourceLinks: Link[] = [{ href: "http://localhost:4000", label: "Documentation" }];
 
-const companyLinks = [
-  { href: "/about", label: "About" },
-];
+const companyLinks: Link[] = [{ href: "/about", label: "About" }];
 
-const legalLinks = [
-  { href: "/legal/privacy", label: "Privacy Policy" },
-  { href: "/legal/terms", label: "Terms of Service" },
+const legalLinks: Link[] = [
+	{ href: "/legal/privacy", label: "Privacy Policy" },
+	{ href: "/legal/terms", label: "Terms of Service" },
 ];
 ---
 

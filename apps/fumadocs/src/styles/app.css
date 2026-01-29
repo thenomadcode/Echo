@@ -11,48 +11,48 @@
 */
 
 :root {
-  /* Light Mode - Echo Sophisticated Warmth */
-  --color-fd-background: oklch(0.985 0.001 106);
-  --color-fd-foreground: oklch(0.216 0.006 56);
-  --color-fd-muted: oklch(0.965 0.003 106);
-  --color-fd-muted-foreground: oklch(0.553 0.012 58);
-  --color-fd-popover: oklch(0.99 0.001 106);
-  --color-fd-popover-foreground: oklch(0.216 0.006 56);
-  --color-fd-card: oklch(0.99 0.001 106);
-  --color-fd-card-foreground: oklch(0.216 0.006 56);
-  --color-fd-border: oklch(0.923 0.003 49 / 0.5);
-  --color-fd-primary: oklch(0.553 0.174 38);
-  --color-fd-primary-foreground: oklch(0.985 0.001 106);
-  --color-fd-secondary: oklch(0.955 0.008 56);
-  --color-fd-secondary-foreground: oklch(0.216 0.006 56);
-  --color-fd-accent: oklch(0.955 0.008 56 / 0.5);
-  --color-fd-accent-foreground: oklch(0.216 0.006 56);
-  --color-fd-ring: oklch(0.553 0.174 38);
+	/* Light Mode - Echo Sophisticated Warmth */
+	--color-fd-background: oklch(0.985 0.001 106);
+	--color-fd-foreground: oklch(0.216 0.006 56);
+	--color-fd-muted: oklch(0.965 0.003 106);
+	--color-fd-muted-foreground: oklch(0.553 0.012 58);
+	--color-fd-popover: oklch(0.99 0.001 106);
+	--color-fd-popover-foreground: oklch(0.216 0.006 56);
+	--color-fd-card: oklch(0.99 0.001 106);
+	--color-fd-card-foreground: oklch(0.216 0.006 56);
+	--color-fd-border: oklch(0.923 0.003 49 / 0.5);
+	--color-fd-primary: oklch(0.553 0.174 38);
+	--color-fd-primary-foreground: oklch(0.985 0.001 106);
+	--color-fd-secondary: oklch(0.955 0.008 56);
+	--color-fd-secondary-foreground: oklch(0.216 0.006 56);
+	--color-fd-accent: oklch(0.955 0.008 56 / 0.5);
+	--color-fd-accent-foreground: oklch(0.216 0.006 56);
+	--color-fd-ring: oklch(0.553 0.174 38);
 }
 
 .dark {
-  /* Dark Mode - Echo Sophisticated Warmth */
-  --color-fd-background: oklch(0.216 0.006 56);
-  --color-fd-foreground: oklch(0.985 0.001 106);
-  --color-fd-muted: oklch(0.25 0.005 56);
-  --color-fd-muted-foreground: oklch(0.65 0.008 58);
-  --color-fd-popover: oklch(0.268 0.006 34);
-  --color-fd-popover-foreground: oklch(0.985 0.001 106);
-  --color-fd-card: oklch(0.268 0.006 34);
-  --color-fd-card-foreground: oklch(0.985 0.001 106);
-  --color-fd-border: oklch(0.35 0.006 56 / 0.4);
-  --color-fd-primary: oklch(0.702 0.191 41);
-  --color-fd-primary-foreground: oklch(0.216 0.006 56);
-  --color-fd-secondary: oklch(0.268 0.006 34);
-  --color-fd-secondary-foreground: oklch(0.985 0.001 106);
-  --color-fd-accent: oklch(0.268 0.006 34 / 0.5);
-  --color-fd-accent-foreground: oklch(0.985 0.001 106);
-  --color-fd-ring: oklch(0.702 0.191 41);
+	/* Dark Mode - Echo Sophisticated Warmth */
+	--color-fd-background: oklch(0.216 0.006 56);
+	--color-fd-foreground: oklch(0.985 0.001 106);
+	--color-fd-muted: oklch(0.25 0.005 56);
+	--color-fd-muted-foreground: oklch(0.65 0.008 58);
+	--color-fd-popover: oklch(0.268 0.006 34);
+	--color-fd-popover-foreground: oklch(0.985 0.001 106);
+	--color-fd-card: oklch(0.268 0.006 34);
+	--color-fd-card-foreground: oklch(0.985 0.001 106);
+	--color-fd-border: oklch(0.35 0.006 56 / 0.4);
+	--color-fd-primary: oklch(0.702 0.191 41);
+	--color-fd-primary-foreground: oklch(0.216 0.006 56);
+	--color-fd-secondary: oklch(0.268 0.006 34);
+	--color-fd-secondary-foreground: oklch(0.985 0.001 106);
+	--color-fd-accent: oklch(0.268 0.006 34 / 0.5);
+	--color-fd-accent-foreground: oklch(0.985 0.001 106);
+	--color-fd-ring: oklch(0.702 0.191 41);
 }
 
 /* Typography - Echo Fonts */
 @theme inline {
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+	--font-sans: "DM Sans", system-ui, sans-serif;
+	--font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, monospace;
 }

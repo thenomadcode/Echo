@@ -1,16 +1,16 @@
 ---
 interface Props {
-  variant?: "default" | "secondary" | "outline" | "coming-soon";
-  class?: string;
+	variant?: "default" | "secondary" | "outline" | "coming-soon";
+	class?: string;
 }
 
 const { variant = "default", class: className = "" } = Astro.props;
 
 const variants = {
-  default: "bg-primary text-primary-foreground",
-  secondary: "bg-secondary text-secondary-foreground",
-  outline: "border border-border text-foreground bg-transparent",
-  "coming-soon": "bg-muted text-muted-foreground border border-border",
+	default: "bg-primary text-primary-foreground",
+	secondary: "bg-secondary text-secondary-foreground",
+	outline: "border border-border text-foreground bg-transparent",
+	"coming-soon": "bg-muted text-muted-foreground border border-border",
 };
 ---
 
