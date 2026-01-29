@@ -10,7 +10,7 @@ pre-commit:
       run: bun run check-types
 
 pre-push:
-  parallel: true
+  parallel: false
   commands:
     lint:
       run: bun run check
