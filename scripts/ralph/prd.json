@@ -1,125 +1,368 @@
 {
-	"projectName": "code-quality-refactor",
-	"branchName": "tnc-249-code-improvement-for-maintainability",
+	"projectName": "product-variants",
+	"branchName": "tnc-239-handle-product-variants",
 	"userStories": [
 		{
 			"id": "S01",
-			"title": "Set Up Automated Code Quality Checks",
+			"title": "Create productVariants schema and migrate products table",
 			"priority": 1,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": true,
 			"acceptanceCriteria": [
-				"Biome installed and configured based on better-t-stack template",
-				"VS Code auto-formats on save",
-				"Pre-commit hooks run Biome checks on staged files",
-				"Pre-commit hooks run TypeScript type checking",
-				"Pre-push hooks run full build validation",
-				"`bun run check` passes with 0 errors across entire codebase",
-				"Team documentation updated with linting workflows"
+				"Create productVariants table in packages/backend/convex/schema.ts with all fields: productId, name, sku, barcode, price, compareAtPrice, costPrice, inventoryQuantity, inventoryPolicy, trackInventory, option1Name/Value, option2Name/Value, option3Name/Value, imageId, externalVariantId, lastSyncAt, weight, weightUnit, requiresShipping, available, position, createdAt, updatedAt",
+				"Add indexes: by_product [productId], by_sku [sku], by_external_id [externalVariantId]",
+				"Update products table: add hasVariants boolean field, rename shopifyProductId to externalProductId, rename shopifyVariantId to externalVariantId (deprecated, will move to variants), update source union to include 'woocommerce' and 'tiendanube'",
+				"Remove price and currency fields from products table (moved to variants)",
+				"Update products indexes: rename by_shopify_id to by_external_id with [businessId, source, externalProductId]",
+				"Update orders.items schema to include: variantId (Id<productVariants>), variantName (string), sku (optional string)",
+				"All schema changes maintain backward compatibility with existing data"
 			]
 		},
 		{
 			"id": "S02",
-			"title": "Use Shared Formatting Utilities",
+			"title": "Create variant CRUD mutations",
 			"priority": 2,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": false,
 			"acceptanceCriteria": [
-				"`apps/web/src/lib/formatting.ts` created with CURRENCY_LOCALES constant (COP, BRL, MXN, USD)",
-				"`apps/web/src/lib/formatting.ts` created with CURRENCY_SYMBOLS constant",
-				"`formatCurrency(amountInCents, currency)` function implemented",
-				"`formatDate(date, locale, options)` function implemented",
-				"`formatDateTime(date, locale)` function implemented",
-				"`formatRelativeTime(date)` function implemented",
-				"8+ files updated to import from shared module: routes/dashboard/index.tsx, routes/orders/index.tsx, routes/customers/$customerId.tsx, routes/products/index.tsx, components/ProductCard.tsx, components/PriceInput.tsx, and 2+ more files",
-				"All duplicate formatting implementations removed",
-				"All imports resolve correctly",
-				"No runtime errors in dev environment"
+				"Create packages/backend/convex/variants.ts with mutations:",
+				"variants.create({ productId, name, price, sku?, barcode?, compareAtPrice?, costPrice?, inventoryQuantity, inventoryPolicy, trackInventory, option1Name?, option1Value?, option2Name?, option2Value?, option3Name?, option3Value?, imageId?, externalVariantId?, weight?, weightUnit?, requiresShipping, available, position }) - returns variantId",
+				"variants.update({ variantId, name?, price?, sku?, inventoryQuantity?, available?, ... }) - updates variant fields",
+				"variants.delete({ variantId }) - soft delete (sets available: false, preserves for order history)",
+				"variants.list({ productId }) - returns all variants for a product ordered by position",
+				"variants.get({ variantId }) - returns single variant",
+				"variants.adjustInventory({ variantId, delta }) - increments/decrements inventoryQuantity by delta",
+				"All mutations validate businessId ownership through product relationship",
+				"Mutations update updatedAt timestamp",
+				"Create and update set default values: inventoryPolicy: 'deny', trackInventory: true, requiresShipping: true, available: true"
 			]
 		},
 		{
 			"id": "S03",
-			"title": "Use Shared Auth Utilities",
+			"title": "Update product queries to include variants",
 			"priority": 3,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": false,
 			"acceptanceCriteria": [
-				"`packages/backend/convex/lib/auth.ts` created with `requireAuth(ctx)` - throws if not authenticated",
-				"`requireBusinessOwnership(ctx, businessId)` - throws if user doesn't own business",
-				"`getAuthUser(ctx)` - returns user or null (no throw)",
-				"`isBusinessOwner(ctx, businessId)` - boolean check",
-				"50+ manual auth checks replaced across all backend files: businesses.ts (12 checks), products.ts (15 checks), orders.ts (18 checks), customers.ts (8 checks), conversations.ts (10 checks), messages.ts (6 checks), whatsapp.ts (5 checks), shopify.ts (8 checks)",
-				"All mutations using new helpers",
-				"All tests pass",
-				"TypeScript compilation succeeds"
+				"Update packages/backend/convex/products.ts queries:",
+				"products.get({ productId }) now eagerly loads variants using .query('productVariants').withIndex('by_product')",
+				"products.list({ businessId, ... }) returns products with variant count and price range calculated",
+				"Create helper: getProductWithVariants(ctx, productId) returns { product, variants }",
+				"For simple products (hasVariants: false), create default variant on product creation with empty name",
+				"products.create now accepts hasVariants boolean parameter",
+				"If hasVariants: true, do not create default variant (variants created separately)",
+				"If hasVariants: false, create one variant with product's legacy price/currency",
+				"Update products.delete to also soft delete all associated variants"
 			]
 		},
 		{
 			"id": "S04",
-			"title": "Navigate Consistently Named Files",
+			"title": "Rewrite Shopify import to create products with variants",
 			"priority": 4,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": true,
 			"acceptanceCriteria": [
-				"All 14+ PascalCase component files renamed to kebab-case: ImageUpload.tsx → image-upload.tsx, PriceInput.tsx → price-input.tsx, ProductCard.tsx → product-card.tsx, ProductForm.tsx → product-form.tsx, AppHeader.tsx → app-header.tsx, MessageBubble.tsx → message-bubble.tsx, StatusBadge.tsx → status-badge.tsx, MetricCard.tsx → metric-card.tsx, CustomerCard.tsx → customer-card.tsx, OrderCard.tsx → order-card.tsx, ConversationList.tsx → conversation-list.tsx, BusinessSelector.tsx → business-selector.tsx, LanguageSelector.tsx → language-selector.tsx, CurrencySelector.tsx → currency-selector.tsx",
-				"All imports updated automatically using ast-grep",
-				"Git history preserved using `git mv`",
-				"`bun run check-types` passes with 0 errors",
-				"`bun run dev` starts without errors",
-				"Manual smoke test confirms all routes load"
+				"Update packages/backend/convex/integrations/shopify/products.ts importProducts action:",
+				"For each Shopify product, create ONE parent product (not N products per variant)",
+				"Set product.hasVariants = true if variants.length > 1, false if variants.length === 1",
+				"Download Shopify product image from CDN, upload to Convex storage, store imageId",
+				"Map Shopify product fields: title → name, description_html → description, id → externalProductId",
+				"For each Shopify variant, create productVariant record:",
+				"Map variant fields: title → name (or generate from options), price → price (convert to cents), sku → sku, inventory_quantity → inventoryQuantity",
+				"Extract variant options: option1 → option1Name/Value, option2 → option2Name/Value, option3 → option3Name/Value",
+				"Download variant image if different from product image, upload to Convex, store variant.imageId",
+				"Store Shopify variant GID in externalVariantId",
+				"Set variant.position based on Shopify variant order",
+				"Import summary reports: 'Imported X products with Y total variants' (not individual variant count)",
+				"No longer create duplicate products with variant names appended"
 			]
 		},
 		{
 			"id": "S05",
-			"title": "Work with Consistent Export Patterns",
+			"title": "Update Shopify webhooks for variant sync",
 			"priority": 5,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": false,
 			"acceptanceCriteria": [
-				"All UI components use named exports (e.g., `export function Button()`)",
-				"All route components use default exports (TanStack Router requirement)",
-				"All utility modules use named exports",
-				"Documentation updated with export conventions in AGENTS.md",
-				"No import errors after standardization"
+				"Update packages/backend/convex/integrations/shopify/webhooks.ts handleWebhook:",
+				"products/update webhook: find product by externalProductId, update parent product fields (name, description, imageId)",
+				"For each variant in webhook payload: upsert productVariant by externalVariantId",
+				"Sync variant fields: price, sku, inventoryQuantity, option values, imageId",
+				"If variant deleted in Shopify (not in webhook payload but exists in Echo): mark variant unavailable",
+				"If new variant added in Shopify: create new productVariant record",
+				"Download and upload new/changed images to Convex storage",
+				"products/delete webhook: soft delete product and all variants",
+				"Track lastSyncAt on product and variants"
 			]
 		},
 		{
 			"id": "S06",
-			"title": "Work with Smaller, Focused Files",
+			"title": "Update product form for simple products",
 			"priority": 6,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": false,
 			"acceptanceCriteria": [
-				"Frontend: `customers/$customerId.tsx` (1,451 lines) split into: $customerId.tsx (100 lines) - Route + layout, $customerId/components/customer-header.tsx (150 lines), $customerId/components/orders-tab.tsx (400 lines), $customerId/components/conversations-tab.tsx (350 lines), $customerId/components/profile-tab.tsx (300 lines), $customerId/components/activity-tab.tsx (200 lines)",
-				"Frontend: `settings.tsx` (723 lines) split into: settings/index.tsx (80 lines), settings/components/general-settings.tsx (200 lines), settings/components/whatsapp-settings.tsx (180 lines), settings/components/ai-settings.tsx (150 lines), settings/components/billing-settings.tsx (120 lines)",
-				"Frontend: `conversations.$conversationId.tsx` (607 lines) split into: $conversationId.tsx (80 lines), $conversationId/components/conversation-header.tsx (100 lines), $conversationId/components/message-list.tsx (250 lines), $conversationId/components/message-input.tsx (150 lines)",
-				"Backend: `shopify.ts` (56KB, ~1,800 lines) split into: shopify/oauth.ts (200 lines), shopify/webhooks.ts (400 lines), shopify/sync-products.ts (600 lines), shopify/sync-orders.ts (300 lines), shopify/sync-customers.ts (200 lines), shopify/lib.ts (100 lines)",
-				"Backend: `http.ts` (24KB, ~800 lines) split into: http/auth.ts (200 lines), http/webhooks.ts (300 lines), http/shopify.ts (200 lines), http/index.ts (100 lines)",
-				"Backend: `orders.ts` (21KB, ~700 lines) split into: orders/queries.ts (200 lines), orders/mutations.ts (300 lines), orders/lib.ts (200 lines), orders/index.ts (50 lines)",
-				"All files <500 lines",
-				"Each module has single responsibility",
-				"All imports resolve correctly",
-				"All tests pass",
-				"No runtime errors",
-				"BROWSER TEST: Navigate to /customers/[id], verify all tabs render and switch correctly",
-				"BROWSER TEST: Navigate to /settings, verify all settings sections render",
-				"BROWSER TEST: Navigate to /conversations/[id], verify message list and input render"
+				"Update apps/web/src/components/products/product-form.tsx:",
+				"Add 'This product has variants' checkbox (default: false)",
+				"When hasVariants = false, show legacy fields: price input, currency (derived from business)",
+				"On save with hasVariants: false, create product with one default variant (name: '', price from form)",
+				"Hide variant builder UI when hasVariants = false",
+				"Form validates: if hasVariants: false, price is required",
+				"Update products.create mutation call to pass hasVariants parameter",
+				"BROWSER TEST: Navigate to /products/new, verify simple product form renders with price field",
+				"BROWSER TEST: Create simple product, verify product and default variant created",
+				"BROWSER TEST: Edit simple product, verify price updates variant price"
 			]
 		},
 		{
 			"id": "S07",
-			"title": "Use Reusable Custom Hooks",
+			"title": "Build variant options builder UI",
 			"priority": 7,
-			"passes": true,
-
+			"passes": false,
+			"ultrawork": false,
 			"acceptanceCriteria": [
-				"`use-business-context.tsx` - Context provider for business ID, currency, timezone",
-				"`use-convex-mutation.ts` - Wraps mutations with automatic toast error handling",
-				"`use-debounce.ts` - Debounces values (e.g., search inputs)",
-				"`use-pagination.ts` - Pagination state management",
-				"All hooks have JSDoc comments",
-				"Usage examples in comments",
-				"Duplicate logic replaced with hooks in 10+ components"
+				"Update apps/web/src/components/products/product-form.tsx:",
+				"When hasVariants = true, show Variant Options section:",
+				"Option inputs (max 3): option name dropdown/text (Size, Color, Material) + values array input (comma-separated)",
+				"Add 'Generate Variants' button: creates all combinations of option values",
+				"Display generated variants in editable table: Name, SKU, Price, Stock, Image upload",
+				"Each variant row: inline edit for name, sku, price, inventoryQuantity",
+				"Variant image upload using existing ImageUpload component",
+				"Delete variant button (soft delete)",
+				"On save: create product, then create all variants using variants.create",
+				"Validate: if hasVariants: true, at least 1 option with values required",
+				"Calculate variant position based on order in UI",
+				"BROWSER TEST: Navigate to /products/new, enable 'has variants', add Size option with S,M,L values",
+				"BROWSER TEST: Click 'Generate Variants', verify 3 variant rows appear in table",
+				"BROWSER TEST: Edit variant price, save product, verify variant price persisted",
+				"BROWSER TEST: Upload variant image, verify image upload succeeds"
+			]
+		},
+		{
+			"id": "S08",
+			"title": "Display products with variants in product list",
+			"priority": 8,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update apps/web/src/components/products/product-card.tsx:",
+				"For products with variants, show price range: 'from $25' or '$25 - $30' if different prices",
+				"Show total stock across all variants: sum of variant.inventoryQuantity",
+				"Show variant count badge: '5 variants' or hide if simple product",
+				"Add expandable section: click to show variant list",
+				"Variant list shows: name, price, stock, availability toggle per variant",
+				"Update apps/web/src/components/products/product-table.tsx with same logic for table view",
+				"Simple products (hasVariants: false) show single price from default variant",
+				"BROWSER TEST: Navigate to /products, verify variant products show price range and variant count",
+				"BROWSER TEST: Click expand on variant product, verify variant list displays",
+				"BROWSER TEST: Verify simple products show single price without variant UI"
+			]
+		},
+		{
+			"id": "S09",
+			"title": "Update order schema and creation for variants",
+			"priority": 9,
+			"passes": false,
+			"ultrawork": true,
+			"acceptanceCriteria": [
+				"Update packages/backend/convex/schema.ts orders.items structure:",
+				"Add variantId: v.id('productVariants') to order items",
+				"Add variantName: v.string() to order items (for display, e.g. 'Small / Red')",
+				"Add sku: v.optional(v.string()) to order items (for fulfillment)",
+				"Keep productId for parent product reference",
+				"Update packages/backend/convex/orders/mutations.ts createOrder:",
+				"For each order item, resolve productId to get product + variants",
+				"Match item.productQuery to specific variant (use variant.name or SKU)",
+				"Store both productId (parent) and variantId (specific variant) in order item",
+				"Fetch price from variant.price (not product.price)",
+				"Copy variant.name to item.variantName, variant.sku to item.sku",
+				"Check variant.inventoryQuantity if variant.trackInventory: true, throw error if insufficient stock",
+				"Decrement variant.inventoryQuantity after order creation using variants.adjustInventory",
+				"Mark variant unavailable if inventoryQuantity reaches 0"
+			]
+		},
+		{
+			"id": "S10",
+			"title": "Update order display with variant details",
+			"priority": 10,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update apps/web/src/routes/_authenticated/orders.$orderId.tsx:",
+				"Order items display: 'Product Name - Variant Name × Quantity - $Price'",
+				"Show SKU below variant name if available: 'SKU: HOODIE-SM-RED'",
+				"For simple products (variantName empty), show product name only",
+				"Link product name to /products/{productId}",
+				"BROWSER TEST: Navigate to order detail page, verify variant name and SKU displayed",
+				"BROWSER TEST: Verify simple product orders show product name without variant",
+				"BROWSER TEST: Verify product link navigates to correct product page"
+			]
+		},
+		{
+			"id": "S11",
+			"title": "Update AI prompts to include variant data",
+			"priority": 11,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update packages/backend/convex/ai/agentPrompt.ts buildAgentPrompt:",
+				"Query products with variants eagerly: for each product, load all available variants",
+				"Remove current groupProductsByVariant logic (no longer needed)",
+				"Format products for AI with nested variants structure:",
+				"Product object includes: id, name, description, hasVariants, variants array",
+				"Each variant includes: id, name, price (formatted in currency), sku, inventoryQuantity, options object",
+				"Options object: { size: 'Small', color: 'Red' } extracted from option1Name/Value, option2Name/Value, option3Name/Value",
+				"Hide out-of-stock variants (inventoryQuantity: 0) or mark as '(Out of stock)'",
+				"For simple products, include single variant with empty name",
+				"Update system prompt with variant handling instructions (see PRD AI System Prompt Addition)",
+				"Test prompt includes variant examples showing how AI should present options"
+			]
+		},
+		{
+			"id": "S12",
+			"title": "Implement AI variant recommendation logic",
+			"priority": 12,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update packages/backend/convex/ai/agent.ts processMessage:",
+				"When customer asks about product with variants, AI lists all available variants with prices",
+				"Format: 'Product Name available in: • Variant 1 - $price (X in stock) • Variant 2 - $price'",
+				"Group variants by parent product in response (not separate product recommendations)",
+				"Show stock levels per variant",
+				"For simple products, respond without variant complexity",
+				"Test scenarios:",
+				"Customer: 'Do you have hoodies?' → AI: 'Yes! Classic Hoodie in: Small $25, Medium $25, Large $30'",
+				"Customer: 'Show me your products' → AI groups products, shows variants per product",
+				"Customer: 'How much is the hoodie?' → AI shows all variant prices if they differ"
+			]
+		},
+		{
+			"id": "S13",
+			"title": "Implement AI variant selection and matching",
+			"priority": 13,
+			"passes": false,
+			"ultrawork": true,
+			"acceptanceCriteria": [
+				"Update packages/backend/convex/ai/tools.ts updateOrder tool:",
+				"When customer specifies variant (e.g., 'I want the red one in small'), extract variant options from request",
+				"Match extracted options to product variants using option1Value, option2Value, option3Value fields",
+				"Fuzzy matching: 'medium' matches 'Medium', 'M', 'Med'",
+				"If exact match found, add variant to order with variantId",
+				"If multiple matches (e.g., 'small' matches 'Small/Red' and 'Small/Blue'), ask clarifying question",
+				"If no match, respond with available options: 'We have Small, Medium, Large. Which would you like?'",
+				"Store matched variantId in conversation.pendingOrder.items",
+				"Test cases:",
+				"Input: 'red hoodie in small' → Match to variant with size=Small, color=Red",
+				"Input: 'I want a large' (ambiguous color) → Ask: 'Large in which color?'",
+				"Input: 'medium blue' → Match to variant with size=Medium, color=Blue",
+				"Input: 'I want the hoodie' (product with variants) → Ask: 'Which size?'",
+				"Confirm selection: 'Added Classic Hoodie (Small / Red) - $27.00 to your order'"
+			]
+		},
+		{
+			"id": "S14",
+			"title": "Implement AI variant disambiguation",
+			"priority": 14,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update packages/backend/convex/ai/process.ts to handle ambiguous variant requests:",
+				"If customer provides partial variant info (only 1 of 2 options), ask for missing option",
+				"Example: Customer says 'large', product has size+color → Ask: 'Large in which color?'",
+				"If customer says just product name with variants → Ask for variant choice with options",
+				"Track partial selections in conversation state (e.g., size selected, waiting for color)",
+				"When all options provided, match to specific variant and add to order",
+				"Never assume or auto-select variant options",
+				"Test scenarios:",
+				"Customer: 'I want a large' → AI: 'Large in Red ($27) or Blue ($27)?'",
+				"Customer: 'Blue' → AI: 'Which size for Blue? Small, Medium, or Large?'",
+				"Customer: 'Do you have red?' → AI: 'Yes, in Small or Medium. Which size?'",
+				"Clear partial state when customer changes product selection"
+			]
+		},
+		{
+			"id": "S15",
+			"title": "Implement variant inventory tracking",
+			"priority": 15,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Create packages/backend/convex/variants/inventory.ts:",
+				"checkStock({ variantId, quantity }) query: returns true if variant.inventoryQuantity >= quantity",
+				"If variant.trackInventory: false, always return true (unlimited stock)",
+				"decrementStock({ variantId, quantity }) mutation: subtract quantity from inventoryQuantity",
+				"Throw error if attempting to decrement below 0 (prevent negative stock)",
+				"Set variant.available: false when inventoryQuantity reaches 0",
+				"incrementStock({ variantId, quantity }) mutation: add quantity (for cancellations, returns)",
+				"Set variant.available: true when incrementing from 0",
+				"Integrate with order creation: call checkStock before creating order, decrementStock after",
+				"Integrate with order cancellation: call incrementStock to restore stock",
+				"Shopify sync: update inventoryQuantity from Shopify inventory_quantity field",
+				"Add manual stock adjustment UI in product form for each variant"
+			]
+		},
+		{
+			"id": "S16",
+			"title": "Implement variant image upload to Convex",
+			"priority": 16,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Create image upload helper in packages/backend/convex/lib/imageUpload.ts:",
+				"downloadAndUploadImage({ imageUrl }) action: fetch from external URL, upload to Convex storage, return storageId",
+				"Handle image formats: JPEG, PNG, WebP",
+				"Validate image size (max 5MB)",
+				"Return error if download fails",
+				"Update Shopify import to use downloadAndUploadImage for product and variant images",
+				"Store returned storageId in product.imageId or variant.imageId",
+				"Update product form: use existing ImageUpload component for variant images",
+				"Each variant can have its own image (overrides product default)",
+				"getProductImageUrl({ product, variant? }) helper: returns variant.imageId if exists, else product.imageId",
+				"Use ctx.storage.getUrl(imageId) to get public HTTPS URL for messaging APIs"
+			]
+		},
+		{
+			"id": "S17",
+			"title": "Implement image delivery via WhatsApp/Instagram/Messenger",
+			"priority": 17,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update packages/backend/convex/ai/agent.ts:",
+				"When AI recommends product, proactively send product image if available",
+				"Use getProductImageUrl helper to get variant or product image",
+				"Get public URL: await ctx.storage.getUrl(imageId)",
+				"Send via WhatsApp: integrate with existing WhatsApp message sending (use media message type)",
+				"Message format: image + caption with product name and variant",
+				"For Instagram/Messenger, use same public URL approach (platform APIs accept HTTPS URLs)",
+				"Test scenarios:",
+				"Customer: 'Show me the hoodie' → AI sends product image",
+				"Customer: 'I want the red one' → AI sends variant-specific image if available",
+				"Image URL must be publicly accessible HTTPS (Convex storage provides this)",
+				"Handle missing images gracefully (text-only response)"
+			]
+		},
+		{
+			"id": "S18",
+			"title": "Update product editing for variants",
+			"priority": 18,
+			"passes": false,
+			"ultrawork": false,
+			"acceptanceCriteria": [
+				"Update apps/web/src/routes/_authenticated/products.$productId.tsx edit page:",
+				"Load product with variants using products.get",
+				"Show variant table with inline editing for: name, price, sku, inventoryQuantity, available toggle",
+				"Add 'New Variant' button to add variant to existing product",
+				"Remove variant button (soft delete, confirm if variant exists in orders)",
+				"Bulk edit: select multiple variants, update price or stock in batch",
+				"Change variant options: update option1Name/Value, option2Name/Value (regenerate variant names)",
+				"Upload/replace variant images",
+				"Save validates: cannot remove all variants from product with hasVariants: true",
+				"BROWSER TEST: Navigate to /products/{id}/edit, verify variant table displays",
+				"BROWSER TEST: Edit variant price, save, verify price updated",
+				"BROWSER TEST: Add new variant, verify variant created",
+				"BROWSER TEST: Delete variant, verify soft delete (still in DB, available: false)"
 			]
 		}
 	]
