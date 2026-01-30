@@ -6235,3 +6235,43 @@
 - Legacy price field maintained for backward compatibility alongside new variants table
 
 ---
+
+## 2026-01-30 15:27 - S07: Build variant options builder UI
+
+**What was implemented:**
+- Updated apps/web/src/components/products/product-form.tsx to add variant builder UI
+- Added VariantOption and VariantData TypeScript interfaces
+- Implemented generateVariantCombinations() function for cartesian product of option values
+- Added state management: variantOptions, variants, optionInputValues
+- Created Variant Options Builder section (shown only when hasVariants = true):
+  - Up to 3 option inputs (name + comma-separated values with tag preview)
+  - Add/Remove option buttons
+  - Generate Variants button that creates all combinations
+- Created editable Variants Table with:
+  - Inline editing for Name, SKU, Price, Stock
+  - Image upload dialog per variant using existing ImageUpload component
+  - Soft delete button (Trash2 icon)
+- Updated form submission logic:
+  - Creates product first using products.create
+  - Then loops through active variants and calls variants.create for each
+  - Validates that hasVariants products have at least 1 active variant
+  - Validates all variants have price > 0
+  - Passes position based on UI order
+
+**Files changed:**
+- apps/web/src/components/products/product-form.tsx (+398 lines)
+
+**Verification:**
+- bun run check-types: passes (0 errors)
+- LSP diagnostics: 0 errors on changed file
+- Pre-commit hooks: all passed
+
+**Learnings for future iterations:**
+- Cartesian product generation: nested loops for options, concat option values to generate variant name
+- Use react state (useState) for dynamic option/variant management in forms
+- Table from shadcn/ui ideal for inline editing: TableCell with Input components
+- Dialog component works well for image upload per variant row
+- Form validation at submission: check variants.filter(v => !v.deleted).length > 0 when hasVariants
+- Variant position should be index in UI order for correct display later
+
+---
