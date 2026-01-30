@@ -6203,3 +6203,35 @@
 - Cascade pattern: mark parent unavailable → also mark children unavailable
 
 ---
+
+## 2026-01-30 15:23 - S06: Update product form for simple products
+
+**What was implemented:**
+- Added "This product has variants" checkbox to product-form.tsx with default value false
+- Added hasVariants field to form default values and form state management
+- Made price field conditional: only displays when hasVariants is false
+- Updated form validation: price is required only for simple products (hasVariants: false)
+- Updated products.create mutation call to pass hasVariants parameter
+- Updated products.update mutation to update default variant price for simple products:
+  - When price is updated for a simple product (hasVariants: false)
+  - Finds the default variant (position: 0)
+  - Updates both product.price (legacy) and variant.price fields
+- Added Checkbox component import from @/components/ui/checkbox
+- Form now correctly creates simple products with one default variant when hasVariants: false
+
+**Files changed:**
+- apps/web/src/components/products/product-form.tsx (+30 lines - checkbox UI, conditional rendering, hasVariants handling)
+- packages/backend/convex/products.ts (+15 lines - update mutation enhanced to sync variant price)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors in web and backend)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- TanStack Form nested field pattern: use `<form.Field name="field">` to access field state for conditional rendering
+- Checkbox onCheckedChange passes boolean directly, no need for `checked === true` conversion
+- Conditional rendering in forms: wrap field in another field's render function to access its state
+- Default variant identification: position === 0 for simple products' single variant
+- Legacy price field maintained for backward compatibility alongside new variants table
+
+---

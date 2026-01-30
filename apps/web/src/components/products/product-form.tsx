@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -40,6 +41,7 @@ interface ProductFormProps {
 		price: number;
 		categoryId?: string;
 		imageId?: string;
+		hasVariants?: boolean;
 	};
 	onSuccess?: () => void;
 }
@@ -64,14 +66,6 @@ export function ProductForm({
 		businessId ? { businessId: businessId as Id<"businesses"> } : "skip",
 	);
 
-	const productSchema = z.object({
-		name: z.string().min(1, "Product name is required"),
-		description: z.string(),
-		price: z.number().min(1, "Price must be greater than 0"),
-		categoryId: z.string(),
-		imageId: z.string(),
-	});
-
 	const form = useForm({
 		defaultValues: {
 			name: initialData?.name || "",
@@ -79,9 +73,19 @@ export function ProductForm({
 			price: initialData?.price || 0,
 			categoryId: initialData?.categoryId || "",
 			imageId: initialData?.imageId || "",
+			hasVariants: initialData?.hasVariants ?? false,
 		},
 		onSubmit: async ({ value }) => {
 			try {
+				const productSchema = z.object({
+					name: z.string().min(1, "Product name is required"),
+					description: z.string(),
+					price: value.hasVariants ? z.number() : z.number().min(1, "Price must be greater than 0"),
+					categoryId: z.string(),
+					imageId: z.string(),
+					hasVariants: z.boolean(),
+				});
+
 				const validated = productSchema.safeParse(value);
 
 				if (!validated.success) {
@@ -95,9 +99,10 @@ export function ProductForm({
 						businessId,
 						name: validated.data.name,
 						description: validated.data.description || undefined,
-						price: validated.data.price,
+						price: validated.data.hasVariants ? undefined : validated.data.price,
 						categoryId: validated.data.categoryId || undefined,
 						imageId: validated.data.imageId || undefined,
+						hasVariants: validated.data.hasVariants,
 					});
 					toast.success("Product created successfully");
 				} else {
@@ -191,28 +196,49 @@ export function ProductForm({
 						)}
 					</form.Field>
 
-					<form.Field name="price">
+					<form.Field name="hasVariants">
 						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={field.name}>
-									Price <span className="text-red-500">*</span>
-								</Label>
-								<PriceInput
+							<div className="flex items-center space-x-2">
+								<Checkbox
 									id={field.name}
-									name={field.name}
-									currency={currency}
-									value={field.state.value}
-									onChange={(valueInCents) => field.handleChange(valueInCents)}
-									placeholder="0.00"
+									checked={field.state.value}
+									onCheckedChange={(checked: boolean) => field.handleChange(checked)}
 								/>
-								{field.state.meta.errors.length > 0 &&
-									field.state.meta.errors.map((error, i) => (
-										<p key={i} className="text-red-500 text-sm">
-											{String(error)}
-										</p>
-									))}
+								<Label htmlFor={field.name} className="cursor-pointer font-normal text-sm">
+									This product has variants
+								</Label>
 							</div>
 						)}
+					</form.Field>
+
+					<form.Field name="hasVariants">
+						{(hasVariantsField) =>
+							!hasVariantsField.state.value ? (
+								<form.Field name="price">
+									{(field) => (
+										<div className="space-y-2">
+											<Label htmlFor={field.name}>
+												Price <span className="text-red-500">*</span>
+											</Label>
+											<PriceInput
+												id={field.name}
+												name={field.name}
+												currency={currency}
+												value={field.state.value}
+												onChange={(valueInCents) => field.handleChange(valueInCents)}
+												placeholder="0.00"
+											/>
+											{field.state.meta.errors.length > 0 &&
+												field.state.meta.errors.map((error, i) => (
+													<p key={i} className="text-red-500 text-sm">
+														{String(error)}
+													</p>
+												))}
+										</div>
+									)}
+								</form.Field>
+							) : null
+						}
 					</form.Field>
 
 					<form.Field name="categoryId">

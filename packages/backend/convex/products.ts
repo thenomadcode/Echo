@@ -87,7 +87,8 @@ export const update = mutation({
 
 		await requireBusinessOwnership(ctx, product.businessId as any);
 
-		const updates: Record<string, unknown> = { updatedAt: Date.now() };
+		const now = Date.now();
+		const updates: Record<string, unknown> = { updatedAt: now };
 
 		if (args.name !== undefined) updates.name = args.name;
 		if (args.description !== undefined) updates.description = args.description;
@@ -97,6 +98,21 @@ export const update = mutation({
 		if (args.available !== undefined) updates.available = args.available;
 
 		await ctx.db.patch(args.productId, updates);
+
+		if (args.price !== undefined && !product.hasVariants) {
+			const defaultVariant = await ctx.db
+				.query("productVariants")
+				.withIndex("by_product", (q) => q.eq("productId", args.productId))
+				.filter((q) => q.eq(q.field("position"), 0))
+				.first();
+
+			if (defaultVariant) {
+				await ctx.db.patch(defaultVariant._id, {
+					price: args.price,
+					updatedAt: now,
+				});
+			}
+		}
 
 		return args.productId;
 	},

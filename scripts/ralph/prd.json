@@ -99,7 +99,7 @@
 			"id": "S06",
 			"title": "Update product form for simple products",
 			"priority": 6,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update apps/web/src/components/products/product-form.tsx:",
