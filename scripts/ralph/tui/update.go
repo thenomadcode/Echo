@@ -12,13 +12,51 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.showHelp {
+			switch msg.String() {
+			case "?", "esc":
+				m.showHelp = false
+			case "q", "ctrl+c":
+				if m.runningCmd != nil && m.runningCmd.Process != nil {
+					m.runningCmd.Process.Kill()
+				}
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
+		if m.searchMode {
+			switch msg.String() {
+			case "esc":
+				m.searchMode = false
+				m.searchQuery = ""
+			case "enter":
+				m.searchMode = false
+			case "backspace":
+				if len(m.searchQuery) > 0 {
+					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+				}
+			default:
+				if len(msg.String()) == 1 {
+					m.searchQuery += msg.String()
+				}
+			}
+			return m, nil
+		}
+
 		switch msg.String() {
+		case "?":
+			m.showHelp = true
+
 		case "q", "ctrl+c":
-			// Kill any running process before quitting
 			if m.runningCmd != nil && m.runningCmd.Process != nil {
 				m.runningCmd.Process.Kill()
 			}
 			return m, tea.Quit
+
+		case "/":
+			m.searchMode = true
+			m.searchQuery = ""
 
 		case "tab":
 			if m.focusedPanel == PanelStories {
@@ -91,13 +129,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case PRDUpdatedMsg:
 		if msg.Err == nil {
+			oldCompleted := m.completedCount
 			m.prd = msg.PRD
 			m.stories = msg.PRD.UserStories
 			m.completedCount = CountCompleted(m.stories)
 
+			if m.currentStoryID != "" && m.completedCount > oldCompleted {
+				story := GetStoryByID(m.stories, m.currentStoryID)
+				if story != nil && story.Passes {
+					if startTime, exists := m.storyStartTimes[m.currentStoryID]; exists {
+						duration := time.Since(startTime)
+						m.storyDurations[m.currentStoryID] = duration
+					}
+				}
+			}
+
 			if m.completedCount == len(m.stories) {
 				m.processDone = true
 			}
+
+			m.prdUpdateNotif = "✓ PRD updated"
+			m.prdUpdateNotifEnd = time.Now().Add(3 * time.Second)
 		}
 		cmds = append(cmds, watchPRDCmd(m.prdPath))
 
@@ -121,6 +173,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentIteration = msg.Iteration
 		m.currentStoryID = msg.StoryID
 		m.iterationStart = time.Now()
+		m.storyStartTimes[msg.StoryID] = time.Now()
 		m.processRunning = true
 		m.runningCmd = msg.Cmd
 		cmds = append(cmds, listenForOutputCmd(m.msgChan))
@@ -136,6 +189,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case TickMsg:
+		if !m.prdUpdateNotifEnd.IsZero() && time.Now().After(m.prdUpdateNotifEnd) {
+			m.prdUpdateNotif = ""
+			m.prdUpdateNotifEnd = time.Time{}
+		}
 		cmds = append(cmds, tickCmd())
 
 	case ErrorMsg:

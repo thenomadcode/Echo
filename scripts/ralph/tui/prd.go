@@ -8,8 +8,9 @@ import (
 
 // PRD represents the product requirements document
 type PRD struct {
-	ProjectName string  `json:"projectName"`
+	Project     string  `json:"project"`
 	BranchName  string  `json:"branchName"`
+	Description string  `json:"description"`
 	UserStories []Story `json:"userStories"`
 }
 
@@ -17,8 +18,10 @@ type PRD struct {
 type Story struct {
 	ID                 string   `json:"id"`
 	Title              string   `json:"title"`
+	Description        string   `json:"description"`
 	Priority           int      `json:"priority"`
 	Passes             bool     `json:"passes"`
+	Notes              string   `json:"notes"`
 	AcceptanceCriteria []string `json:"acceptanceCriteria"`
 }
 

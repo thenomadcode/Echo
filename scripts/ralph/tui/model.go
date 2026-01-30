@@ -23,15 +23,23 @@ type Model struct {
 	maxIterations    int
 	currentStoryID   string
 	iterationStart   time.Time
+	storyStartTimes  map[string]time.Time
+	storyDurations   map[string]time.Duration
 
 	processRunning bool
 	processDone    bool
 	processError   error
+	initError      error
 	runningCmd     *exec.Cmd
 
-	outputLines    []string
-	outputViewport viewport.Model
-	storyScroll    int
+	outputLines       []string
+	outputViewport    viewport.Model
+	storyScroll       int
+	showHelp          bool
+	searchMode        bool
+	searchQuery       string
+	prdUpdateNotif    string
+	prdUpdateNotifEnd time.Time
 
 	width  int
 	height int
@@ -46,9 +54,9 @@ type Model struct {
 }
 
 func NewModel(prdPath, promptPath, projectRoot string, maxIterations int) Model {
-	prd, _ := LoadPRD(prdPath)
+	prd, err := LoadPRD(prdPath)
 
-	return Model{
+	m := Model{
 		prd:              prd,
 		stories:          prd.UserStories,
 		completedCount:   CountCompleted(prd.UserStories),
@@ -61,7 +69,18 @@ func NewModel(prdPath, promptPath, projectRoot string, maxIterations int) Model 
 		promptPath:       promptPath,
 		projectRoot:      projectRoot,
 		msgChan:          make(chan interface{}, 100),
+		initError:        err,
+		storyStartTimes:  make(map[string]time.Time),
+		storyDurations:   make(map[string]time.Duration),
 	}
+
+	if err != nil {
+		m.outputLines = append(m.outputLines, "ERROR: Failed to load PRD file: "+err.Error())
+		m.outputLines = append(m.outputLines, "Path: "+prdPath)
+		m.outputViewport.SetContent(string(m.outputLines[0]) + "\n" + m.outputLines[1])
+	}
+
+	return m
 }
 
 func (m Model) Init() tea.Cmd {
