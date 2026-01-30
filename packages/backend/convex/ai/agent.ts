@@ -19,10 +19,15 @@ import type {
 	UpdateOrderArgs,
 } from "./tools";
 
+interface ProductWithVariants {
+	product: Doc<"products">;
+	variants: Doc<"productVariants">[];
+}
+
 interface AgentContext {
 	conversation: Doc<"conversations">;
 	business: Doc<"businesses">;
-	products: Doc<"products">[];
+	productsWithVariants: ProductWithVariants[];
 	messages: Doc<"messages">[];
 	customerContext: CustomerContext | null;
 }
@@ -53,6 +58,16 @@ export const loadAgentContext = internalQuery({
 				q.eq("businessId", conversation.businessId as unknown as string).eq("deleted", false),
 			)
 			.collect();
+
+		const productsWithVariants: ProductWithVariants[] = await Promise.all(
+			products.map(async (product) => {
+				const variants = await ctx.db
+					.query("productVariants")
+					.withIndex("by_product", (q) => q.eq("productId", product._id))
+					.collect();
+				return { product, variants };
+			}),
+		);
 
 		const messages = await ctx.db
 			.query("messages")
@@ -116,7 +131,7 @@ export const loadAgentContext = internalQuery({
 		return {
 			conversation,
 			business,
-			products,
+			productsWithVariants,
 			messages: messages.reverse(),
 			customerContext,
 		};
@@ -264,6 +279,52 @@ function getEscalatedResponse(language: string): string {
 	return responses[language] ?? responses.en ?? "";
 }
 
+function formatPriceForAI(cents: number, currency: string): string {
+	const amount = cents / 100;
+	const symbols: Record<string, string> = {
+		USD: "$",
+		COP: "COP $",
+		BRL: "R$",
+		MXN: "MX$",
+	};
+	return `${symbols[currency] ?? currency}${amount.toFixed(2)}`;
+}
+
+function extractVariantOptions(variant: Doc<"productVariants">): Record<string, string> {
+	const options: Record<string, string> = {};
+	if (variant.option1Name && variant.option1Value) {
+		options[variant.option1Name.toLowerCase()] = variant.option1Value;
+	}
+	if (variant.option2Name && variant.option2Value) {
+		options[variant.option2Name.toLowerCase()] = variant.option2Value;
+	}
+	if (variant.option3Name && variant.option3Value) {
+		options[variant.option3Name.toLowerCase()] = variant.option3Value;
+	}
+	return options;
+}
+
+function transformProductsForAI(
+	productsWithVariants: ProductWithVariants[],
+	businessCurrency: string,
+) {
+	return productsWithVariants.map(({ product, variants }) => ({
+		id: product._id,
+		name: product.name,
+		description: product.description,
+		hasVariants: product.hasVariants ?? false,
+		variants: variants.map((variant) => ({
+			id: variant._id,
+			name: variant.name,
+			price: formatPriceForAI(variant.price, businessCurrency),
+			sku: variant.sku,
+			inventoryQuantity: variant.inventoryQuantity,
+			available: variant.available,
+			options: extractVariantOptions(variant),
+		})),
+	}));
+}
+
 interface ProcessWithAgentResult {
 	response: string;
 	toolsUsed: string[];
@@ -283,7 +344,13 @@ export const processWithAgent = action({
 			throw new Error("Conversation or business not found");
 		}
 
-		const { conversation, business, products, messages, customerContext }: AgentContext = context;
+		const {
+			conversation,
+			business,
+			productsWithVariants,
+			messages,
+			customerContext,
+		}: AgentContext = context;
 
 		if (conversation.state === "escalated") {
 			return {
@@ -292,8 +359,12 @@ export const processWithAgent = action({
 			};
 		}
 
+		const products = productsWithVariants.map((p) => p.product);
 		const language = (conversation.detectedLanguage ?? "en") as LanguageCode;
 		const orderState = buildOrderState(conversation, products);
+
+		const currency =
+			business.defaultLanguage === "es" ? "COP" : business.defaultLanguage === "pt" ? "BRL" : "USD";
 
 		const systemPrompt = buildAgentPrompt({
 			business: {
@@ -304,19 +375,7 @@ export const processWithAgent = action({
 				timezone: business.timezone,
 				businessHours: business.businessHours,
 			},
-			products: products
-				.filter(
-					(p: Doc<"products">) =>
-						!p.hasVariants && p.price !== undefined && p.currency !== undefined,
-				)
-				.map((p: Doc<"products">) => ({
-					name: p.name,
-					price: p.price as number,
-					currency: p.currency as string,
-					description: p.description,
-					available: p.available,
-					shopifyProductId: p.shopifyProductId,
-				})),
+			products: transformProductsForAI(productsWithVariants, currency),
 			currentOrder: orderState,
 			language,
 			customerPhone: conversation.customerId,
@@ -366,19 +425,7 @@ export const processWithAgent = action({
 						timezone: business.timezone,
 						businessHours: business.businessHours,
 					},
-					products: products
-						.filter(
-							(p: Doc<"products">) =>
-								!p.hasVariants && p.price !== undefined && p.currency !== undefined,
-						)
-						.map((p: Doc<"products">) => ({
-							name: p.name,
-							price: p.price as number,
-							currency: p.currency as string,
-							description: p.description,
-							available: p.available,
-							shopifyProductId: p.shopifyProductId,
-						})),
+					products: transformProductsForAI(updatedContext.productsWithVariants, currency),
 					currentOrder: updatedOrderState,
 					language,
 					customerPhone: conversation.customerId,
