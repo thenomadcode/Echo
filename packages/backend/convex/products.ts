@@ -347,3 +347,111 @@ export const seedTestProducts = internalMutation({
 		return { seeded: true, count: testProducts.length };
 	},
 });
+
+export const getWithVariants = query({
+	args: {
+		productId: v.id("products"),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
+			return null;
+		}
+
+		const product = await ctx.db.get(args.productId);
+		if (!product) {
+			return null;
+		}
+
+		const isOwner = await isBusinessOwner(ctx, product.businessId as any);
+		if (!isOwner) {
+			return null;
+		}
+
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.collect();
+
+		return {
+			...product,
+			variants: variants.sort((a, b) => a.position - b.position),
+		};
+	},
+});
+
+export const listWithVariants = query({
+	args: {
+		businessId: v.string(),
+		categoryId: v.optional(v.string()),
+		available: v.optional(v.boolean()),
+		search: v.optional(v.string()),
+		limit: v.optional(v.number()),
+		cursor: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
+			return { products: [], hasMore: false, nextCursor: undefined };
+		}
+
+		const isOwner = await isBusinessOwner(ctx, args.businessId as any);
+		if (!isOwner) {
+			return { products: [], hasMore: false, nextCursor: undefined };
+		}
+
+		const productsQuery = ctx.db
+			.query("products")
+			.withIndex("by_business", (q) => q.eq("businessId", args.businessId).eq("deleted", false));
+
+		let allProducts = await productsQuery.collect();
+
+		if (args.categoryId !== undefined) {
+			allProducts = allProducts.filter((p) => p.categoryId === args.categoryId);
+		}
+
+		if (args.available !== undefined) {
+			allProducts = allProducts.filter((p) => p.available === args.available);
+		}
+
+		if (args.search) {
+			const searchLower = args.search.toLowerCase();
+			allProducts = allProducts.filter(
+				(p) =>
+					p.name.toLowerCase().includes(searchLower) ||
+					p.description?.toLowerCase().includes(searchLower),
+			);
+		}
+
+		allProducts.sort((a, b) => a.order - b.order);
+
+		const offset = args.cursor ?? 0;
+		const limit = args.limit ?? 50;
+
+		const paginatedProducts = allProducts.slice(offset, offset + limit);
+
+		const productsWithVariants = await Promise.all(
+			paginatedProducts.map(async (product) => {
+				const variants = await ctx.db
+					.query("productVariants")
+					.withIndex("by_product", (q) => q.eq("productId", product._id))
+					.collect();
+
+				return {
+					...product,
+					variants: variants.sort((a, b) => a.position - b.position),
+					variantCount: variants.length,
+				};
+			}),
+		);
+
+		const hasMore = allProducts.length > offset + limit;
+		const nextCursor = hasMore ? offset + limit : undefined;
+
+		return {
+			products: productsWithVariants,
+			hasMore,
+			nextCursor,
+		};
+	},
+});

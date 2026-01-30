@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
-import { requireBusinessOwnership } from "./lib/auth";
+import { mutation, query } from "./_generated/server";
+import { getAuthUser, isBusinessOwner, requireBusinessOwnership } from "./lib/auth";
 
 export const create = mutation({
 	args: {
@@ -194,5 +194,63 @@ export const adjustInventory = mutation({
 		});
 
 		return args.variantId;
+	},
+});
+
+export const list = query({
+	args: {
+		productId: v.id("products"),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
+			return [];
+		}
+
+		const product = await ctx.db.get(args.productId);
+		if (!product) {
+			return [];
+		}
+
+		const isOwner = await isBusinessOwner(ctx, product.businessId as any);
+		if (!isOwner) {
+			return [];
+		}
+
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.collect();
+
+		return variants.sort((a, b) => a.position - b.position);
+	},
+});
+
+export const get = query({
+	args: {
+		variantId: v.id("productVariants"),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
+			return null;
+		}
+
+		const variant = await ctx.db.get(args.variantId);
+		if (!variant) {
+			return null;
+		}
+
+		const product = await ctx.db.get(variant.productId);
+		if (!product) {
+			return null;
+		}
+
+		const isOwner = await isBusinessOwner(ctx, product.businessId as any);
+		if (!isOwner) {
+			return null;
+		}
+
+		return variant;
 	},
 });
