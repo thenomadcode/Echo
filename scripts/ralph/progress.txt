@@ -256,3 +256,38 @@
   - State management for expandable rows uses Map<string, boolean> for efficient lookups
 ---
 
+## 2026-01-30 21:10 - US-013
+- Implemented Shopify import for products with variants
+- Updated SHOPIFY_PRODUCTS_QUERY to fetch variant options, images, and all variant fields
+- Updated ShopifyGraphQLResponse type to include new fields: selectedOptions, image, compareAtPrice, barcode, weight, etc.
+- Created downloadAndStoreImage helper function in utils.ts to download from Shopify CDN and store in Convex storage
+- Created upsertProductWithVariants internal mutation in mutations.ts that:
+  - Creates or updates parent product + N variants atomically
+  - Maps Shopify selectedOptions to option1/2/3 Name/Value pairs
+  - Handles variant soft-delete (marks missing variants as unavailable)
+  - Tracks externalProductId and externalVariantId for sync
+- Refactored importProducts action to:
+  - Create 1 parent product + N variants (instead of N separate products)
+  - Download and store product and variant images
+  - Map Shopify variant fields to Echo variant schema
+  - Handle single-variant products as simple products (hasVariants: false)
+  - Convert Shopify weight units to grams for consistency
+- Refactored syncProducts action with same variant-based logic
+- Removed old mutations: upsertProduct, upsertProductWithStats, markMissingProductsUnavailable (replaced by upsertProductWithVariants)
+- Files changed:
+  - packages/backend/convex/integrations/shopify/utils.ts (+28 lines: new query fields, downloadAndStoreImage)
+  - packages/backend/convex/integrations/shopify/types.ts (+25 lines: new type fields)
+  - packages/backend/convex/integrations/shopify/mutations.ts (+144 lines: upsertProductWithVariants)
+  - packages/backend/convex/integrations/shopify/products.ts (~200 lines refactored: new import/sync logic)
+- **Learnings for future iterations:**
+  - Shopify GraphQL uses selectedOptions array instead of legacy option1/option2/option3
+  - Shopify weight units: KILOGRAMS, POUNDS, OUNCES, GRAMS → normalize to grams for storage
+  - ctx.storage.store() is available in actions, not mutations (for downloading external images)
+  - Single-variant products should have hasVariants: false (not true with 1 variant)
+  - Variant title "Default Title" should be treated as empty string (simple product)
+  - upsertProductWithVariants handles create/update/soft-delete in one transaction
+  - Map selectedOptions to option1Name/Value, option2Name/Value, option3Name/Value for consistency with manual products
+  - Image download pattern: action downloads → ctx.storage.store() → returns storage ID
+  - Shopify compareAtPrice can be null (no sale/original price)
+---
+
