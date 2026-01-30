@@ -326,7 +326,7 @@
 			"id": "S17",
 			"title": "Implement image delivery via WhatsApp/Instagram/Messenger",
 			"priority": 17,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/ai/agent.ts:",

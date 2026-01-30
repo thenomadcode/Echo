@@ -6650,3 +6650,43 @@
 
 ---
 
+
+## 2026-01-30 16:30 - S17: Implement image delivery via WhatsApp/Instagram/Messenger
+
+**What was implemented:**
+- Updated `packages/backend/convex/ai/process.ts`:
+  - Added `recommendedProductIds` field to `ProcessMessageResult` type
+  - In `processMessage` action: when intent is `product_question`, extract products matching the query
+  - Simple keyword matching: checks if product name contains query or query contains product name (case-insensitive)
+  - Stores matched product IDs in `recommendedProductIds` array
+  - In `processAndRespond` action: after sending text response, send images for recommended products
+  - Calls `api.products.getProductImageUrl` to get public image URL for each product
+  - Sends image messages via WhatsApp or Meta APIs using `type: "image"`
+  - Images sent sequentially after text message
+  - Gracefully handles missing images (skips if getProductImageUrl returns null)
+
+**Files changed:**
+- packages/backend/convex/ai/process.ts (+20 lines - recommendedProductIds tracking, image sending logic)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- Convex codegen: passes
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Product recommendation detection uses simple keyword matching for MVP
+- getProductImageUrl helper returns public HTTPS URL from ctx.storage.getUrl
+- Images sent after text response to maintain message flow
+- WhatsApp and Meta APIs both use `type: "image"` with image URL in content field
+- Sequential image sending (not parallel) to preserve order and avoid rate limits
+- Missing images handled gracefully - no error if product has no image
+
+**Potential improvements (future):**
+- Use AI to extract product mentions from response text (more accurate than query matching)
+- Send variant-specific images when variant is mentioned
+- Batch multiple product images into a carousel/gallery message
+- Add product name caption to image messages
+- Track image send success/failure in message delivery status
+
+---
+

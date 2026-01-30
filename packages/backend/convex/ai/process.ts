@@ -18,6 +18,7 @@ type ProcessMessageResult = {
 	shouldEscalate: boolean;
 	detectedLanguage: string;
 	messageId: Id<"messages">;
+	recommendedProductIds?: Id<"products">[];
 };
 
 interface CustomerContextProfile {
@@ -577,12 +578,24 @@ export const processMessage = action({
 			latencyMs,
 		});
 
+		let recommendedProductIds: Id<"products">[] | undefined;
+		if (intent.type === "product_question") {
+			const query = intent.query.toLowerCase();
+			const matchedProducts = products.filter((p: Doc<"products">) => {
+				return p.name.toLowerCase().includes(query) || query.includes(p.name.toLowerCase());
+			});
+			if (matchedProducts.length > 0) {
+				recommendedProductIds = matchedProducts.map((p: Doc<"products">) => p._id);
+			}
+		}
+
 		return {
 			response,
 			intent,
 			shouldEscalate,
 			detectedLanguage,
 			messageId,
+			recommendedProductIds,
 		};
 	},
 });
@@ -997,7 +1010,34 @@ export const processAndRespond = internalAction({
 				});
 			}
 
-			// 4. Clear processing state
+			// 4. Send product images if recommended
+			if (aiResult.recommendedProductIds && aiResult.recommendedProductIds.length > 0) {
+				for (const productId of aiResult.recommendedProductIds) {
+					const imageUrl = await ctx.runQuery(api.products.getProductImageUrl, {
+						productId,
+					});
+
+					if (imageUrl) {
+						if (args.channel === "whatsapp") {
+							await ctx.runAction(api.integrations.whatsapp.actions.sendMessage, {
+								messageId: aiResult.messageId,
+								conversationId: args.conversationId,
+								content: imageUrl,
+								type: "image",
+							});
+						} else {
+							await ctx.runAction(api.integrations.meta.actions.sendMessage, {
+								messageId: aiResult.messageId,
+								conversationId: args.conversationId,
+								content: imageUrl,
+								type: "image",
+							});
+						}
+					}
+				}
+			}
+
+			// 5. Clear processing state
 			await ctx.runMutation(internal.ai.process.setAiProcessingState, {
 				conversationId: args.conversationId,
 				isProcessing: false,
