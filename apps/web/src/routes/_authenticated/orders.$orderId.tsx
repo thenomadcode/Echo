@@ -3,7 +3,7 @@ import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@echo/backend/convex/_generated/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import {
 	ArrowLeft,
@@ -208,7 +208,25 @@ function OrderDetailPage() {
 								<TableBody>
 									{order.items.map((item, idx) => (
 										<TableRow key={idx}>
-											<TableCell className="font-medium">{item.name}</TableCell>
+											<TableCell>
+												<div className="flex flex-col gap-0.5">
+													<div className="font-medium">
+														<Link
+															to="/products/$productId"
+															params={{ productId: item.productId }}
+															className="hover:underline"
+														>
+															{item.name}
+														</Link>
+														{item.variantName && (
+															<span className="text-muted-foreground"> - {item.variantName}</span>
+														)}
+													</div>
+													{item.sku && (
+														<span className="text-muted-foreground text-xs">SKU: {item.sku}</span>
+													)}
+												</div>
+											</TableCell>
 											<TableCell className="text-center">{item.quantity}</TableCell>
 											<TableCell className="text-right">
 												{formatCurrency(
