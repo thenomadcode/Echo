@@ -70,6 +70,7 @@ import type * as orders_status from "../orders/status.js";
 import type * as orders_types from "../orders/types.js";
 import type * as privateData from "../privateData.js";
 import type * as products from "../products.js";
+import type * as variants from "../variants.js";
 
 import type {
   ApiFromModules,
@@ -140,6 +141,7 @@ declare const fullApi: ApiFromModules<{
   "orders/types": typeof orders_types;
   privateData: typeof privateData;
   products: typeof products;
+  variants: typeof variants;
 }>;
 
 /**
