@@ -114,7 +114,7 @@
 				"BROWSER TEST: Navigate to create product, toggle variants on/off, verify form fields change"
 			],
 			"priority": 7,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "UI for variant toggle"
 		},
