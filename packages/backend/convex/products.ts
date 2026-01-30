@@ -301,6 +301,118 @@ export const bulkUpdateCategory = mutation({
 	},
 });
 
+export const createWithVariants = mutation({
+	args: {
+		businessId: v.string(),
+		name: v.string(),
+		description: v.optional(v.string()),
+		categoryId: v.optional(v.string()),
+		imageId: v.optional(v.string()),
+		hasVariants: v.boolean(),
+		variants: v.array(
+			v.object({
+				name: v.string(),
+				sku: v.optional(v.string()),
+				price: v.number(),
+				inventoryQuantity: v.number(),
+				option1Name: v.optional(v.string()),
+				option1Value: v.optional(v.string()),
+				option2Name: v.optional(v.string()),
+				option2Value: v.optional(v.string()),
+				option3Name: v.optional(v.string()),
+				option3Value: v.optional(v.string()),
+				imageId: v.optional(v.string()),
+				available: v.optional(v.boolean()),
+				compareAtPrice: v.optional(v.number()),
+				costPrice: v.optional(v.number()),
+				barcode: v.optional(v.string()),
+				weight: v.optional(v.number()),
+				weightUnit: v.optional(
+					v.union(v.literal("kg"), v.literal("g"), v.literal("lb"), v.literal("oz")),
+				),
+				requiresShipping: v.optional(v.boolean()),
+			}),
+		),
+	},
+	handler: async (ctx, args) => {
+		const { business } = await requireBusinessOwnership(ctx, args.businessId as any);
+
+		if (args.variants.length === 0) {
+			throw new Error("At least one variant is required");
+		}
+
+		const now = Date.now();
+
+		const existingProducts = await ctx.db
+			.query("products")
+			.withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+			.collect();
+		const maxOrder = existingProducts.reduce((max, p) => Math.max(max, p.order), -1);
+
+		const currency =
+			business.defaultLanguage === "es" ? "COP" : business.defaultLanguage === "pt" ? "BRL" : "USD";
+
+		const price = args.variants[0]!.price;
+
+		const productId = await ctx.db.insert("products", {
+			businessId: args.businessId,
+			name: args.name,
+			description: args.description,
+			price,
+			currency,
+			categoryId: args.categoryId,
+			imageId: args.imageId,
+			available: true,
+			deleted: false,
+			hasVariants: args.hasVariants,
+			order: maxOrder + 1,
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		const createdVariantIds: string[] = [];
+		for (let i = 0; i < args.variants.length; i++) {
+			const variant = args.variants[i];
+			if (!variant) continue;
+
+			const variantId = await ctx.db.insert("productVariants", {
+				productId,
+				name: variant.name,
+				sku: variant.sku,
+				price: variant.price,
+				inventoryQuantity: variant.inventoryQuantity,
+				option1Name: variant.option1Name,
+				option1Value: variant.option1Value,
+				option2Name: variant.option2Name,
+				option2Value: variant.option2Value,
+				option3Name: variant.option3Name,
+				option3Value: variant.option3Value,
+				imageId: variant.imageId,
+				available: variant.available ?? true,
+				position: i,
+				compareAtPrice: variant.compareAtPrice,
+				costPrice: variant.costPrice,
+				barcode: variant.barcode,
+				weight: variant.weight,
+				weightUnit: variant.weightUnit,
+				requiresShipping: variant.requiresShipping,
+				createdAt: now,
+				updatedAt: now,
+			});
+
+			createdVariantIds.push(variantId as string);
+		}
+
+		const product = await ctx.db.get(productId);
+		const variants = await Promise.all(createdVariantIds.map((id) => ctx.db.get(id as any)));
+
+		return {
+			...product,
+			variants: variants.filter((v): v is NonNullable<typeof v> => v !== null),
+		};
+	},
+});
+
 export const seedTestProducts = internalMutation({
 	args: {
 		businessId: v.id("businesses"),
