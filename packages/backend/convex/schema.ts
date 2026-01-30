@@ -63,17 +63,26 @@ export default defineSchema({
 		deleted: v.boolean(),
 		order: v.number(),
 		description: v.optional(v.string()),
-		// Shopify sync fields
-		source: v.optional(v.union(v.literal("manual"), v.literal("shopify"))),
-		shopifyProductId: v.optional(v.string()),
+		// Variant support
+		hasVariants: v.boolean(),
+		// E-commerce provider sync fields
+		source: v.optional(
+			v.union(
+				v.literal("manual"),
+				v.literal("shopify"),
+				v.literal("woocommerce"),
+				v.literal("tiendanube"),
+			),
+		),
+		externalProductId: v.optional(v.string()),
 		shopifyVariantId: v.optional(v.string()),
-		lastShopifySyncAt: v.optional(v.number()),
+		lastSyncAt: v.optional(v.number()),
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	})
 		.index("by_business", ["businessId", "deleted"])
 		.index("by_category", ["categoryId", "deleted", "available"])
-		.index("by_shopify_id", ["businessId", "shopifyProductId"]),
+		.index("by_external_id", ["businessId", "source", "externalProductId"]),
 
 	productVariants: defineTable({
 		productId: v.id("products"),

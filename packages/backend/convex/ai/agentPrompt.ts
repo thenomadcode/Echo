@@ -19,7 +19,7 @@ interface Product {
 	currency: string;
 	description?: string;
 	available: boolean;
-	shopifyProductId?: string;
+	externalProductId?: string;
 }
 
 interface OrderItem {
@@ -147,14 +147,14 @@ function getVariantName(name: string): string {
 	return dashIndex > 0 ? name.substring(dashIndex + 3) : "";
 }
 
-// Group products by shopifyProductId to identify variants
+// Group products by externalProductId to identify variants
 function groupProductsByVariant(products: Product[]): Map<string, Product[]> {
 	const groups = new Map<string, Product[]>();
 
 	for (const product of products) {
-		// Products with shopifyProductId are grouped by it
+		// Products with externalProductId are grouped by it
 		// Products without are considered standalone (manual products)
-		const key = product.shopifyProductId ?? `standalone_${product.name}`;
+		const key = product.externalProductId ?? `standalone_${product.name}`;
 		const existing = groups.get(key) ?? [];
 		existing.push(product);
 		groups.set(key, existing);

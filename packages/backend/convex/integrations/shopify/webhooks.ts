@@ -173,14 +173,14 @@ export const handleWebhook = internalAction({
 								internal.integrations.shopify.mutations.markProductsUnavailable,
 								{
 									businessId,
-									shopifyProductId: `gid://shopify/Product/${product.id}`,
+									externalProductId: `gid://shopify/Product/${product.id}`,
 								},
 							);
 						}
 						return;
 					}
 
-					const shopifyProductId = `gid://shopify/Product/${product.id}`;
+					const externalProductId = `gid://shopify/Product/${product.id}`;
 					const imageUrl = product.images[0]?.src ?? null;
 
 					const business = await ctx.runQuery(
@@ -213,7 +213,7 @@ export const handleWebhook = internalAction({
 						try {
 							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProduct, {
 								businessId,
-								shopifyProductId,
+								externalProductId,
 								shopifyVariantId: `gid://shopify/ProductVariant/${variant.id}`,
 								name,
 								description: product.body_html ?? undefined,
@@ -240,10 +240,10 @@ export const handleWebhook = internalAction({
 						return;
 					}
 
-					const shopifyProductId = `gid://shopify/Product/${deleteData.id}`;
+					const externalProductId = `gid://shopify/Product/${deleteData.id}`;
 					await ctx.runMutation(internal.integrations.shopify.mutations.markProductsUnavailable, {
 						businessId,
-						shopifyProductId,
+						externalProductId,
 					});
 					break;
 				}

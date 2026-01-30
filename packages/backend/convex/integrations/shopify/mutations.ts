@@ -38,7 +38,7 @@ export const saveConnection = internalMutation({
 export const upsertProduct = internalMutation({
 	args: {
 		businessId: v.id("businesses"),
-		shopifyProductId: v.string(),
+		externalProductId: v.string(),
 		shopifyVariantId: v.string(),
 		name: v.string(),
 		description: v.optional(v.string()),
@@ -50,8 +50,11 @@ export const upsertProduct = internalMutation({
 	handler: async (ctx, args) => {
 		const existing = await ctx.db
 			.query("products")
-			.withIndex("by_shopify_id", (q) =>
-				q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId),
+			.withIndex("by_external_id", (q) =>
+				q
+					.eq("businessId", args.businessId)
+					.eq("source", "shopify")
+					.eq("externalProductId", args.externalProductId),
 			)
 			.filter((q) => q.eq(q.field("shopifyVariantId"), args.shopifyVariantId))
 			.first();
@@ -64,7 +67,7 @@ export const upsertProduct = internalMutation({
 				description: args.description,
 				price: args.price,
 				available: args.available,
-				lastShopifySyncAt: now,
+				lastSyncAt: now,
 				updatedAt: now,
 			});
 			return existing._id;
@@ -86,10 +89,11 @@ export const upsertProduct = internalMutation({
 			available: args.available,
 			deleted: false,
 			order: maxOrder + 1,
+			hasVariants: false,
 			source: "shopify",
-			shopifyProductId: args.shopifyProductId,
+			externalProductId: args.externalProductId,
 			shopifyVariantId: args.shopifyVariantId,
-			lastShopifySyncAt: now,
+			lastSyncAt: now,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -101,7 +105,7 @@ export const upsertProduct = internalMutation({
 export const upsertProductWithStats = internalMutation({
 	args: {
 		businessId: v.id("businesses"),
-		shopifyProductId: v.string(),
+		externalProductId: v.string(),
 		shopifyVariantId: v.string(),
 		name: v.string(),
 		description: v.optional(v.string()),
@@ -113,8 +117,11 @@ export const upsertProductWithStats = internalMutation({
 	handler: async (ctx, args): Promise<{ isNew: boolean }> => {
 		const existing = await ctx.db
 			.query("products")
-			.withIndex("by_shopify_id", (q) =>
-				q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId),
+			.withIndex("by_external_id", (q) =>
+				q
+					.eq("businessId", args.businessId)
+					.eq("source", "shopify")
+					.eq("externalProductId", args.externalProductId),
 			)
 			.filter((q) => q.eq(q.field("shopifyVariantId"), args.shopifyVariantId))
 			.first();
@@ -127,7 +134,7 @@ export const upsertProductWithStats = internalMutation({
 				description: args.description,
 				price: args.price,
 				available: args.available,
-				lastShopifySyncAt: now,
+				lastSyncAt: now,
 				updatedAt: now,
 			});
 			return { isNew: false };
@@ -149,10 +156,11 @@ export const upsertProductWithStats = internalMutation({
 			available: args.available,
 			deleted: false,
 			order: maxOrder + 1,
+			hasVariants: false,
 			source: "shopify",
-			shopifyProductId: args.shopifyProductId,
+			externalProductId: args.externalProductId,
 			shopifyVariantId: args.shopifyVariantId,
-			lastShopifySyncAt: now,
+			lastSyncAt: now,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -184,13 +192,16 @@ export const updateSyncStatus = internalMutation({
 export const markProductsUnavailable = internalMutation({
 	args: {
 		businessId: v.id("businesses"),
-		shopifyProductId: v.string(),
+		externalProductId: v.string(),
 	},
 	handler: async (ctx, args): Promise<number> => {
 		const products = await ctx.db
 			.query("products")
-			.withIndex("by_shopify_id", (q) =>
-				q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId),
+			.withIndex("by_external_id", (q) =>
+				q
+					.eq("businessId", args.businessId)
+					.eq("source", "shopify")
+					.eq("externalProductId", args.externalProductId),
 			)
 			.collect();
 
@@ -200,7 +211,7 @@ export const markProductsUnavailable = internalMutation({
 		for (const product of products) {
 			await ctx.db.patch(product._id, {
 				available: false,
-				lastShopifySyncAt: now,
+				lastSyncAt: now,
 				updatedAt: now,
 			});
 			count++;
@@ -230,7 +241,7 @@ export const markMissingProductsUnavailable = internalMutation({
 			if (product.shopifyVariantId && !seenSet.has(product.shopifyVariantId)) {
 				await ctx.db.patch(product._id, {
 					available: false,
-					lastShopifySyncAt: now,
+					lastSyncAt: now,
 					updatedAt: now,
 				});
 				count++;
@@ -348,9 +359,9 @@ export const deleteConnectionAndClearProducts = internalMutation({
 		for (const product of shopifyProducts) {
 			await ctx.db.patch(product._id, {
 				source: "manual",
-				shopifyProductId: undefined,
+				externalProductId: undefined,
 				shopifyVariantId: undefined,
-				lastShopifySyncAt: undefined,
+				lastSyncAt: undefined,
 				updatedAt: now,
 			});
 		}

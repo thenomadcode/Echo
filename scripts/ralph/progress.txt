@@ -31,3 +31,31 @@
   - All prices stored in smallest currency unit (centavos/cents) as integers
   - Soft delete pattern: use `available: v.boolean()` instead of hard deletes
 ---
+
+## 2026-01-30 20:56 - US-002
+- Updated products table schema in packages/backend/convex/schema.ts:
+  - Added hasVariants boolean field (default: false)
+  - Expanded source field to support 'manual' | 'shopify' | 'woocommerce' | 'tiendanube'
+  - Renamed shopifyProductId to externalProductId
+  - Renamed lastShopifySyncAt to lastSyncAt
+  - Updated index from by_shopify_id to by_external_id with [businessId, source, externalProductId]
+- Updated all Shopify integration files:
+  - packages/backend/convex/integrations/shopify/mutations.ts (upsertProduct, upsertProductWithStats, markProductsUnavailable, deleteConnectionAndClearProducts)
+  - packages/backend/convex/integrations/shopify/products.ts (importProducts, syncProducts)
+  - packages/backend/convex/integrations/shopify/webhooks.ts (handleWebhook)
+- Updated all AI files to use new field names:
+  - packages/backend/convex/ai/agentPrompt.ts
+  - packages/backend/convex/ai/response.ts
+  - packages/backend/convex/ai/agent.ts
+  - packages/backend/convex/ai/prompts.ts
+  - packages/backend/convex/ai/process.ts
+- **Learnings for future iterations:**
+  - When renaming schema fields, must update:
+    1. Schema definition
+    2. All mutations using the field
+    3. All queries/filters using withIndex
+    4. TypeScript interfaces in AI/integration code
+  - The hasVariants field is now required on all product inserts (defaults to false for existing Shopify imports)
+  - E-commerce provider source is now generic, supporting future integrations beyond Shopify
+  - Compound indexes require all fields in the index definition when querying
+---

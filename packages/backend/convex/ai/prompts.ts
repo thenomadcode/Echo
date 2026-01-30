@@ -29,7 +29,7 @@ interface Product {
 	currency: string;
 	description?: string;
 	available: boolean;
-	shopifyProductId?: string;
+	externalProductId?: string;
 }
 
 interface CustomerContextProfile {
@@ -106,7 +106,7 @@ function getVariantName(name: string): string {
 function groupProductsByVariant(products: Product[]): Map<string, Product[]> {
 	const groups = new Map<string, Product[]>();
 	for (const product of products) {
-		const key = product.shopifyProductId ?? `standalone_${product.name}`;
+		const key = product.externalProductId ?? `standalone_${product.name}`;
 		const existing = groups.get(key) ?? [];
 		existing.push(product);
 		groups.set(key, existing);

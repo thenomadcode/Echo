@@ -79,7 +79,7 @@ export const importProducts = action({
 						continue;
 					}
 
-					const shopifyProductId = product.id;
+					const externalProductId = product.id;
 					const imageUrl = product.images.edges[0]?.node.url ?? null;
 
 					for (const variantEdge of product.variants.edges) {
@@ -96,7 +96,7 @@ export const importProducts = action({
 						try {
 							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProduct, {
 								businessId: args.businessId,
-								shopifyProductId,
+								externalProductId,
 								shopifyVariantId: variant.id,
 								name,
 								description: product.descriptionHtml || undefined,
@@ -220,7 +220,7 @@ export const syncProducts = action({
 						continue;
 					}
 
-					const shopifyProductId = product.id;
+					const externalProductId = product.id;
 					const imageUrl = product.images.edges[0]?.node.url ?? null;
 
 					for (const variantEdge of product.variants.edges) {
@@ -241,7 +241,7 @@ export const syncProducts = action({
 								internal.integrations.shopify.mutations.upsertProductWithStats,
 								{
 									businessId: args.businessId,
-									shopifyProductId,
+									externalProductId,
 									shopifyVariantId: variant.id,
 									name,
 									description: product.descriptionHtml || undefined,

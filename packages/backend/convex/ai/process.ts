@@ -476,7 +476,7 @@ export const processMessage = action({
 			currency: p.currency,
 			description: p.description,
 			available: p.available,
-			shopifyProductId: p.shopifyProductId,
+			externalProductId: p.externalProductId,
 		}));
 
 		let newState = determineNewState(intent, conversation.state ?? "idle");
