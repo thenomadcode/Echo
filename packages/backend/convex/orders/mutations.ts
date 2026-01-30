@@ -208,24 +208,14 @@ export const decrementInventory = internalMutation({
 	},
 	handler: async (ctx, args) => {
 		for (const { variantId, quantity } of args.variants) {
-			const variant = await ctx.db.get(variantId);
-			if (!variant) {
-				console.error(`Variant ${variantId} not found during inventory decrement`);
-				continue;
+			try {
+				await ctx.runMutation(internal.variants.decrementStock, {
+					variantId,
+					quantity,
+				});
+			} catch (error) {
+				console.error(`Failed to decrement stock for variant ${variantId}:`, error);
 			}
-
-			const newQuantity = variant.inventoryQuantity - quantity;
-
-			const updates: any = {
-				inventoryQuantity: Math.max(0, newQuantity),
-				updatedAt: Date.now(),
-			};
-
-			if (newQuantity <= 0 && variant.inventoryPolicy === "deny") {
-				updates.available = false;
-			}
-
-			await ctx.db.patch(variantId, updates);
 		}
 	},
 });

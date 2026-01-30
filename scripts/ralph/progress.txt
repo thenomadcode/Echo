@@ -6568,3 +6568,38 @@
 
 ---
 
+
+## 2026-01-30 16:19 - S15: Implement variant inventory tracking
+
+**What was implemented:**
+- Added inventory tracking functions to `packages/backend/convex/variants.ts`:
+  - `checkStock({ variantId, quantity })` query: returns true if stock available OR trackInventory=false
+  - `decrementStock({ variantId, quantity })` internal mutation: subtracts quantity, prevents negative stock
+  - `incrementStock({ variantId, quantity })` internal mutation: adds quantity, auto-enables variant when stock restored
+- Inventory management logic:
+  - checkStock returns true for unlimited stock (trackInventory: false)
+  - decrementStock throws error if attempting below 0, marks unavailable when reaches 0 and inventoryPolicy="deny"
+  - incrementStock marks available: true when incrementing from 0
+- Integrated with order creation:
+  - Updated `packages/backend/convex/orders/mutations.ts` decrementInventory to call internal.variants.decrementStock
+  - Stock validation already exists in orders.create (checks inventory before order creation)
+  - Automatic stock decrement scheduled after order creation via ctx.scheduler.runAfter
+- Note: Order cancellation flow not yet implemented in codebase (will integrate incrementStock when added)
+- Note: Shopify sync inventory already implemented in previous story S04
+- Note: Manual stock adjustment UI deferred to S18 (product editing story)
+
+**Files changed:**
+- packages/backend/convex/variants.ts (+108 lines - checkStock, decrementStock, incrementStock)
+- packages/backend/convex/orders/mutations.ts (-18/+10 lines - use internal.variants.decrementStock)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Convex subdirectory modules (variants/inventory.ts) require API regeneration - simpler to add to main file
+- Internal mutations perfect for inventory operations that should only be called by other backend code
+- Return structured data ({ newQuantity, wasSetUnavailable }) for caller awareness
+- trackInventory: false bypasses all checks (useful for digital/unlimited products)
+
+---

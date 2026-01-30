@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getAuthUser, isBusinessOwner } from "./lib/auth";
 
 /**
@@ -308,5 +308,111 @@ export const adjustInventory = mutation({
 		});
 
 		return { newQuantity };
+	},
+});
+
+/**
+ * Check if a variant has sufficient stock for a given quantity
+ * Returns true if stock is available OR trackInventory is false (unlimited stock)
+ */
+export const checkStock = query({
+	args: {
+		variantId: v.id("productVariants"),
+		quantity: v.number(),
+	},
+	handler: async (ctx, args) => {
+		const variant = await ctx.db.get(args.variantId);
+		if (!variant) {
+			return false;
+		}
+
+		if (!variant.trackInventory) {
+			return true;
+		}
+
+		return variant.inventoryQuantity >= args.quantity;
+	},
+});
+
+/**
+ * Decrement stock for a variant (internal mutation - used by order creation)
+ * Throws error if attempting to decrement below 0 (prevents negative stock)
+ * Sets available: false when inventoryQuantity reaches 0 and inventoryPolicy is "deny"
+ */
+export const decrementStock = internalMutation({
+	args: {
+		variantId: v.id("productVariants"),
+		quantity: v.number(),
+	},
+	handler: async (ctx, args) => {
+		const variant = await ctx.db.get(args.variantId);
+		if (!variant) {
+			throw new Error(`Variant ${args.variantId} not found`);
+		}
+
+		if (!variant.trackInventory) {
+			return { newQuantity: variant.inventoryQuantity, wasSetUnavailable: false };
+		}
+
+		const newQuantity = variant.inventoryQuantity - args.quantity;
+
+		if (newQuantity < 0) {
+			throw new Error(
+				`Cannot decrement stock below zero for variant ${args.variantId}. Current: ${variant.inventoryQuantity}, requested: ${args.quantity}`,
+			);
+		}
+
+		const updates: { inventoryQuantity: number; updatedAt: number; available?: boolean } = {
+			inventoryQuantity: newQuantity,
+			updatedAt: Date.now(),
+		};
+
+		let wasSetUnavailable = false;
+		if (newQuantity === 0 && variant.inventoryPolicy === "deny") {
+			updates.available = false;
+			wasSetUnavailable = true;
+		}
+
+		await ctx.db.patch(args.variantId, updates);
+
+		return { newQuantity, wasSetUnavailable };
+	},
+});
+
+/**
+ * Increment stock for a variant (internal mutation - used for cancellations, returns)
+ * Sets available: true when incrementing from 0 (stock becomes available again)
+ */
+export const incrementStock = internalMutation({
+	args: {
+		variantId: v.id("productVariants"),
+		quantity: v.number(),
+	},
+	handler: async (ctx, args) => {
+		const variant = await ctx.db.get(args.variantId);
+		if (!variant) {
+			throw new Error(`Variant ${args.variantId} not found`);
+		}
+
+		if (!variant.trackInventory) {
+			return { newQuantity: variant.inventoryQuantity, wasSetAvailable: false };
+		}
+
+		const newQuantity = variant.inventoryQuantity + args.quantity;
+
+		const updates: { inventoryQuantity: number; updatedAt: number; available?: boolean } = {
+			inventoryQuantity: newQuantity,
+			updatedAt: Date.now(),
+		};
+
+		let wasSetAvailable = false;
+		if (variant.inventoryQuantity === 0 && newQuantity > 0) {
+			updates.available = true;
+			wasSetAvailable = true;
+		}
+
+		await ctx.db.patch(args.variantId, updates);
+
+		return { newQuantity, wasSetAvailable };
 	},
 });

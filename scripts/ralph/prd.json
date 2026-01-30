@@ -285,7 +285,7 @@
 			"id": "S15",
 			"title": "Implement variant inventory tracking",
 			"priority": 15,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Create packages/backend/convex/variants/inventory.ts:",
