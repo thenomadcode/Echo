@@ -201,3 +201,58 @@
   - Requires at least one variant (simple products must pass 1 variant with empty name and product details)
 ---
 
+## 2026-01-30 21:40 - US-011
+- Implemented products.updateWithVariants mutation in packages/backend/convex/products.ts
+- Mutation handles product-level updates (name, description, category, image)
+- Supports updating existing variants via variantsToUpdate array parameter
+- Supports adding new variants via variantsToAdd array parameter (auto-calculates position from max existing position)
+- Supports removing variants via variantsToRemove array parameter (soft delete using available: false)
+- All variant operations validate that variants belong to the specified product
+- Validates businessId ownership through requireBusinessOwnership
+- Returns updated product with all variants sorted by position
+- Files changed: packages/backend/convex/products.ts (+196 lines), scripts/ralph/prd.json (+1 line)
+- **Learnings for future iterations:**
+  - Update mutations should accept arrays of operations to enable batch updates in single transaction
+  - Position auto-increment for new variants ensures proper ordering: maxPosition + 1 + arrayIndex
+  - Variant ownership validation prevents cross-product variant manipulation attacks
+  - Soft delete pattern (available: false) preserves data for order history and analytics
+  - Optional parameters allow partial updates - only specified fields are modified
+  - Return full product + variants after update for UI state refresh without additional query
+---
+
+
+## 2026-01-30 21:44 - US-012
+- Implemented product list variant display in apps/web/src/routes/_authenticated/products/index.tsx
+- Updated query from api.products.list to api.products.listWithVariants to fetch variant data
+- Created helper functions in apps/web/src/lib/formatting.ts:
+  - getPriceRange(): calculates price range string or single price
+  - getTotalStock(): sums inventoryQuantity across all variants
+- Updated ProductTable component (apps/web/src/components/products/product-table.tsx):
+  - Added Price Range column showing "$25.00 - $30.00" for products with varying prices
+  - Added Stock column with total inventory across variants
+  - Added variant count badge showing "3 variants"
+  - Implemented expandable rows using Collapsible component from shadcn/ui
+  - Nested variant details table shows: variant name, SKU, price, stock, availability
+  - ChevronDown/ChevronUp icons indicate expand/collapse state
+- Updated ProductCard component (apps/web/src/components/products/product-card.tsx):
+  - Displays price range instead of single price for variant products
+  - Shows variant count badge below price
+  - Shows total stock count across all variants
+  - Stock count displays in red when 0
+- Files changed: 
+  - apps/web/src/routes/_authenticated/products/index.tsx (+5, -1)
+  - apps/web/src/lib/formatting.ts (+44 new)
+  - apps/web/src/components/products/product-table.tsx (+143, -16)
+  - apps/web/src/components/products/product-card.tsx (+31, -5)
+- Commit: adde9be "feat: US-012 - Display products with variants in product list"
+- **Learnings for future iterations:**
+  - Use Collapsible component from @/components/ui/collapsible for expandable content in tables
+  - ChevronDown/ChevronUp from lucide-react provide clear visual indicators for expand state
+  - Helper functions for calculations (price range, stock totals) keep components clean
+  - Badge component with "outline" variant works well for metadata display (variant counts)
+  - Conditional rendering based on hasVariants flag prevents showing variant UI for simple products
+  - Table-in-table pattern (nested variant details) requires careful indentation for visual hierarchy
+  - formatCurrency helper from @/lib/formatting handles multi-currency display consistently
+  - State management for expandable rows uses Map<string, boolean> for efficient lookups
+---
+

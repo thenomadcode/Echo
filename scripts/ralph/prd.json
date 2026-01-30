@@ -184,7 +184,7 @@
 				"Typecheck passes"
 			],
 			"priority": 11,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "Backend for product + variant updates"
 		},
@@ -202,7 +202,7 @@
 				"BROWSER TEST: Navigate to products page, verify variant count badges display, expand product to see variants"
 			],
 			"priority": 12,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "UI for product list with variants"
 		},

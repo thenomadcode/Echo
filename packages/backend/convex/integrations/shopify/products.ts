@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internal } from "../../_generated/api";
 import { action } from "../../_generated/server";
 import type { ImportResult, ShopifyGraphQLResponse, SyncResult } from "./types";
-import { SHOPIFY_PRODUCTS_QUERY } from "./utils";
+import { SHOPIFY_PRODUCTS_QUERY, downloadAndStoreImage } from "./utils";
 
 export const importProducts = action({
 	args: {
@@ -80,41 +80,103 @@ export const importProducts = action({
 					}
 
 					const externalProductId = product.id;
-					const imageUrl = product.images.edges[0]?.node.url ?? null;
+					const currency =
+						business.defaultLanguage === "es"
+							? "COP"
+							: business.defaultLanguage === "pt"
+								? "BRL"
+								: "USD";
 
-					for (const variantEdge of product.variants.edges) {
+					let productImageId: string | undefined;
+					if (product.images.edges[0]?.node.url) {
+						const imageUrl = product.images.edges[0].node.url;
+						const storageId = await downloadAndStoreImage(ctx, imageUrl);
+						if (storageId) {
+							productImageId = storageId;
+						}
+					}
+
+					const hasVariants = product.variants.edges.length > 1;
+					const variants = [];
+
+					for (let i = 0; i < product.variants.edges.length; i++) {
+						const variantEdge = product.variants.edges[i];
+						if (!variantEdge) continue;
+
 						const variant = variantEdge.node;
-						const isOnlyVariant = product.variants.edges.length === 1;
-						const variantTitle =
-							isOnlyVariant || variant.title === "Default Title" ? "" : variant.title;
-
-						const name = variantTitle ? `${product.title} - ${variantTitle}` : product.title;
-
 						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
-						const available = variant.inventoryQuantity > 0;
+						const compareAtPriceInCents = variant.compareAtPrice
+							? Math.round(Number.parseFloat(variant.compareAtPrice) * 100)
+							: undefined;
 
-						try {
-							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProduct, {
+						let variantImageId: string | undefined;
+						if (variant.image?.url) {
+							const storageId = await downloadAndStoreImage(ctx, variant.image.url);
+							if (storageId) {
+								variantImageId = storageId;
+							}
+						}
+
+						const option1 = variant.selectedOptions[0];
+						const option2 = variant.selectedOptions[1];
+						const option3 = variant.selectedOptions[2];
+
+						const variantName =
+							hasVariants && variant.title !== "Default Title" ? variant.title : "";
+
+						const weightInGrams = variant.weight
+							? variant.weightUnit === "KILOGRAMS"
+								? variant.weight * 1000
+								: variant.weightUnit === "POUNDS"
+									? variant.weight * 453.592
+									: variant.weightUnit === "OUNCES"
+										? variant.weight * 28.3495
+										: variant.weight
+							: undefined;
+
+						const weightUnit = weightInGrams ? ("g" as const) : undefined;
+
+						variants.push({
+							externalVariantId: variant.id,
+							name: variantName,
+							sku: variant.sku ?? undefined,
+							barcode: variant.barcode ?? undefined,
+							price: priceInCents,
+							compareAtPrice: compareAtPriceInCents,
+							inventoryQuantity: variant.inventoryQuantity,
+							available: variant.availableForSale,
+							option1Name: option1?.name,
+							option1Value: option1?.value,
+							option2Name: option2?.name,
+							option2Value: option2?.value,
+							option3Name: option3?.name,
+							option3Value: option3?.value,
+							imageId: variantImageId,
+							weight: weightInGrams,
+							weightUnit: weightUnit,
+							requiresShipping: variant.requiresShipping,
+							position: variant.position,
+						});
+					}
+
+					try {
+						await ctx.runMutation(
+							internal.integrations.shopify.mutations.upsertProductWithVariants,
+							{
 								businessId: args.businessId,
 								externalProductId,
-								shopifyVariantId: variant.id,
-								name,
+								name: product.title,
 								description: product.descriptionHtml || undefined,
-								price: priceInCents,
-								currency:
-									business.defaultLanguage === "es"
-										? "COP"
-										: business.defaultLanguage === "pt"
-											? "BRL"
-											: "USD",
-								imageUrl: imageUrl ?? undefined,
-								available,
-							});
-							imported++;
-						} catch (err) {
-							const msg = err instanceof Error ? err.message : "Unknown error";
-							errors.push(`Failed to import "${name}": ${msg}`);
-						}
+								imageId: productImageId,
+								currency,
+								hasVariants,
+								variants,
+							},
+						);
+						imported++;
+					} catch (err) {
+						const msg = err instanceof Error ? err.message : "Unknown error";
+						errors.push(`Failed to import "${product.title}": ${msg}`);
 					}
 				}
 
@@ -170,9 +232,8 @@ export const syncProducts = action({
 		const { shop, accessToken, business } = connection;
 		let updated = 0;
 		let added = 0;
-		let removed = 0;
+		const removed = 0;
 		const errors: string[] = [];
-		const seenShopifyVariantIds = new Set<string>();
 
 		let hasNextPage = true;
 		let cursor: string | null = null;
@@ -214,73 +275,118 @@ export const syncProducts = action({
 					const product = edge.node;
 
 					if (product.status !== "ACTIVE") {
-						for (const variantEdge of product.variants.edges) {
-							seenShopifyVariantIds.add(variantEdge.node.id);
-						}
 						continue;
 					}
 
 					const externalProductId = product.id;
-					const imageUrl = product.images.edges[0]?.node.url ?? null;
+					const currency =
+						business.defaultLanguage === "es"
+							? "COP"
+							: business.defaultLanguage === "pt"
+								? "BRL"
+								: "USD";
 
-					for (const variantEdge of product.variants.edges) {
-						const variant = variantEdge.node;
-						seenShopifyVariantIds.add(variant.id);
-
-						const isOnlyVariant = product.variants.edges.length === 1;
-						const variantTitle =
-							isOnlyVariant || variant.title === "Default Title" ? "" : variant.title;
-
-						const name = variantTitle ? `${product.title} - ${variantTitle}` : product.title;
-
-						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
-						const available = variant.inventoryQuantity > 0;
-
-						try {
-							const syncResult = await ctx.runMutation(
-								internal.integrations.shopify.mutations.upsertProductWithStats,
-								{
-									businessId: args.businessId,
-									externalProductId,
-									shopifyVariantId: variant.id,
-									name,
-									description: product.descriptionHtml || undefined,
-									price: priceInCents,
-									currency:
-										business.defaultLanguage === "es"
-											? "COP"
-											: business.defaultLanguage === "pt"
-												? "BRL"
-												: "USD",
-									imageUrl: imageUrl ?? undefined,
-									available,
-								},
-							);
-
-							if (syncResult.isNew) {
-								added++;
-							} else {
-								updated++;
-							}
-						} catch (err) {
-							const msg = err instanceof Error ? err.message : "Unknown error";
-							errors.push(`Failed to sync "${name}": ${msg}`);
+					let productImageId: string | undefined;
+					if (product.images.edges[0]?.node.url) {
+						const imageUrl = product.images.edges[0].node.url;
+						const storageId = await downloadAndStoreImage(ctx, imageUrl);
+						if (storageId) {
+							productImageId = storageId;
 						}
+					}
+
+					const hasVariants = product.variants.edges.length > 1;
+					const variants = [];
+
+					for (let i = 0; i < product.variants.edges.length; i++) {
+						const variantEdge = product.variants.edges[i];
+						if (!variantEdge) continue;
+
+						const variant = variantEdge.node;
+						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
+						const compareAtPriceInCents = variant.compareAtPrice
+							? Math.round(Number.parseFloat(variant.compareAtPrice) * 100)
+							: undefined;
+
+						let variantImageId: string | undefined;
+						if (variant.image?.url) {
+							const storageId = await downloadAndStoreImage(ctx, variant.image.url);
+							if (storageId) {
+								variantImageId = storageId;
+							}
+						}
+
+						const option1 = variant.selectedOptions[0];
+						const option2 = variant.selectedOptions[1];
+						const option3 = variant.selectedOptions[2];
+
+						const variantName =
+							hasVariants && variant.title !== "Default Title" ? variant.title : "";
+
+						const weightInGrams = variant.weight
+							? variant.weightUnit === "KILOGRAMS"
+								? variant.weight * 1000
+								: variant.weightUnit === "POUNDS"
+									? variant.weight * 453.592
+									: variant.weightUnit === "OUNCES"
+										? variant.weight * 28.3495
+										: variant.weight
+							: undefined;
+
+						const weightUnit = weightInGrams ? ("g" as const) : undefined;
+
+						variants.push({
+							externalVariantId: variant.id,
+							name: variantName,
+							sku: variant.sku ?? undefined,
+							barcode: variant.barcode ?? undefined,
+							price: priceInCents,
+							compareAtPrice: compareAtPriceInCents,
+							inventoryQuantity: variant.inventoryQuantity,
+							available: variant.availableForSale,
+							option1Name: option1?.name,
+							option1Value: option1?.value,
+							option2Name: option2?.name,
+							option2Value: option2?.value,
+							option3Name: option3?.name,
+							option3Value: option3?.value,
+							imageId: variantImageId,
+							weight: weightInGrams,
+							weightUnit: weightUnit,
+							requiresShipping: variant.requiresShipping,
+							position: variant.position,
+						});
+					}
+
+					try {
+						const syncResult = await ctx.runMutation(
+							internal.integrations.shopify.mutations.upsertProductWithVariants,
+							{
+								businessId: args.businessId,
+								externalProductId,
+								name: product.title,
+								description: product.descriptionHtml || undefined,
+								imageId: productImageId,
+								currency,
+								hasVariants,
+								variants,
+							},
+						);
+
+						if (syncResult.isNew) {
+							added++;
+						} else {
+							updated++;
+						}
+					} catch (err) {
+						const msg = err instanceof Error ? err.message : "Unknown error";
+						errors.push(`Failed to sync "${product.title}": ${msg}`);
 					}
 				}
 
 				hasNextPage = products.pageInfo.hasNextPage;
 				cursor = products.pageInfo.endCursor;
 			}
-
-			const removedCount = await ctx.runMutation(
-				internal.integrations.shopify.mutations.markMissingProductsUnavailable,
-				{
-					businessId: args.businessId,
-					seenShopifyVariantIds: Array.from(seenShopifyVariantIds),
-				},
-			);
-			removed = removedCount;
 
 			const status =
 				errors.length === 0 ? "success" : updated + added + removed > 0 ? "partial" : "failed";

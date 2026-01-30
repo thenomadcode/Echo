@@ -34,12 +34,17 @@ export const SHOPIFY_PRODUCTS_QUERY = `
           title
           descriptionHtml
           status
-          images(first: 1) {
+          images(first: 10) {
             edges {
               node {
                 url
               }
             }
+          }
+          options {
+            name
+            position
+            values
           }
           variants(first: 100) {
             edges {
@@ -47,8 +52,22 @@ export const SHOPIFY_PRODUCTS_QUERY = `
                 id
                 title
                 price
+                compareAtPrice
                 sku
+                barcode
                 inventoryQuantity
+                availableForSale
+                selectedOptions {
+                  name
+                  value
+                }
+                image {
+                  url
+                }
+                weight
+                weightUnit
+                requiresShipping
+                position
               }
             }
           }
@@ -68,3 +87,23 @@ export const WEBHOOK_TOPICS = [
 	"products/delete",
 	"orders/paid",
 ] as const;
+
+export async function downloadAndStoreImage(
+	ctx: { storage: { store: (blob: Blob) => Promise<string> } },
+	imageUrl: string,
+): Promise<string | null> {
+	try {
+		const response = await fetch(imageUrl);
+		if (!response.ok) {
+			console.error(`Failed to download image: ${response.status} ${response.statusText}`);
+			return null;
+		}
+
+		const blob = await response.blob();
+		const storageId = await ctx.storage.store(blob);
+		return storageId;
+	} catch (error) {
+		console.error(`Error downloading and storing image from ${imageUrl}:`, error);
+		return null;
+	}
+}

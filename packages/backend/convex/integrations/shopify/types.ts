@@ -37,14 +37,33 @@ export type ShopifyGraphQLResponse = {
 							};
 						}>;
 					};
+					options: Array<{
+						name: string;
+						position: number;
+						values: string[];
+					}>;
 					variants: {
 						edges: Array<{
 							node: {
 								id: string;
 								title: string;
 								price: string;
-								sku: string;
+								compareAtPrice: string | null;
+								sku: string | null;
+								barcode: string | null;
 								inventoryQuantity: number;
+								availableForSale: boolean;
+								selectedOptions: Array<{
+									name: string;
+									value: string;
+								}>;
+								image: {
+									url: string;
+								} | null;
+								weight: number | null;
+								weightUnit: string | null;
+								requiresShipping: boolean;
+								position: number;
 							};
 						}>;
 					};

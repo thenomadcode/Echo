@@ -383,3 +383,200 @@ export const saveAiMessage = internalMutation({
 		return messageId;
 	},
 });
+
+export const upsertProductWithVariants = internalMutation({
+	args: {
+		businessId: v.id("businesses"),
+		externalProductId: v.string(),
+		name: v.string(),
+		description: v.optional(v.string()),
+		imageId: v.optional(v.string()),
+		currency: v.string(),
+		hasVariants: v.boolean(),
+		variants: v.array(
+			v.object({
+				externalVariantId: v.string(),
+				name: v.string(),
+				sku: v.optional(v.string()),
+				barcode: v.optional(v.string()),
+				price: v.number(),
+				compareAtPrice: v.optional(v.number()),
+				inventoryQuantity: v.number(),
+				available: v.boolean(),
+				option1Name: v.optional(v.string()),
+				option1Value: v.optional(v.string()),
+				option2Name: v.optional(v.string()),
+				option2Value: v.optional(v.string()),
+				option3Name: v.optional(v.string()),
+				option3Value: v.optional(v.string()),
+				imageId: v.optional(v.string()),
+				weight: v.optional(v.number()),
+				weightUnit: v.optional(
+					v.union(v.literal("kg"), v.literal("g"), v.literal("lb"), v.literal("oz")),
+				),
+				requiresShipping: v.optional(v.boolean()),
+				position: v.number(),
+			}),
+		),
+	},
+	handler: async (ctx, args): Promise<{ productId: string; isNew: boolean }> => {
+		const existing = await ctx.db
+			.query("products")
+			.withIndex("by_external_id", (q) =>
+				q
+					.eq("businessId", args.businessId)
+					.eq("source", "shopify")
+					.eq("externalProductId", args.externalProductId),
+			)
+			.first();
+
+		const now = Date.now();
+
+		if (existing) {
+			await ctx.db.patch(existing._id, {
+				name: args.name,
+				description: args.description,
+				imageId: args.imageId,
+				hasVariants: args.hasVariants,
+				price: args.variants[0]?.price ?? existing.price,
+				lastSyncAt: now,
+				updatedAt: now,
+			});
+
+			const existingVariants = await ctx.db
+				.query("productVariants")
+				.withIndex("by_product", (q) => q.eq("productId", existing._id))
+				.collect();
+
+			const existingVariantsByExternalId = new Map(
+				existingVariants.map((v) => [v.externalVariantId, v]),
+			);
+			const seenExternalIds = new Set<string>();
+
+			for (const variant of args.variants) {
+				seenExternalIds.add(variant.externalVariantId);
+				const existingVariant = existingVariantsByExternalId.get(variant.externalVariantId);
+
+				if (existingVariant) {
+					await ctx.db.patch(existingVariant._id, {
+						name: variant.name,
+						sku: variant.sku,
+						barcode: variant.barcode,
+						price: variant.price,
+						compareAtPrice: variant.compareAtPrice,
+						inventoryQuantity: variant.inventoryQuantity,
+						available: variant.available,
+						option1Name: variant.option1Name,
+						option1Value: variant.option1Value,
+						option2Name: variant.option2Name,
+						option2Value: variant.option2Value,
+						option3Name: variant.option3Name,
+						option3Value: variant.option3Value,
+						imageId: variant.imageId,
+						weight: variant.weight,
+						weightUnit: variant.weightUnit,
+						requiresShipping: variant.requiresShipping,
+						position: variant.position,
+						lastSyncAt: now,
+						updatedAt: now,
+					});
+				} else {
+					await ctx.db.insert("productVariants", {
+						productId: existing._id,
+						externalVariantId: variant.externalVariantId,
+						name: variant.name,
+						sku: variant.sku,
+						barcode: variant.barcode,
+						price: variant.price,
+						compareAtPrice: variant.compareAtPrice,
+						inventoryQuantity: variant.inventoryQuantity,
+						available: variant.available,
+						option1Name: variant.option1Name,
+						option1Value: variant.option1Value,
+						option2Name: variant.option2Name,
+						option2Value: variant.option2Value,
+						option3Name: variant.option3Name,
+						option3Value: variant.option3Value,
+						imageId: variant.imageId,
+						weight: variant.weight,
+						weightUnit: variant.weightUnit,
+						requiresShipping: variant.requiresShipping,
+						position: variant.position,
+						lastSyncAt: now,
+						createdAt: now,
+						updatedAt: now,
+					});
+				}
+			}
+
+			for (const existingVariant of existingVariants) {
+				if (
+					existingVariant.externalVariantId &&
+					!seenExternalIds.has(existingVariant.externalVariantId)
+				) {
+					await ctx.db.patch(existingVariant._id, {
+						available: false,
+						lastSyncAt: now,
+						updatedAt: now,
+					});
+				}
+			}
+
+			return { productId: existing._id, isNew: false };
+		}
+
+		const existingProducts = await ctx.db
+			.query("products")
+			.withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+			.collect();
+		const maxOrder = existingProducts.reduce((max, p) => Math.max(max, p.order), -1);
+
+		const productId = await ctx.db.insert("products", {
+			businessId: args.businessId,
+			name: args.name,
+			description: args.description,
+			price: args.variants[0]!.price,
+			currency: args.currency,
+			imageId: args.imageId,
+			available: true,
+			deleted: false,
+			hasVariants: args.hasVariants,
+			source: "shopify",
+			externalProductId: args.externalProductId,
+			order: maxOrder + 1,
+			lastSyncAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		for (const variant of args.variants) {
+			await ctx.db.insert("productVariants", {
+				productId,
+				externalVariantId: variant.externalVariantId,
+				name: variant.name,
+				sku: variant.sku,
+				barcode: variant.barcode,
+				price: variant.price,
+				compareAtPrice: variant.compareAtPrice,
+				inventoryQuantity: variant.inventoryQuantity,
+				available: variant.available,
+				option1Name: variant.option1Name,
+				option1Value: variant.option1Value,
+				option2Name: variant.option2Name,
+				option2Value: variant.option2Value,
+				option3Name: variant.option3Name,
+				option3Value: variant.option3Value,
+				imageId: variant.imageId,
+				weight: variant.weight,
+				weightUnit: variant.weightUnit,
+				requiresShipping: variant.requiresShipping,
+				position: variant.position,
+				lastSyncAt: now,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+
+		return { productId, isNew: true };
+	},
+});
