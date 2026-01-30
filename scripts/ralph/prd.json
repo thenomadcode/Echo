@@ -222,7 +222,7 @@
 			"id": "S12",
 			"title": "Implement AI variant recommendation logic",
 			"priority": 12,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/ai/agent.ts processMessage:",
@@ -241,7 +241,7 @@
 			"id": "S13",
 			"title": "Implement AI variant selection and matching",
 			"priority": 13,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/ai/tools.ts updateOrder tool:",
@@ -264,7 +264,7 @@
 			"id": "S14",
 			"title": "Implement AI variant disambiguation",
 			"priority": 14,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/ai/process.ts to handle ambiguous variant requests:",

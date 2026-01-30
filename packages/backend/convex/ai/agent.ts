@@ -160,8 +160,15 @@ export const updateOrderState = internalMutation({
 				address: v.optional(v.string()),
 			}),
 		),
+		partialVariantSelection: v.optional(
+			v.object({
+				productId: v.id("products"),
+				selectedOptions: v.object({}),
+			}),
+		),
 		state: v.optional(v.string()),
 		clearOrder: v.optional(v.boolean()),
+		clearPartialVariant: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const updates: Record<string, unknown> = {
@@ -171,6 +178,7 @@ export const updateOrderState = internalMutation({
 		if (args.clearOrder) {
 			updates.pendingOrder = undefined;
 			updates.pendingDelivery = undefined;
+			updates.partialVariantSelection = undefined;
 			updates.state = "idle";
 		} else {
 			if (args.pendingOrder !== undefined) {
@@ -178,6 +186,12 @@ export const updateOrderState = internalMutation({
 			}
 			if (args.pendingDelivery !== undefined) {
 				updates.pendingDelivery = args.pendingDelivery;
+			}
+			if (args.partialVariantSelection !== undefined) {
+				updates.partialVariantSelection = args.partialVariantSelection;
+			}
+			if (args.clearPartialVariant) {
+				updates.partialVariantSelection = undefined;
 			}
 			if (args.state !== undefined) {
 				updates.state = args.state;
@@ -400,7 +414,7 @@ export const processWithAgent = action({
 		const toolResults: string[] = [];
 
 		for (const toolCall of result.toolCalls) {
-			const execResult = await executeToolCall(ctx, toolCall, conversation, products);
+			const execResult = await executeToolCall(ctx, toolCall, conversation, productsWithVariants);
 			toolResults.push(`${toolCall.name}: ${execResult.message}`);
 			if (execResult.data) {
 				toolResults.push(JSON.stringify(execResult.data));
@@ -465,7 +479,7 @@ async function executeToolCall(
 	ctx: ActionContext,
 	toolCall: ToolCall,
 	conversation: Doc<"conversations">,
-	products: Doc<"products">[],
+	productsWithVariants: ProductWithVariants[],
 ): Promise<ToolExecutionResult> {
 	switch (toolCall.name) {
 		case "update_order":
@@ -473,7 +487,7 @@ async function executeToolCall(
 				ctx,
 				toolCall.arguments as unknown as UpdateOrderArgs,
 				conversation,
-				products,
+				productsWithVariants,
 			);
 		case "set_delivery":
 			return executeSetDelivery(
@@ -524,13 +538,223 @@ async function executeToolCall(
 	}
 }
 
+/**
+ * Fuzzy match a variant query against variant option values
+ * Handles abbreviations like 'm', 'med', 'medium' → 'Medium'
+ */
+function fuzzyMatchVariantValue(query: string, value: string): boolean {
+	const q = query.toLowerCase().trim();
+	const v = value.toLowerCase().trim();
+
+	// Exact match
+	if (q === v) return true;
+
+	// Abbreviation handling for common size names
+	const sizeAbbreviations: Record<string, string[]> = {
+		small: ["s", "sm", "sml"],
+		medium: ["m", "med", "md"],
+		large: ["l", "lg", "lrg"],
+		"extra small": ["xs", "xsm"],
+		"extra large": ["xl", "xlg"],
+		"2x large": ["xxl", "2xl"],
+		"3x large": ["xxxl", "3xl"],
+	};
+
+	for (const [fullName, abbrevs] of Object.entries(sizeAbbreviations)) {
+		if (v === fullName && abbrevs.includes(q)) return true;
+		if (q === fullName && abbrevs.includes(v)) return true;
+	}
+
+	// Partial match (query contains value or value contains query)
+	if (v.includes(q) || q.includes(v)) return true;
+
+	return false;
+}
+
+/**
+ * Extract all variant option values from a variant
+ */
+function getVariantOptionValues(variant: Doc<"productVariants">): string[] {
+	const values: string[] = [];
+	if (variant.option1Value) values.push(variant.option1Value);
+	if (variant.option2Value) values.push(variant.option2Value);
+	if (variant.option3Value) values.push(variant.option3Value);
+	return values;
+}
+
+/**
+ * Extract option names and values from a variant as a map
+ */
+function getVariantOptionsMap(variant: Doc<"productVariants">): Record<string, string> {
+	const options: Record<string, string> = {};
+	if (variant.option1Name && variant.option1Value) {
+		options[variant.option1Name.toLowerCase()] = variant.option1Value;
+	}
+	if (variant.option2Name && variant.option2Value) {
+		options[variant.option2Name.toLowerCase()] = variant.option2Value;
+	}
+	if (variant.option3Name && variant.option3Value) {
+		options[variant.option3Name.toLowerCase()] = variant.option3Value;
+	}
+	return options;
+}
+
+/**
+ * Find which options are missing from a partial selection
+ */
+function getMissingOptions(
+	variants: Doc<"productVariants">[],
+	selectedOptions: Record<string, string | undefined>,
+): string[] {
+	if (variants.length === 0) return [];
+
+	const firstVariant = variants[0];
+	const allOptionNames: string[] = [];
+
+	if (firstVariant.option1Name) allOptionNames.push(firstVariant.option1Name.toLowerCase());
+	if (firstVariant.option2Name) allOptionNames.push(firstVariant.option2Name.toLowerCase());
+	if (firstVariant.option3Name) allOptionNames.push(firstVariant.option3Name.toLowerCase());
+
+	return allOptionNames.filter((name) => !selectedOptions[name]);
+}
+
+/**
+ * Format variant for display (e.g., "Small / Red")
+ */
+function formatVariantDisplay(variant: Doc<"productVariants">): string {
+	const values = getVariantOptionValues(variant);
+	return values.length > 0 ? values.join(" / ") : variant.name || "Standard";
+}
+
+/**
+ * Match a variant query to available variants with fuzzy matching
+ * Returns: { matched, variantId, error, availableOptions }
+ */
+function matchVariantQuery(
+	variantQuery: string,
+	variants: Doc<"productVariants">[],
+): {
+	matched: boolean;
+	variantId?: string;
+	variantName?: string;
+	price?: number;
+	error?: string;
+	availableOptions?: string[];
+} {
+	const query = variantQuery.toLowerCase().trim();
+	const queryParts = query.split(/\s+/);
+	const availableVariants = variants.filter((v) => v.available);
+
+	if (availableVariants.length === 0) {
+		return { matched: false, error: "No variants available for this product" };
+	}
+
+	// Try to find exact matches (all query parts match variant options)
+	const exactMatches: Doc<"productVariants">[] = [];
+
+	for (const variant of availableVariants) {
+		const optionValues = getVariantOptionValues(variant);
+
+		// Check if all query parts match option values
+		const allPartsMatch = queryParts.every((part) =>
+			optionValues.some((opt) => fuzzyMatchVariantValue(part, opt)),
+		);
+
+		if (allPartsMatch) {
+			exactMatches.push(variant);
+		}
+	}
+
+	// If exactly one match, return it
+	if (exactMatches.length === 1) {
+		const matched = exactMatches[0];
+		if (matched) {
+			return {
+				matched: true,
+				variantId: matched._id,
+				variantName: formatVariantDisplay(matched),
+				price: matched.price,
+			};
+		}
+	}
+
+	// If multiple exact matches, ask for clarification
+	if (exactMatches.length > 1) {
+		const options = exactMatches.map((v) => {
+			const display = formatVariantDisplay(v);
+			const priceFormatted = `$${(v.price / 100).toFixed(2)}`;
+			return `${display} (${priceFormatted})`;
+		});
+		return {
+			matched: false,
+			error: `Multiple variants match "${variantQuery}". Please specify which one:`,
+			availableOptions: options,
+		};
+	}
+
+	// No exact match - try partial matches (at least one query part matches)
+	const partialMatches: Doc<"productVariants">[] = [];
+
+	for (const variant of availableVariants) {
+		const optionValues = getVariantOptionValues(variant);
+
+		const anyPartMatches = queryParts.some((part) =>
+			optionValues.some((opt) => fuzzyMatchVariantValue(part, opt)),
+		);
+
+		if (anyPartMatches) {
+			partialMatches.push(variant);
+		}
+	}
+
+	// If exactly one partial match, return it
+	if (partialMatches.length === 1) {
+		const matched = partialMatches[0];
+		if (matched) {
+			return {
+				matched: true,
+				variantId: matched._id,
+				variantName: formatVariantDisplay(matched),
+				price: matched.price,
+			};
+		}
+	}
+
+	// If multiple partial matches, ask for clarification
+	if (partialMatches.length > 1) {
+		const options = partialMatches.map((v) => {
+			const display = formatVariantDisplay(v);
+			const priceFormatted = `$${(v.price / 100).toFixed(2)}`;
+			return `${display} (${priceFormatted})`;
+		});
+		return {
+			matched: false,
+			error: `"${variantQuery}" matches multiple options. Which would you like:`,
+			availableOptions: options,
+		};
+	}
+
+	// No matches at all - return all available options
+	const options = availableVariants.map((v) => {
+		const display = formatVariantDisplay(v);
+		const priceFormatted = `$${(v.price / 100).toFixed(2)}`;
+		return `${display} (${priceFormatted})`;
+	});
+	return {
+		matched: false,
+		error: `"${variantQuery}" doesn't match any available options. Available:`,
+		availableOptions: options,
+	};
+}
+
 async function executeUpdateOrder(
 	ctx: ActionContext,
 	args: UpdateOrderArgs,
 	conversation: Doc<"conversations">,
-	products: Doc<"products">[],
+	productsWithVariants: ProductWithVariants[],
 ): Promise<ToolExecutionResult> {
 	const currentItems = conversation.pendingOrder?.items ?? [];
+	const products = productsWithVariants.map((p) => p.product);
 
 	if (args.action === "clear") {
 		await ctx.runMutation(internal.ai.agent.updateOrderState, {
@@ -557,24 +781,208 @@ async function executeUpdateOrder(
 				};
 			}
 
-			const existingIdx = newItems.findIndex((i) => i.productId === product._id);
-			const qty = item.quantity ?? 1;
+			// Get variants for this product
+			const productWithVariants = productsWithVariants.find((p) => p.product._id === product._id);
+			const variants = productWithVariants?.variants ?? [];
 
-			if (existingIdx >= 0) {
-				const existing = newItems[existingIdx];
-				if (existing) {
-					newItems[existingIdx] = {
-						...existing,
-						quantity: existing.quantity + qty,
+			// Check if product has variants
+			if (product.hasVariants && variants.length > 1) {
+				// Product has variants - need variant specification
+				let variantQuery = item.variant_query;
+
+				// Check if we have a partial selection for this product
+				const hasPartialSelection =
+					conversation.partialVariantSelection !== undefined &&
+					conversation.partialVariantSelection.productId === product._id;
+
+				if (hasPartialSelection && variantQuery && conversation.partialVariantSelection) {
+					// Combine stored partial selection with new query
+					const stored = conversation.partialVariantSelection.selectedOptions;
+					variantQuery = Object.values(stored)
+						.filter((v) => v !== undefined)
+						.concat(variantQuery)
+						.join(" ");
+				}
+
+				if (!variantQuery) {
+					// No variant specified - ask customer which variant
+					const availableVariants = variants.filter((v) => v.available);
+					const options = availableVariants.map((v) => {
+						const display = formatVariantDisplay(v);
+						const priceFormatted = `$${(v.price / 100).toFixed(2)}`;
+						return `${display} (${priceFormatted})`;
+					});
+					return {
+						success: false,
+						message: `"${product.name}" has multiple options. Which would you like: ${options.join(", ")}?`,
+						data: { needsVariantSelection: true, availableOptions: options },
 					};
 				}
-			} else {
-				newItems.push({
-					productQuery: product.name,
-					quantity: qty,
-					productId: product._id,
-					price: product.price,
+
+				// Try to match variant
+				const matchResult = matchVariantQuery(variantQuery, variants);
+
+				if (!matchResult.matched) {
+					// Check if this is a partial match (some options specified)
+					const queryParts = variantQuery.toLowerCase().trim().split(/\s+/);
+					const partialMatches = variants.filter((v) => {
+						const optionValues = getVariantOptionValues(v);
+						return queryParts.some((part) =>
+							optionValues.some((opt) => fuzzyMatchVariantValue(part, opt)),
+						);
+					});
+
+					// If we have partial matches, store the partial selection and ask for missing options
+					if (partialMatches.length > 0) {
+						// Extract which options are specified in the query
+						const selectedOptions: Record<string, string | undefined> = {};
+						const firstVariant = variants[0];
+
+						if (firstVariant.option1Name) {
+							selectedOptions[firstVariant.option1Name.toLowerCase()] = undefined;
+						}
+						if (firstVariant.option2Name) {
+							selectedOptions[firstVariant.option2Name.toLowerCase()] = undefined;
+						}
+						if (firstVariant.option3Name) {
+							selectedOptions[firstVariant.option3Name.toLowerCase()] = undefined;
+						}
+
+						// Fill in matched options
+						for (const part of queryParts) {
+							for (const variant of partialMatches) {
+								const optionsMap = getVariantOptionsMap(variant);
+								for (const [optionName, optionValue] of Object.entries(optionsMap)) {
+									if (fuzzyMatchVariantValue(part, optionValue)) {
+										selectedOptions[optionName] = optionValue;
+									}
+								}
+							}
+						}
+
+						// Store partial selection
+						await ctx.runMutation(internal.ai.agent.updateOrderState, {
+							conversationId: conversation._id,
+							partialVariantSelection: {
+								productId: product._id,
+								selectedOptions,
+							},
+						});
+
+						// Find missing options
+						const missingOptions = getMissingOptions(partialMatches, selectedOptions);
+						const missingOptionNames = missingOptions.join(" or ");
+
+						// Get available values for missing options
+						const availableForMissing = partialMatches.flatMap((v) => {
+							const optionsMap = getVariantOptionsMap(v);
+							const missingValues = missingOptions
+								.map((opt) => optionsMap[opt])
+								.filter((v) => v !== undefined);
+							return missingValues;
+						});
+
+						const uniqueMissingValues = [...new Set(availableForMissing)];
+						const optionsStr = uniqueMissingValues
+							.map((v) => {
+								const variant = partialMatches.find((pv) => {
+									const optionsMap = getVariantOptionsMap(pv);
+									return Object.values(optionsMap).includes(v);
+								});
+								const price = variant ? `$${(variant.price / 100).toFixed(2)}` : "";
+								return `${v} (${price})`.trim();
+							})
+							.join(" or ");
+
+						return {
+							success: false,
+							message: `${Object.values(selectedOptions)
+								.filter((v) => v !== undefined)
+								.join(" / ")} selected. Which ${missingOptionNames}: ${optionsStr}?`,
+							data: {
+								needsVariantSelection: true,
+								availableOptions: uniqueMissingValues,
+								partialSelection: selectedOptions,
+							},
+						};
+					}
+
+					// Return error with available options
+					const optionsStr = matchResult.availableOptions?.join(", ") ?? "";
+					return {
+						success: false,
+						message: `${matchResult.error} ${optionsStr}`,
+						data: {
+							needsVariantSelection: true,
+							availableOptions: matchResult.availableOptions,
+						},
+					};
+				}
+
+				// Variant matched successfully - clear partial selection
+				await ctx.runMutation(internal.ai.agent.updateOrderState, {
+					conversationId: conversation._id,
+					clearPartialVariant: true,
 				});
+
+				// Variant matched successfully
+				const existingIdx = newItems.findIndex(
+					(i) => i.productId === product._id && i.productQuery === matchResult.variantName,
+				);
+				const qty = item.quantity ?? 1;
+
+				if (existingIdx >= 0) {
+					const existing = newItems[existingIdx];
+					if (existing) {
+						newItems[existingIdx] = {
+							...existing,
+							quantity: existing.quantity + qty,
+						};
+					}
+				} else {
+					// Store variant name in productQuery for S09's matchVariant to use
+					newItems.push({
+						productQuery: `${product.name} - ${matchResult.variantName}`,
+						quantity: qty,
+						productId: product._id,
+						price: matchResult.price,
+					});
+				}
+			} else {
+				// Simple product without variants (or single variant)
+				// Clear partial selection if switching products
+				if (
+					conversation.partialVariantSelection !== undefined &&
+					conversation.partialVariantSelection.productId !== product._id
+				) {
+					await ctx.runMutation(internal.ai.agent.updateOrderState, {
+						conversationId: conversation._id,
+						clearPartialVariant: true,
+					});
+				}
+
+				const variant = variants[0];
+				const price = variant?.price ?? product.price;
+
+				const existingIdx = newItems.findIndex((i) => i.productId === product._id);
+				const qty = item.quantity ?? 1;
+
+				if (existingIdx >= 0) {
+					const existing = newItems[existingIdx];
+					if (existing) {
+						newItems[existingIdx] = {
+							...existing,
+							quantity: existing.quantity + qty,
+						};
+					}
+				} else {
+					newItems.push({
+						productQuery: product.name,
+						quantity: qty,
+						productId: product._id,
+						price: price,
+					});
+				}
 			}
 		} else if (args.action === "remove") {
 			const idx = newItems.findIndex(

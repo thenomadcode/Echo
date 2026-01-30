@@ -215,6 +215,15 @@ export default defineSchema({
 			}),
 		),
 
+		// Partial variant selection tracking (S14)
+		// Stores partial variant choices when customer specifies only some options
+		partialVariantSelection: v.optional(
+			v.object({
+				productId: v.id("products"),
+				selectedOptions: v.object({}), // e.g., { size: "Large", color: undefined }
+			}),
+		),
+
 		// Escalation reason - why AI escalated to human
 		escalationReason: v.optional(v.string()),
 

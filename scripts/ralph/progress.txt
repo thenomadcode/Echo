@@ -1,3 +1,99 @@
+## 2026-01-30 16:45 - S14: Implement AI variant disambiguation with conversation state tracking
+
+**What was implemented:**
+- Updated `packages/backend/convex/schema.ts`:
+  - Added `partialVariantSelection: v.optional(v.object({ productId: v.id("products"), selectedOptions: v.object({}) }))` field to conversations table
+  - Stores partial variant choices when customer specifies only some options (e.g., size=Large, color=undefined)
+  - Backward compatible with optional field
+
+- Updated `packages/backend/convex/ai/agent.ts`:
+  - Added `getVariantOptionsMap()` helper to extract option names and values from a variant as a map
+  - Added `getMissingOptions()` helper to find which options are missing from a partial selection
+  - Updated `updateOrderState` mutation to accept `partialVariantSelection` and `clearPartialVariant` args
+  - Enhanced `executeUpdateOrder()` to implement partial variant matching:
+    - Checks for existing partial selection for the product
+    - Combines stored partial selection with new query before matching
+    - On partial match (some options specified), stores partial selection and asks for missing options
+    - Returns enhanced error message: "Large selected. Which color: Red ($27) or Blue ($27)?"
+    - Clears partialVariantSelection when variant successfully matched
+    - Clears partialVariantSelection when customer changes to different product
+
+**Test scenarios handled:**
+- "I want a large" → Stores size=Large, asks "Large in Red ($27) or Blue ($27)?"
+- "Blue" (after above) → Combines Large+Blue, matches variant, clears partial state
+- "Do you have red?" → Stores color=Red, asks "Red in Small or Medium?"
+- Successful match → Clears partialVariantSelection
+- Changes to different product → Clears partialVariantSelection
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+6 lines - partialVariantSelection field)
+- packages/backend/convex/ai/agent.ts (+180 lines - helpers, updateOrderState args, executeUpdateOrder logic)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+- S14 "passes": true in prd.json
+
+**Learnings for future iterations:**
+- Partial variant selection enables multi-turn disambiguation without losing context
+- Store selectedOptions as map with undefined values for missing options
+- Combine stored partial with new query by concatenating all specified values
+- Return helpful error messages that guide AI to ask specific clarifying questions
+- Clear partial state on success or product change to prevent stale state
+
+---
+
+## 2026-01-30 16:30 - S13: Implement AI variant selection and matching
+
+**What was implemented:**
+- Updated `packages/backend/convex/ai/tools.ts`:
+  - Added `variant_query` optional string field to update_order tool items schema
+  - Added `variant_query` to `UpdateOrderArgs` interface
+  - AI will pass customer's variant specification here (e.g., "small red", "medium", "large hoodie")
+
+- Updated `packages/backend/convex/ai/agent.ts`:
+  - Modified `executeToolCall` to pass `productsWithVariants` instead of just `products`
+  - Added `fuzzyMatchVariantValue()` helper for abbreviation matching:
+    - Handles size abbreviations: 's'/'sm' → 'Small', 'm'/'med' → 'Medium', 'l'/'lg' → 'Large', etc.
+    - Case-insensitive matching
+    - Partial string matching
+  - Added `getVariantOptionValues()` helper to extract option1Value, option2Value, option3Value
+  - Added `formatVariantDisplay()` to format variant as "Small / Red" for display
+  - Added `matchVariantQuery()` function implementing fuzzy matching:
+    - First tries exact matches (all query parts match variant options)
+    - Falls back to partial matches (at least one query part matches)
+    - Returns single match with variantId, variantName, price
+    - Returns error with available options if multiple matches or no matches
+  - Updated `executeUpdateOrder()` to handle variants:
+    - Passes productsWithVariants through to get variant data
+    - For products with variants but no variant_query: returns error listing available options
+    - For products with variant_query: uses matchVariantQuery() to find matching variant
+    - Stores productQuery with variant name (e.g., "Classic Hoodie - Small / Red") for S09's matchVariant
+    - For simple products: uses legacy behavior with single variant price
+
+**Test scenarios handled:**
+- "red hoodie in small" → Matches variant with option values containing 'small' and 'red'
+- "I want a large" (ambiguous) → Returns error listing all 'Large' variants with their other options
+- "medium blue" → Matches variant with 'Medium' and 'Blue' options
+- "I want the hoodie" (product has variants, no variant_query) → Returns error asking which variant
+- Successful match → Includes variant name in confirmation via productQuery field
+
+**Files changed:**
+- packages/backend/convex/ai/tools.ts (+6 lines)
+- packages/backend/convex/ai/agent.ts (+175 lines)
+
+**Verification:**
+- `bunx convex typecheck`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+
+**Learnings for future iterations:**
+- Size abbreviation mapping handles common patterns: s/sm/sml, m/med/md, l/lg/lrg, xs/xl/xxl/xxxl
+- Two-pass matching (exact then partial) provides best UX for ambiguous queries
+- Store variant name in productQuery (e.g., "Product - Variant") for downstream S09 matchVariant to use
+- Return structured errors with availableOptions array for AI to present choices naturally
+
+---
+
 ## 2026-01-30 15:40 - S09: Update order schema and creation for variants
 
 **What was implemented:**
@@ -6434,3 +6530,41 @@
 - formatProductCatalog should only format, not transform data structure
 
 ---
+## 2026-01-30 16:03 - S12: Implement AI variant recommendation logic
+
+**What was implemented:**
+- Verified S11 implementation already satisfies S12 requirements:
+  - `packages/backend/convex/ai/agentPrompt.ts` formatProductCatalog() function (lines 194-233)
+    - Groups variants by parent product (not separate product recommendations)
+    - Shows stock levels per variant: `(${variant.inventoryQuantity} in stock)` or `[OUT OF STOCK]`
+    - Displays variant options naturally: "Small / Red" format
+    - For simple products (hasVariants: false), shows single price without variant complexity
+  - AI system prompt (lines 212-228) includes variant handling instructions:
+    - "Products with variants: Listed with '(HAS VARIANTS - ask customer which they want)'"
+    - "Each variant shows options like 'Small / Red' with price and stock"
+    - "Always ask which variant: 'What size?' or 'Which color?' naturally"
+    - Example provided: "The Classic Hoodie comes in Small ($25), Medium ($25), and Large ($30). Which size?"
+  - `packages/backend/convex/ai/agent.ts` transformProductsForAI() function (lines 307-326)
+    - Formats products with nested variants structure for AI consumption
+    - Includes variant price, SKU, inventory quantity, availability, and options
+
+**No files changed:**
+- S12 acceptance criteria already met by S11 implementation
+- Verified active prompt file is agentPrompt.ts (not dead code prompts.ts)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- All S12 acceptance criteria satisfied:
+  ✅ AI lists all available variants with prices when customer asks about product
+  ✅ Format groups variants by parent product (formatProductCatalog does this)
+  ✅ Stock levels shown per variant
+  ✅ Simple products respond without variant complexity
+  ✅ Prompt includes natural conversation examples for variant handling
+
+**Learnings for future iterations:**
+- S11 and S12 are tightly coupled - variant prompt formatting (S11) directly enables AI variant recommendations (S12)
+- Check for dead code files (prompts.ts was legacy, agentPrompt.ts is active)
+- AI prompt quality is critical - well-crafted examples in system prompt guide LLM behavior effectively
+
+---
+

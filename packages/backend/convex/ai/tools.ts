@@ -31,6 +31,11 @@ export const ORDER_TOOLS: Tool[] = [
 									type: "number",
 									description: "Quantity (for add/set_quantity actions)",
 								},
+								variant_query: {
+									type: "string",
+									description:
+										"Customer's variant specification (e.g., 'small red', 'medium', 'large hoodie'). Required when product has variants.",
+								},
 							},
 							required: ["product_name"],
 						},
@@ -153,6 +158,7 @@ export interface UpdateOrderArgs {
 	items?: Array<{
 		product_name: string;
 		quantity?: number;
+		variant_query?: string;
 	}>;
 }
 
