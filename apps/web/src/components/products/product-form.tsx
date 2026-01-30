@@ -7,6 +7,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import type { VariantOption } from "@/components/products/variant-options-builder";
+import { VariantOptionsBuilder } from "@/components/products/variant-options-builder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -72,6 +74,12 @@ export function ProductForm({
 		categoryId: z.string(),
 		imageId: z.string(),
 		hasVariants: z.boolean(),
+		variantOptions: z.array(
+			z.object({
+				name: z.string(),
+				values: z.array(z.string()),
+			}),
+		),
 	});
 
 	const form = useForm({
@@ -82,6 +90,7 @@ export function ProductForm({
 			categoryId: initialData?.categoryId || "",
 			imageId: initialData?.imageId || "",
 			hasVariants: false,
+			variantOptions: [] as VariantOption[],
 		},
 		onSubmit: async ({ value }) => {
 			try {
@@ -242,14 +251,9 @@ export function ProductForm({
 									)}
 								</form.Field>
 							) : (
-								<div className="rounded-lg border border-dashed p-8 text-center">
-									<p className="text-muted-foreground text-sm">
-										Variant options builder will be implemented in the next iteration
-									</p>
-									<p className="mt-2 text-muted-foreground text-xs">
-										You will be able to configure size, color, and other variant options here
-									</p>
-								</div>
+								<form.Field name="variantOptions">
+									{(field) => <VariantOptionsBuilder field={field} />}
+								</form.Field>
 							)
 						}
 					</form.Subscribe>
