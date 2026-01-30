@@ -23,11 +23,15 @@ interface Product {
 	_id: Id<"products">;
 	businessId: string;
 	name: string;
-	price: number;
-	currency: string;
+	price?: number;
+	currency?: string;
 	categoryId?: string;
 	imageId?: string;
 	available: boolean;
+	hasVariants?: boolean;
+	variantCount?: number;
+	minPrice?: number;
+	maxPrice?: number;
 }
 
 interface ProductTableProps {
@@ -63,6 +67,14 @@ function ProductTableRow({
 		product.imageId ? { storageId: product.imageId } : "skip",
 	);
 
+	const displayPrice =
+		product.hasVariants && product.minPrice !== undefined ? product.minPrice : product.price;
+	const showPriceRange =
+		product.hasVariants &&
+		product.minPrice !== undefined &&
+		product.maxPrice !== undefined &&
+		product.minPrice !== product.maxPrice;
+
 	return (
 		<TableRow
 			className={cn("cursor-pointer", !product.available && "text-muted-foreground opacity-60")}
@@ -80,9 +92,26 @@ function ProductTableRow({
 					</div>
 				)}
 			</TableCell>
-			<TableCell className="font-medium">{product.name}</TableCell>
+			<TableCell className="font-medium">
+				<div className="space-y-1">
+					<div>{product.name}</div>
+					{product.hasVariants && product.variantCount && product.variantCount > 0 && (
+						<div className="text-muted-foreground text-xs">
+							{product.variantCount} variant{product.variantCount === 1 ? "" : "s"}
+						</div>
+					)}
+				</div>
+			</TableCell>
 			<TableCell>
-				{formatCurrency(product.price, product.currency as "COP" | "BRL" | "MXN" | "USD")}
+				{displayPrice !== undefined && product.currency ? (
+					<div>
+						{showPriceRange && product.minPrice !== undefined && product.maxPrice !== undefined
+							? `${formatCurrency(product.minPrice, product.currency as "COP" | "BRL" | "MXN" | "USD")} - ${formatCurrency(product.maxPrice, product.currency as "COP" | "BRL" | "MXN" | "USD")}`
+							: `${product.hasVariants ? "from " : ""}${formatCurrency(displayPrice, product.currency as "COP" | "BRL" | "MXN" | "USD")}`}
+					</div>
+				) : (
+					<span className="text-muted-foreground text-sm">Price not set</span>
+				)}
 			</TableCell>
 			<TableCell>{categoryName}</TableCell>
 			<TableCell onClick={(e) => e.stopPropagation()}>
@@ -157,7 +186,9 @@ export function ProductTable({
 		if (sortField === "name") {
 			compareValue = a.name.localeCompare(b.name);
 		} else if (sortField === "price") {
-			compareValue = a.price - b.price;
+			const priceA = a.hasVariants && a.minPrice !== undefined ? a.minPrice : (a.price ?? 0);
+			const priceB = b.hasVariants && b.minPrice !== undefined ? b.minPrice : (b.price ?? 0);
+			compareValue = priceA - priceB;
 		} else if (sortField === "category") {
 			const catA = getCategoryName(a.categoryId);
 			const catB = getCategoryName(b.categoryId);

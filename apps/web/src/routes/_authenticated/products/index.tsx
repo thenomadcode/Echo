@@ -361,6 +361,10 @@ function ProductsPage({ businessId }: ProductsPageProps) {
 									available={product.available}
 									selected={selectedProducts.has(product._id)}
 									onSelectChange={(selected) => handleSelectProduct(product._id, selected)}
+									hasVariants={product.hasVariants}
+									variantCount={product.variantCount}
+									minPrice={product.minPrice}
+									maxPrice={product.maxPrice}
 								/>
 							))}
 						</div>

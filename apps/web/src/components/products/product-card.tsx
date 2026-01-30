@@ -14,13 +14,17 @@ interface ProductCardProps {
 	productId: Id<"products">;
 	businessId: string;
 	name: string;
-	price: number;
-	currency: string;
+	price?: number;
+	currency?: string;
 	categoryId?: string;
 	imageId?: string;
 	available: boolean;
 	selected?: boolean;
 	onSelectChange?: (selected: boolean) => void;
+	hasVariants?: boolean;
+	variantCount?: number;
+	minPrice?: number;
+	maxPrice?: number;
 }
 
 export function ProductCard({
@@ -34,6 +38,10 @@ export function ProductCard({
 	available,
 	selected = false,
 	onSelectChange,
+	hasVariants = false,
+	variantCount = 0,
+	minPrice,
+	maxPrice,
 }: ProductCardProps) {
 	const navigate = useNavigate();
 	const updateProduct = useMutation(api.products.update);
@@ -41,6 +49,10 @@ export function ProductCard({
 	const imageUrl = useQuery(api.products.getImageUrl, imageId ? { storageId: imageId } : "skip");
 
 	const category = categories?.find((c) => c._id === categoryId);
+
+	const displayPrice = hasVariants && minPrice !== undefined ? minPrice : price;
+	const showPriceRange =
+		hasVariants && minPrice !== undefined && maxPrice !== undefined && minPrice !== maxPrice;
 
 	const handleCardClick = () => {
 		navigate({ to: `/products/${productId}` });
@@ -105,9 +117,22 @@ export function ProductCard({
 					<div className="flex items-start justify-between gap-2">
 						<h3 className="line-clamp-2 font-semibold leading-tight">{name}</h3>
 					</div>
-					<p className="font-bold text-lg text-primary">
-						{formatCurrency(price, currency as "COP" | "BRL" | "MXN" | "USD")}
-					</p>
+					<div>
+						{displayPrice !== undefined && currency ? (
+							<p className="font-bold text-lg text-primary">
+								{showPriceRange && minPrice !== undefined && maxPrice !== undefined
+									? `${formatCurrency(minPrice, currency as "COP" | "BRL" | "MXN" | "USD")} - ${formatCurrency(maxPrice, currency as "COP" | "BRL" | "MXN" | "USD")}`
+									: `${hasVariants ? "from " : ""}${formatCurrency(displayPrice, currency as "COP" | "BRL" | "MXN" | "USD")}`}
+							</p>
+						) : (
+							<p className="font-bold text-lg text-primary">Price not set</p>
+						)}
+						{hasVariants && variantCount > 0 && (
+							<p className="text-muted-foreground text-xs">
+								{variantCount} variant{variantCount === 1 ? "" : "s"}
+							</p>
+						)}
+					</div>
 					{category && <p className="text-muted-foreground text-sm">{category.name}</p>}
 				</div>
 			</CardContent>
