@@ -31,7 +31,7 @@ export const importProducts = action({
 			return { imported: 0, skipped: 0, errors: ["No Shopify connection found"] };
 		}
 
-		const { shop, accessToken, business } = connection;
+		const { shop, accessToken } = connection;
 		let imported = 0;
 		let skipped = 0;
 		const errors: string[] = [];
@@ -80,41 +80,79 @@ export const importProducts = action({
 					}
 
 					const shopifyProductId = product.id;
-					const imageUrl = product.images.edges[0]?.node.url ?? null;
+					const hasVariants = product.variants.edges.length > 1;
 
-					for (const variantEdge of product.variants.edges) {
-						const variant = variantEdge.node;
-						const isOnlyVariant = product.variants.edges.length === 1;
-						const variantTitle =
-							isOnlyVariant || variant.title === "Default Title" ? "" : variant.title;
-
-						const name = variantTitle ? `${product.title} - ${variantTitle}` : product.title;
-
-						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
-						const available = variant.inventoryQuantity > 0;
-
-						try {
-							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProduct, {
+					try {
+						const { productId } = await ctx.runMutation(
+							internal.integrations.shopify.mutations.upsertParentProduct,
+							{
 								businessId: args.businessId,
-								shopifyProductId,
-								shopifyVariantId: variant.id,
-								name,
+								externalProductId: shopifyProductId,
+								name: product.title,
 								description: product.descriptionHtml || undefined,
+								hasVariants,
+								available: product.variants.edges.some((v) => v.node.inventoryQuantity > 0),
+							},
+						);
+
+						for (const variantEdge of product.variants.edges) {
+							const variant = variantEdge.node;
+							const selectedOptions = variant.selectedOptions;
+
+							const option1 = selectedOptions[0];
+							const option2 = selectedOptions[1];
+							const option3 = selectedOptions[2];
+
+							const optionParts: string[] = [];
+							if (option1?.value && option1.value !== "Default Title")
+								optionParts.push(option1.value);
+							if (option2?.value) optionParts.push(option2.value);
+							if (option3?.value) optionParts.push(option3.value);
+
+							const variantName = optionParts.join(" / ");
+
+							const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
+							const compareAtPriceInCents = variant.compareAtPrice
+								? Math.round(Number.parseFloat(variant.compareAtPrice) * 100)
+								: undefined;
+
+							const inventoryPolicy =
+								variant.inventoryPolicy === "CONTINUE" ? ("continue" as const) : ("deny" as const);
+
+							const weightUnit = variant.weightUnit?.toLowerCase() as
+								| "kg"
+								| "g"
+								| "lb"
+								| "oz"
+								| undefined;
+
+							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProductVariant, {
+								productId,
+								externalVariantId: variant.id,
+								name: variantName,
+								sku: variant.sku || undefined,
+								barcode: variant.barcode || undefined,
 								price: priceInCents,
-								currency:
-									business.defaultLanguage === "es"
-										? "COP"
-										: business.defaultLanguage === "pt"
-											? "BRL"
-											: "USD",
-								imageUrl: imageUrl ?? undefined,
-								available,
+								compareAtPrice: compareAtPriceInCents,
+								inventoryQuantity: variant.inventoryQuantity,
+								inventoryPolicy,
+								option1Name: option1?.name,
+								option1Value: option1?.value,
+								option2Name: option2?.name,
+								option2Value: option2?.value,
+								option3Name: option3?.name,
+								option3Value: option3?.value,
+								weight: variant.weight ?? undefined,
+								weightUnit,
+								requiresShipping: variant.requiresShipping,
+								position: variant.position,
 							});
-							imported++;
-						} catch (err) {
-							const msg = err instanceof Error ? err.message : "Unknown error";
-							errors.push(`Failed to import "${name}": ${msg}`);
 						}
+
+						imported++;
+					} catch (err) {
+						const msg = err instanceof Error ? err.message : "Unknown error";
+						errors.push(`Failed to import "${product.title}": ${msg}`);
 					}
 				}
 
@@ -167,12 +205,12 @@ export const syncProducts = action({
 			return { updated: 0, added: 0, removed: 0, errors: ["No Shopify connection found"] };
 		}
 
-		const { shop, accessToken, business } = connection;
+		const { shop, accessToken } = connection;
 		let updated = 0;
 		let added = 0;
 		let removed = 0;
 		const errors: string[] = [];
-		const seenShopifyVariantIds = new Set<string>();
+		const seenExternalVariantIds = new Set<string>();
 
 		let hasNextPage = true;
 		let cursor: string | null = null;
@@ -215,57 +253,96 @@ export const syncProducts = action({
 
 					if (product.status !== "ACTIVE") {
 						for (const variantEdge of product.variants.edges) {
-							seenShopifyVariantIds.add(variantEdge.node.id);
+							seenExternalVariantIds.add(variantEdge.node.id);
 						}
 						continue;
 					}
 
 					const shopifyProductId = product.id;
-					const imageUrl = product.images.edges[0]?.node.url ?? null;
+					const hasVariants = product.variants.edges.length > 1;
 
-					for (const variantEdge of product.variants.edges) {
-						const variant = variantEdge.node;
-						seenShopifyVariantIds.add(variant.id);
+					try {
+						const { productId, isNew: isProductNew } = await ctx.runMutation(
+							internal.integrations.shopify.mutations.upsertParentProduct,
+							{
+								businessId: args.businessId,
+								externalProductId: shopifyProductId,
+								name: product.title,
+								description: product.descriptionHtml || undefined,
+								hasVariants,
+								available: product.variants.edges.some((v) => v.node.inventoryQuantity > 0),
+							},
+						);
 
-						const isOnlyVariant = product.variants.edges.length === 1;
-						const variantTitle =
-							isOnlyVariant || variant.title === "Default Title" ? "" : variant.title;
+						if (isProductNew) {
+							added++;
+						}
 
-						const name = variantTitle ? `${product.title} - ${variantTitle}` : product.title;
+						for (const variantEdge of product.variants.edges) {
+							const variant = variantEdge.node;
+							seenExternalVariantIds.add(variant.id);
 
-						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
-						const available = variant.inventoryQuantity > 0;
+							const selectedOptions = variant.selectedOptions;
 
-						try {
-							const syncResult = await ctx.runMutation(
-								internal.integrations.shopify.mutations.upsertProductWithStats,
+							const option1 = selectedOptions[0];
+							const option2 = selectedOptions[1];
+							const option3 = selectedOptions[2];
+
+							const optionParts: string[] = [];
+							if (option1?.value && option1.value !== "Default Title")
+								optionParts.push(option1.value);
+							if (option2?.value) optionParts.push(option2.value);
+							if (option3?.value) optionParts.push(option3.value);
+
+							const variantName = optionParts.join(" / ");
+
+							const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
+							const compareAtPriceInCents = variant.compareAtPrice
+								? Math.round(Number.parseFloat(variant.compareAtPrice) * 100)
+								: undefined;
+
+							const inventoryPolicy =
+								variant.inventoryPolicy === "CONTINUE" ? ("continue" as const) : ("deny" as const);
+
+							const weightUnit = variant.weightUnit?.toLowerCase() as
+								| "kg"
+								| "g"
+								| "lb"
+								| "oz"
+								| undefined;
+
+							const { isNew: isVariantNew } = await ctx.runMutation(
+								internal.integrations.shopify.mutations.upsertProductVariant,
 								{
-									businessId: args.businessId,
-									shopifyProductId,
-									shopifyVariantId: variant.id,
-									name,
-									description: product.descriptionHtml || undefined,
+									productId,
+									externalVariantId: variant.id,
+									name: variantName,
+									sku: variant.sku || undefined,
+									barcode: variant.barcode || undefined,
 									price: priceInCents,
-									currency:
-										business.defaultLanguage === "es"
-											? "COP"
-											: business.defaultLanguage === "pt"
-												? "BRL"
-												: "USD",
-									imageUrl: imageUrl ?? undefined,
-									available,
+									compareAtPrice: compareAtPriceInCents,
+									inventoryQuantity: variant.inventoryQuantity,
+									inventoryPolicy,
+									option1Name: option1?.name,
+									option1Value: option1?.value,
+									option2Name: option2?.name,
+									option2Value: option2?.value,
+									option3Name: option3?.name,
+									option3Value: option3?.value,
+									weight: variant.weight ?? undefined,
+									weightUnit,
+									requiresShipping: variant.requiresShipping,
+									position: variant.position,
 								},
 							);
 
-							if (syncResult.isNew) {
-								added++;
-							} else {
+							if (!isProductNew && !isVariantNew) {
 								updated++;
 							}
-						} catch (err) {
-							const msg = err instanceof Error ? err.message : "Unknown error";
-							errors.push(`Failed to sync "${name}": ${msg}`);
 						}
+					} catch (err) {
+						const msg = err instanceof Error ? err.message : "Unknown error";
+						errors.push(`Failed to sync "${product.title}": ${msg}`);
 					}
 				}
 
@@ -274,10 +351,10 @@ export const syncProducts = action({
 			}
 
 			const removedCount = await ctx.runMutation(
-				internal.integrations.shopify.mutations.markMissingProductsUnavailable,
+				internal.integrations.shopify.mutations.markMissingVariantsUnavailable,
 				{
 					businessId: args.businessId,
-					seenShopifyVariantIds: Array.from(seenShopifyVariantIds),
+					seenExternalVariantIds: Array.from(seenExternalVariantIds),
 				},
 			);
 			removed = removedCount;

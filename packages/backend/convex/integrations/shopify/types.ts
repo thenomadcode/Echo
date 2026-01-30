@@ -43,8 +43,22 @@ export type ShopifyGraphQLResponse = {
 								id: string;
 								title: string;
 								price: string;
-								sku: string;
+								compareAtPrice: string | null;
+								sku: string | null;
+								barcode: string | null;
 								inventoryQuantity: number;
+								inventoryPolicy: "DENY" | "CONTINUE";
+								weight: number | null;
+								weightUnit: "KILOGRAMS" | "GRAMS" | "POUNDS" | "OUNCES" | null;
+								requiresShipping: boolean;
+								position: number;
+								selectedOptions: Array<{
+									name: string;
+									value: string;
+								}>;
+								image: {
+									url: string;
+								} | null;
 							};
 						}>;
 					};

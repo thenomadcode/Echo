@@ -47,8 +47,22 @@ export const SHOPIFY_PRODUCTS_QUERY = `
                 id
                 title
                 price
+                compareAtPrice
                 sku
+                barcode
                 inventoryQuantity
+                inventoryPolicy
+                weight
+                weightUnit
+                requiresShipping
+                position
+                selectedOptions {
+                  name
+                  value
+                }
+                image {
+                  url
+                }
               }
             }
           }
