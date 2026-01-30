@@ -1,7 +1,61 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server";
+import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
+import type { MutationCtx } from "../_generated/server";
+import { internalMutation, mutation } from "../_generated/server";
 import { requireBusinessOwnership } from "../lib/auth";
 import { generateOrderNumber } from "../lib/orderNumber";
+
+/**
+ * Match a variant based on a product query string (e.g., "small red", "SKU123")
+ * Returns the matched variant or null if no match found
+ */
+async function matchVariant(
+	ctx: MutationCtx,
+	productId: Id<"products">,
+	productQuery: string,
+): Promise<Id<"productVariants"> | null> {
+	const variants = await ctx.db
+		.query("productVariants")
+		.withIndex("by_product", (q) => q.eq("productId", productId))
+		.filter((q) => q.eq(q.field("available"), true))
+		.collect();
+
+	if (variants.length === 0) {
+		return null;
+	}
+
+	const query = productQuery.toLowerCase().trim();
+
+	for (const variant of variants) {
+		if (variant.sku && variant.sku.toLowerCase() === query) {
+			return variant._id;
+		}
+	}
+
+	for (const variant of variants) {
+		if (variant.name?.toLowerCase().includes(query)) {
+			return variant._id;
+		}
+	}
+
+	for (const variant of variants) {
+		const optionValues = [
+			variant.option1Value?.toLowerCase(),
+			variant.option2Value?.toLowerCase(),
+			variant.option3Value?.toLowerCase(),
+		].filter(Boolean);
+
+		const allOptionsMatch = optionValues.every((opt) => query.includes(opt || ""));
+		const queryMatchesAnyOption = optionValues.some((opt) => query.includes(opt || ""));
+
+		if (allOptionsMatch || queryMatchesAnyOption) {
+			return variant._id;
+		}
+	}
+
+	return null;
+}
 
 export const create = mutation({
 	args: {
@@ -11,6 +65,7 @@ export const create = mutation({
 			v.object({
 				productId: v.id("products"),
 				quantity: v.number(),
+				productQuery: v.optional(v.string()),
 			}),
 		),
 		contactPhone: v.string(),
@@ -20,11 +75,16 @@ export const create = mutation({
 
 		const orderItems: {
 			productId: (typeof args.items)[number]["productId"];
+			variantId?: Id<"productVariants">;
 			name: string;
+			variantName?: string;
+			sku?: string;
 			quantity: number;
 			unitPrice: number;
 			totalPrice: number;
 		}[] = [];
+
+		const variantsToDecrement: Array<{ variantId: Id<"productVariants">; quantity: number }> = [];
 
 		for (const item of args.items) {
 			const product = await ctx.db.get(item.productId);
@@ -39,17 +99,50 @@ export const create = mutation({
 			}
 
 			let unitPrice: number;
-			if (product.hasVariants) {
-				const defaultVariant = await ctx.db
-					.query("productVariants")
-					.withIndex("by_product", (q) => q.eq("productId", item.productId))
-					.first();
+			let variantId: Id<"productVariants"> | undefined;
+			let variantName: string | undefined;
+			let sku: string | undefined;
 
-				if (!defaultVariant || !defaultVariant.available) {
-					throw new Error(`Product ${product.name} has no available variants`);
+			if (product.hasVariants) {
+				let matchedVariantId: Id<"productVariants"> | null = null;
+				if (item.productQuery) {
+					matchedVariantId = await matchVariant(ctx, item.productId, item.productQuery);
 				}
 
-				unitPrice = defaultVariant.price;
+				if (!matchedVariantId) {
+					const firstVariant = await ctx.db
+						.query("productVariants")
+						.withIndex("by_product", (q) => q.eq("productId", item.productId))
+						.filter((q) => q.eq(q.field("available"), true))
+						.first();
+
+					if (!firstVariant) {
+						throw new Error(`Product ${product.name} has no available variants`);
+					}
+					matchedVariantId = firstVariant._id;
+				}
+
+				const variant = await ctx.db.get(matchedVariantId);
+				if (!variant) {
+					throw new Error(`Variant not found for product ${product.name}`);
+				}
+
+				if (variant.trackInventory) {
+					if (variant.inventoryPolicy === "deny" && variant.inventoryQuantity < item.quantity) {
+						throw new Error(
+							`Insufficient stock for ${product.name}${variant.name ? ` - ${variant.name}` : ""}. Available: ${variant.inventoryQuantity}, requested: ${item.quantity}`,
+						);
+					}
+				}
+
+				unitPrice = variant.price;
+				variantId = variant._id;
+				variantName = variant.name || undefined;
+				sku = variant.sku || undefined;
+
+				if (variant.trackInventory) {
+					variantsToDecrement.push({ variantId: variant._id, quantity: item.quantity });
+				}
 			} else {
 				if (product.price === undefined) {
 					throw new Error(`Product ${product.name} has no price configured`);
@@ -59,7 +152,10 @@ export const create = mutation({
 
 			orderItems.push({
 				productId: item.productId,
+				variantId,
 				name: product.name,
+				variantName,
+				sku,
 				quantity: item.quantity,
 				unitPrice,
 				totalPrice: unitPrice * item.quantity,
@@ -90,7 +186,47 @@ export const create = mutation({
 			updatedAt: now,
 		});
 
+		await ctx.scheduler.runAfter(0, internal.orders.mutations.decrementInventory, {
+			variants: variantsToDecrement,
+		});
+
 		return orderId;
+	},
+});
+
+/**
+ * Internal mutation to decrement inventory after order creation
+ */
+export const decrementInventory = internalMutation({
+	args: {
+		variants: v.array(
+			v.object({
+				variantId: v.id("productVariants"),
+				quantity: v.number(),
+			}),
+		),
+	},
+	handler: async (ctx, args) => {
+		for (const { variantId, quantity } of args.variants) {
+			const variant = await ctx.db.get(variantId);
+			if (!variant) {
+				console.error(`Variant ${variantId} not found during inventory decrement`);
+				continue;
+			}
+
+			const newQuantity = variant.inventoryQuantity - quantity;
+
+			const updates: any = {
+				inventoryQuantity: Math.max(0, newQuantity),
+				updatedAt: Date.now(),
+			};
+
+			if (newQuantity <= 0 && variant.inventoryPolicy === "deny") {
+				updates.available = false;
+			}
+
+			await ctx.db.patch(variantId, updates);
+		}
 	},
 });
 

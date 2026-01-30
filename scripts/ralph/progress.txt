@@ -6275,3 +6275,45 @@
 - Variant position should be index in UI order for correct display later
 
 ---
+
+## 2026-01-30 15:39 - S08: Display products with variants in product list
+
+**What was implemented:**
+- Updated `apps/web/src/components/products/product-card.tsx`:
+  - Added props: `hasVariants`, `variantCount`, `minPrice`, `maxPrice` (all optional)
+  - Made `price` and `currency` optional to support variant products
+  - Display logic: Shows price range for variant products ("$25 - $30" or "from $25")
+  - Simple products show single price without "from" prefix
+  - Variant count badge displays below price ("5 variants")
+  - Price displays "Price not set" when product has no price configured
+- Updated `apps/web/src/components/products/product-table.tsx`:
+  - Updated `Product` interface to include variant fields
+  - Made `price` and `currency` optional
+  - ProductTableRow shows variant count below product name
+  - Price column displays range or "from" prefix for variant products
+  - Sort by price uses minPrice for variant products, handles undefined prices gracefully
+- Updated `apps/web/src/routes/_authenticated/products/index.tsx`:
+  - Passes variant data to ProductCard: `hasVariants`, `variantCount`, `minPrice`, `maxPrice`
+  - Products list query already returns these fields from backend (from S03)
+
+**Files changed:**
+- apps/web/src/components/products/product-card.tsx (+24 lines, type fixes)
+- apps/web/src/components/products/product-table.tsx (+35 lines, variant display, sort fixes)
+- apps/web/src/routes/_authenticated/products/index.tsx (+4 lines, props passed)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+
+**Learnings for future iterations:**
+- `products.list` backend query already enriches products with `variantCount`, `minPrice`, `maxPrice`
+- Price display pattern: Range ("$25 - $30"), Single with prefix ("from $25"), or Single ("$25")
+- Handle optional price/currency gracefully with "Price not set" fallback
+- Sort functions need explicit undefined handling when fields become optional
+
+**Note:**
+- Expandable variant list and per-variant stock display were deferred (not in initial PRD scope)
+- Current implementation shows variant count and price range only
+- Stock totals across variants not implemented (no totalStock field from backend yet)
+
+---
