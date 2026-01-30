@@ -73,3 +73,50 @@
   - Orders can now track both simple products and specific variants
   - Future mutations will use variantId to fetch price from productVariants table instead of products table
 ---
+
+## 2026-01-30 21:05 - US-004
+- Implemented variant CRUD mutations in packages/backend/convex/variants.ts
+- Created 4 mutations: create, update, deleteVariant, adjustInventory
+- All mutations validate businessId ownership through parent product
+- Fixed products.ts to include hasVariants field in product creation
+- Files changed: packages/backend/convex/variants.ts (new), packages/backend/convex/products.ts
+- **Learnings for future iterations:**
+  - Variant mutations follow same pattern as product mutations (get parent, validate ownership, perform operation)
+  - Soft delete pattern: mark available: false instead of hard delete
+  - Position field auto-increments if not specified (max position + 1)
+  - Inventory adjustments prevent negative values with validation
+  - All schema changes require updating existing insert statements
+---
+
+## 2026-01-30 21:11 - US-005
+- Implemented variant query functions in packages/backend/convex/variants.ts
+- Added variants.list query to fetch all variants for a product (sorted by position)
+- Added variants.get query to fetch a single variant by ID
+- Implemented products.getWithVariants query in packages/backend/convex/products.ts to fetch product with all its variants
+- Implemented products.listWithVariants query to fetch product list with variant data and counts
+- All queries respect businessId ownership through parent product validation
+- Files changed: packages/backend/convex/variants.ts (+62), packages/backend/convex/products.ts (+108)
+- **Learnings for future iterations:**
+  - Product list queries with variants use Promise.all to fetch variants for each product in parallel
+  - Variants are sorted by position field for consistent ordering
+  - Auth pattern: check user authentication, get parent entity, verify ownership via isBusinessOwner
+  - Query functions return null/empty array instead of throwing errors for unauthorized access
+  - Variant count can be calculated during list queries for UI badges/summaries
+---
+## 2026-01-30 21:15 - US-006
+- Created variant generation utility in packages/backend/convex/lib/variantGeneration.ts
+- Implemented generateVariantCombinations() function supporting 1-3 options
+- Implemented calculateVariantCount() helper for UI display
+- Handles all edge cases: single option, two options, three options
+- Auto-generates variant names: single option returns value only, multiple options use " / " separator
+- TypeScript interfaces: VariantOption (input), GeneratedVariant (output with option1-3 Name/Value pairs)
+- Files changed: packages/backend/convex/lib/variantGeneration.ts (new)
+- **Learnings for future iterations:**
+  - Utility functions for complex logic belong in packages/backend/convex/lib/
+  - Shopify-compatible means max 3 options (option1, option2, option3)
+  - Variant names follow format: "Value1 / Value2 / Value3" for multi-option, just "Value1" for single option
+  - TypeScript interfaces should be exported for reuse in mutations/queries
+  - Validation should happen at function entry (throw early for invalid inputs)
+  - Combinatorial generation uses nested loops: 1 for single, 2 for double, 3 for triple options
+---
+

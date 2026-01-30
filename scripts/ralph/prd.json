@@ -64,7 +64,7 @@
 				"Typecheck passes"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "Backend variant management"
 		},
@@ -81,7 +81,7 @@
 				"Typecheck passes"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "Backend variant queries"
 		},
@@ -97,7 +97,7 @@
 				"Typecheck passes"
 			],
 			"priority": 6,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "Utility for bulk variant creation"
 		},
