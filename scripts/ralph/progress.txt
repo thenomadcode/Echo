@@ -6356,3 +6356,31 @@
 - Stock totals across variants not implemented (no totalStock field from backend yet)
 
 ---
+
+## 2026-01-30 15:50 - S10: Update order display with variant details
+
+**What was implemented:**
+- Updated `apps/web/src/routes/_authenticated/orders.$orderId.tsx`:
+  - Added `Link` import from `@tanstack/react-router`
+  - Updated Product column in order items table to display variant information
+  - Product name is now a clickable link to `/products/{productId}`
+  - Shows "Product Name - Variant Name" when variant exists
+  - Shows just product name for simple products (no variant)
+  - Shows "SKU: {sku}" below product/variant name when available
+  - Followed existing shadcn/ui patterns and styles with flex layout and text styling
+
+**Files changed:**
+- apps/web/src/routes/_authenticated/orders.$orderId.tsx (+20 lines, -2 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- Pre-commit hooks: lint and typecheck passed
+- LSP diagnostics: 0 errors on changed file
+
+**Learnings for future iterations:**
+- Order items now display full variant context (name + SKU) for better fulfillment clarity
+- Product links enable quick navigation from order detail to product management
+- Variant display gracefully handles both simple products (no variant) and complex products (with variants)
+- Use flex layout with gap for clean vertical stacking of product name and SKU
+
+---

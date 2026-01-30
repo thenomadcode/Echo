@@ -185,7 +185,7 @@
 			"id": "S10",
 			"title": "Update order display with variant details",
 			"priority": 10,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update apps/web/src/routes/_authenticated/orders.$orderId.tsx:",
