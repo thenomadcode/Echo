@@ -59,3 +59,17 @@
   - E-commerce provider source is now generic, supporting future integrations beyond Shopify
   - Compound indexes require all fields in the index definition when querying
 ---
+
+## 2026-01-30 21:08 - US-003
+- Updated orders table schema in packages/backend/convex/schema.ts:
+  - Added variantId field (optional v.id("productVariants"))
+  - Added variantName field (optional v.string())
+  - Added sku field (optional v.string())
+- Updated OrderItem type in packages/backend/convex/orders/types.ts with same fields
+- Files changed: packages/backend/convex/schema.ts, packages/backend/convex/orders/types.ts
+- **Learnings for future iterations:**
+  - Order items schema changes are backward compatible with existing orders (all new fields are optional)
+  - TypeScript types should match Convex schema validators exactly
+  - Orders can now track both simple products and specific variants
+  - Future mutations will use variantId to fetch price from productVariants table instead of products table
+---
