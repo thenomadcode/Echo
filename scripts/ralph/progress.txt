@@ -291,3 +291,27 @@
   - Shopify compareAtPrice can be null (no sale/original price)
 ---
 
+
+## 2026-01-30 22:04 - US-014
+- Implemented Shopify webhook handler for variant updates in packages/backend/convex/integrations/shopify/webhooks.ts
+- Refactored products/create and products/update webhook handlers to use upsertProductWithVariants mutation instead of creating separate products per variant
+- Webhook now creates 1 parent product + N variants (matching import/sync behavior)
+- Added downloadAndStoreImage import from utils.ts for image handling in webhooks
+- Downloads product and variant images from Shopify CDN and stores in Convex storage
+- Maps webhook REST API data to variant schema (externalVariantId, name, sku, price, inventoryQuantity, available, position)
+- Handles single-variant products as simple products (hasVariants: false)
+- Marks products unavailable when webhook receives non-active status
+- Updates lastSyncAt timestamp on all variant operations
+- Files changed: packages/backend/convex/integrations/shopify/webhooks.ts (+63, -25 lines)
+- Commit: 55528c2 "feat: US-014 - Create Shopify webhook handler for variant updates"
+- **Learnings for future iterations:**
+  - Webhook REST API differs from GraphQL API: variants array directly in product, no nested edges/nodes
+  - Webhook handlers are internalAction so ctx.storage is available for downloadAndStoreImage
+  - Image matching for variants in webhook: product.images.find(img => img.id === variant.id)
+  - Variant position uses array index i for consistent ordering
+  - Webhook payloads don't include option names/values (only available in GraphQL), so leave option1-3 Name/Value as undefined
+  - compareAtPrice and barcode also not in webhook payload (GraphQL only)
+  - Old webhook pattern created N separate products (one per variant) - new pattern creates 1 product + N variants
+  - upsertProductWithVariants handles create/update/soft-delete atomically, no need for separate markMissingProductsUnavailable call
+---
+

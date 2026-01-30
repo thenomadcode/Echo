@@ -13,12 +13,28 @@ interface BusinessInfo {
 	};
 }
 
+interface ProductVariant {
+	name: string;
+	sku?: string;
+	price: number;
+	inventoryQuantity: number;
+	available: boolean;
+	option1Name?: string;
+	option1Value?: string;
+	option2Name?: string;
+	option2Value?: string;
+	option3Name?: string;
+	option3Value?: string;
+}
+
 interface Product {
 	name: string;
 	price: number;
 	currency: string;
 	description?: string;
 	available: boolean;
+	hasVariants: boolean;
+	variants?: ProductVariant[];
 	externalProductId?: string;
 }
 
@@ -135,35 +151,6 @@ function formatOrderSummary(order: OrderState): string {
 	return lines.join("\n");
 }
 
-// Extract base product name from variant name (e.g., "Hoodie - Small" -> "Hoodie")
-function getBaseProductName(name: string): string {
-	const dashIndex = name.lastIndexOf(" - ");
-	return dashIndex > 0 ? name.substring(0, dashIndex) : name;
-}
-
-// Extract variant name from product name (e.g., "Hoodie - Small" -> "Small")
-function getVariantName(name: string): string {
-	const dashIndex = name.lastIndexOf(" - ");
-	return dashIndex > 0 ? name.substring(dashIndex + 3) : "";
-}
-
-// Group products by externalProductId to identify variants
-function groupProductsByVariant(products: Product[]): Map<string, Product[]> {
-	const groups = new Map<string, Product[]>();
-
-	for (const product of products) {
-		// Products with externalProductId are grouped by it
-		// Products without are considered standalone (manual products)
-		const key = product.externalProductId ?? `standalone_${product.name}`;
-		const existing = groups.get(key) ?? [];
-		existing.push(product);
-		groups.set(key, existing);
-	}
-
-	return groups;
-}
-
-// Format product catalog with variant grouping
 function formatCustomerContext(customer: CustomerContext): string {
 	const sections: string[] = [];
 
@@ -208,39 +195,37 @@ function formatCustomerContext(customer: CustomerContext): string {
 }
 
 function formatProductCatalog(products: Product[]): string {
-	const groups = groupProductsByVariant(products);
 	const lines: string[] = [];
 
-	for (const [, variants] of groups) {
-		const availableVariants = variants.filter((p) => p.available);
-		const unavailableVariants = variants.filter((p) => !p.available);
-
-		if (availableVariants.length === 0 && unavailableVariants.length === 0) {
+	for (const product of products) {
+		if (!product.available && (!product.variants || product.variants.length === 0)) {
 			continue;
 		}
 
-		// Single product (no variants) or standalone manual product
-		if (variants.length === 1) {
-			const p = variants[0];
-			if (!p) continue;
-			const price = formatPrice(p.price, p.currency);
-			const desc = p.description ? ` - ${p.description}` : "";
-			const status = p.available ? "" : " [OUT OF STOCK]";
-			lines.push(`  - ${p.name}: ${price}${desc}${status}`);
+		const desc = product.description ? ` - ${product.description}` : "";
+
+		if (!product.hasVariants || !product.variants || product.variants.length === 0) {
+			const price = formatPrice(product.price, product.currency);
+			const status = product.available ? "" : " [OUT OF STOCK]";
+			lines.push(`  - ${product.name}: ${price}${desc}${status}`);
 			continue;
 		}
 
-		// Multiple variants - group under base product name
-		const baseName = getBaseProductName(variants[0]?.name ?? "");
-		const description = variants[0]?.description ? ` - ${variants[0].description}` : "";
+		const availableVariants = product.variants.filter((v) => v.available);
 
-		lines.push(`  - ${baseName}${description} (HAS VARIANTS - ask customer which they want):`);
+		if (availableVariants.length === 0) {
+			lines.push(`  - ${product.name}${desc} [OUT OF STOCK]`);
+			continue;
+		}
 
-		for (const v of variants) {
-			const variantName = getVariantName(v.name);
-			const price = formatPrice(v.price, v.currency);
-			const status = v.available ? "" : " [OUT OF STOCK]";
-			lines.push(`      • ${variantName}: ${price}${status}`);
+		lines.push(`  - ${product.name}${desc} (HAS VARIANTS - ask customer which they want):`);
+
+		for (const variant of availableVariants) {
+			const variantName = variant.name || "Default";
+			const price = formatPrice(variant.price, product.currency);
+			const stock = variant.inventoryQuantity > 0 ? ` (${variant.inventoryQuantity} in stock)` : "";
+			const skuInfo = variant.sku ? ` [SKU: ${variant.sku}]` : "";
+			lines.push(`      • ${variantName}: ${price}${stock}${skuInfo}`);
 		}
 	}
 
@@ -323,8 +308,12 @@ ${returningGreeting}
 ### Products
 - ALL products in catalog are valid - never filter based on business type
 - If they ask "what do you have?" → Give natural summary, don't list everything
-- Variants → Ask naturally: "What size?" not "Select: S/M/L/XL"
-- Out of stock → Apologize, suggest alternatives
+- **Variants** (products with multiple options):
+  - When customer wants a product with variants → Ask naturally which variant they want
+  - Example: "What size?" or "Which color?" not "Select: S/M/L/XL"
+  - Stock info is shown for each variant - mention if their choice is low stock
+  - SKU is internal reference - only mention if customer asks specifically
+- Out of stock → Apologize, suggest alternatives from same product or similar products
 
 ### Changes
 - Customer can change anything anytime - be flexible

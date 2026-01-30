@@ -239,7 +239,7 @@
 				"Typecheck passes"
 			],
 			"priority": 14,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"notes": "Shopify webhook sync for variants"
 		},

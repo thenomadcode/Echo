@@ -22,7 +22,7 @@ import type {
 interface AgentContext {
 	conversation: Doc<"conversations">;
 	business: Doc<"businesses">;
-	products: Doc<"products">[];
+	products: (Doc<"products"> & { variants: Doc<"productVariants">[] })[];
 	messages: Doc<"messages">[];
 	customerContext: CustomerContext | null;
 }
@@ -47,12 +47,29 @@ export const loadAgentContext = internalQuery({
 		const business = await ctx.db.get(conversation.businessId);
 		if (!business) return null;
 
-		const products = await ctx.db
+		const productsQuery = await ctx.db
 			.query("products")
 			.withIndex("by_business", (q) =>
 				q.eq("businessId", conversation.businessId as unknown as string).eq("deleted", false),
 			)
 			.collect();
+
+		const productsWithVariants = await Promise.all(
+			productsQuery.map(async (product) => {
+				const variants = await ctx.db
+					.query("productVariants")
+					.withIndex("by_product", (q) => q.eq("productId", product._id))
+					.filter((q) => q.eq(q.field("available"), true))
+					.collect();
+
+				return {
+					...product,
+					variants: variants.sort((a, b) => a.position - b.position),
+				};
+			}),
+		);
+
+		const products = productsWithVariants;
 
 		const messages = await ctx.db
 			.query("messages")
@@ -304,12 +321,26 @@ export const processWithAgent = action({
 				timezone: business.timezone,
 				businessHours: business.businessHours,
 			},
-			products: products.map((p: Doc<"products">) => ({
+			products: products.map((p) => ({
 				name: p.name,
 				price: p.price,
 				currency: p.currency,
 				description: p.description,
 				available: p.available,
+				hasVariants: p.hasVariants,
+				variants: p.variants?.map((v) => ({
+					name: v.name,
+					sku: v.sku,
+					price: v.price,
+					inventoryQuantity: v.inventoryQuantity,
+					available: v.available,
+					option1Name: v.option1Name,
+					option1Value: v.option1Value,
+					option2Name: v.option2Name,
+					option2Value: v.option2Value,
+					option3Name: v.option3Name,
+					option3Value: v.option3Value,
+				})),
 				externalProductId: p.externalProductId,
 			})),
 			currentOrder: orderState,
@@ -361,12 +392,26 @@ export const processWithAgent = action({
 						timezone: business.timezone,
 						businessHours: business.businessHours,
 					},
-					products: products.map((p: Doc<"products">) => ({
+					products: products.map((p) => ({
 						name: p.name,
 						price: p.price,
 						currency: p.currency,
 						description: p.description,
 						available: p.available,
+						hasVariants: p.hasVariants,
+						variants: p.variants?.map((v) => ({
+							name: v.name,
+							sku: v.sku,
+							price: v.price,
+							inventoryQuantity: v.inventoryQuantity,
+							available: v.available,
+							option1Name: v.option1Name,
+							option1Value: v.option1Value,
+							option2Name: v.option2Name,
+							option2Value: v.option2Value,
+							option3Name: v.option3Name,
+							option3Value: v.option3Value,
+						})),
 						externalProductId: p.externalProductId,
 					})),
 					currentOrder: updatedOrderState,
