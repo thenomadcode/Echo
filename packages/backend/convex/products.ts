@@ -413,6 +413,203 @@ export const createWithVariants = mutation({
 	},
 });
 
+export const updateWithVariants = mutation({
+	args: {
+		productId: v.id("products"),
+		name: v.optional(v.string()),
+		description: v.optional(v.string()),
+		categoryId: v.optional(v.string()),
+		imageId: v.optional(v.string()),
+		variantsToUpdate: v.optional(
+			v.array(
+				v.object({
+					variantId: v.id("productVariants"),
+					name: v.optional(v.string()),
+					sku: v.optional(v.string()),
+					price: v.optional(v.number()),
+					inventoryQuantity: v.optional(v.number()),
+					option1Name: v.optional(v.string()),
+					option1Value: v.optional(v.string()),
+					option2Name: v.optional(v.string()),
+					option2Value: v.optional(v.string()),
+					option3Name: v.optional(v.string()),
+					option3Value: v.optional(v.string()),
+					imageId: v.optional(v.string()),
+					available: v.optional(v.boolean()),
+					position: v.optional(v.number()),
+					compareAtPrice: v.optional(v.number()),
+					costPrice: v.optional(v.number()),
+					barcode: v.optional(v.string()),
+					weight: v.optional(v.number()),
+					weightUnit: v.optional(
+						v.union(v.literal("kg"), v.literal("g"), v.literal("lb"), v.literal("oz")),
+					),
+					requiresShipping: v.optional(v.boolean()),
+				}),
+			),
+		),
+		variantsToAdd: v.optional(
+			v.array(
+				v.object({
+					name: v.string(),
+					sku: v.optional(v.string()),
+					price: v.number(),
+					inventoryQuantity: v.number(),
+					option1Name: v.optional(v.string()),
+					option1Value: v.optional(v.string()),
+					option2Name: v.optional(v.string()),
+					option2Value: v.optional(v.string()),
+					option3Name: v.optional(v.string()),
+					option3Value: v.optional(v.string()),
+					imageId: v.optional(v.string()),
+					available: v.optional(v.boolean()),
+					compareAtPrice: v.optional(v.number()),
+					costPrice: v.optional(v.number()),
+					barcode: v.optional(v.string()),
+					weight: v.optional(v.number()),
+					weightUnit: v.optional(
+						v.union(v.literal("kg"), v.literal("g"), v.literal("lb"), v.literal("oz")),
+					),
+					requiresShipping: v.optional(v.boolean()),
+				}),
+			),
+		),
+		variantsToRemove: v.optional(v.array(v.id("productVariants"))),
+	},
+	handler: async (ctx, args) => {
+		const product = await ctx.db.get(args.productId);
+		if (!product) {
+			throw new Error("Product not found");
+		}
+
+		await requireBusinessOwnership(ctx, product.businessId as any);
+
+		const now = Date.now();
+
+		const productUpdates: Record<string, unknown> = { updatedAt: now };
+
+		if (args.name !== undefined) productUpdates.name = args.name;
+		if (args.description !== undefined) productUpdates.description = args.description;
+		if (args.categoryId !== undefined) productUpdates.categoryId = args.categoryId;
+		if (args.imageId !== undefined) productUpdates.imageId = args.imageId;
+
+		await ctx.db.patch(args.productId, productUpdates);
+
+		if (args.variantsToUpdate) {
+			for (const variantUpdate of args.variantsToUpdate) {
+				const variant = await ctx.db.get(variantUpdate.variantId);
+				if (!variant) {
+					continue;
+				}
+
+				if (variant.productId !== args.productId) {
+					throw new Error("Variant does not belong to this product");
+				}
+
+				const updates: Record<string, unknown> = { updatedAt: now };
+
+				if (variantUpdate.name !== undefined) updates.name = variantUpdate.name;
+				if (variantUpdate.sku !== undefined) updates.sku = variantUpdate.sku;
+				if (variantUpdate.price !== undefined) updates.price = variantUpdate.price;
+				if (variantUpdate.inventoryQuantity !== undefined)
+					updates.inventoryQuantity = variantUpdate.inventoryQuantity;
+				if (variantUpdate.option1Name !== undefined)
+					updates.option1Name = variantUpdate.option1Name;
+				if (variantUpdate.option1Value !== undefined)
+					updates.option1Value = variantUpdate.option1Value;
+				if (variantUpdate.option2Name !== undefined)
+					updates.option2Name = variantUpdate.option2Name;
+				if (variantUpdate.option2Value !== undefined)
+					updates.option2Value = variantUpdate.option2Value;
+				if (variantUpdate.option3Name !== undefined)
+					updates.option3Name = variantUpdate.option3Name;
+				if (variantUpdate.option3Value !== undefined)
+					updates.option3Value = variantUpdate.option3Value;
+				if (variantUpdate.imageId !== undefined) updates.imageId = variantUpdate.imageId;
+				if (variantUpdate.available !== undefined) updates.available = variantUpdate.available;
+				if (variantUpdate.position !== undefined) updates.position = variantUpdate.position;
+				if (variantUpdate.compareAtPrice !== undefined)
+					updates.compareAtPrice = variantUpdate.compareAtPrice;
+				if (variantUpdate.costPrice !== undefined) updates.costPrice = variantUpdate.costPrice;
+				if (variantUpdate.barcode !== undefined) updates.barcode = variantUpdate.barcode;
+				if (variantUpdate.weight !== undefined) updates.weight = variantUpdate.weight;
+				if (variantUpdate.weightUnit !== undefined) updates.weightUnit = variantUpdate.weightUnit;
+				if (variantUpdate.requiresShipping !== undefined)
+					updates.requiresShipping = variantUpdate.requiresShipping;
+
+				await ctx.db.patch(variantUpdate.variantId, updates);
+			}
+		}
+
+		if (args.variantsToAdd) {
+			const existingVariants = await ctx.db
+				.query("productVariants")
+				.withIndex("by_product", (q) => q.eq("productId", args.productId))
+				.collect();
+			const maxPosition = existingVariants.reduce((max, v) => Math.max(max, v.position), -1);
+
+			for (let i = 0; i < args.variantsToAdd.length; i++) {
+				const variant = args.variantsToAdd[i];
+				if (!variant) continue;
+
+				await ctx.db.insert("productVariants", {
+					productId: args.productId,
+					name: variant.name,
+					sku: variant.sku,
+					price: variant.price,
+					inventoryQuantity: variant.inventoryQuantity,
+					option1Name: variant.option1Name,
+					option1Value: variant.option1Value,
+					option2Name: variant.option2Name,
+					option2Value: variant.option2Value,
+					option3Name: variant.option3Name,
+					option3Value: variant.option3Value,
+					imageId: variant.imageId,
+					available: variant.available ?? true,
+					position: maxPosition + 1 + i,
+					compareAtPrice: variant.compareAtPrice,
+					costPrice: variant.costPrice,
+					barcode: variant.barcode,
+					weight: variant.weight,
+					weightUnit: variant.weightUnit,
+					requiresShipping: variant.requiresShipping,
+					createdAt: now,
+					updatedAt: now,
+				});
+			}
+		}
+
+		if (args.variantsToRemove) {
+			for (const variantId of args.variantsToRemove) {
+				const variant = await ctx.db.get(variantId);
+				if (!variant) {
+					continue;
+				}
+
+				if (variant.productId !== args.productId) {
+					throw new Error("Variant does not belong to this product");
+				}
+
+				await ctx.db.patch(variantId, {
+					available: false,
+					updatedAt: now,
+				});
+			}
+		}
+
+		const updatedProduct = await ctx.db.get(args.productId);
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.collect();
+
+		return {
+			...updatedProduct,
+			variants: variants.sort((a, b) => a.position - b.position),
+		};
+	},
+});
+
 export const seedTestProducts = internalMutation({
 	args: {
 		businessId: v.id("businesses"),

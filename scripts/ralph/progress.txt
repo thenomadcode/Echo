@@ -138,3 +138,66 @@
   - Placeholder UI for future features helps visualize the complete user experience
   - Toggle descriptions should explain what enabling the feature does for the user
 ---
+## 2026-01-30 21:23 - US-008
+- Created VariantOptionsBuilder component in apps/web/src/components/products/variant-options-builder.tsx
+- Implemented dynamic option fields with max 3 options (Shopify-compatible)
+- Each option has name field and values array with add/remove buttons
+- Integrated calculateVariantCount utility to display variant count
+- Added "Generate X Variants" button (disabled when count is 0)
+- Integrated component into ProductForm component when hasVariants toggle is enabled
+- Added variantOptions field to form state and Zod validation schema
+- Files changed: apps/web/src/components/products/variant-options-builder.tsx (new), apps/web/src/components/products/product-form.tsx
+- **Learnings for future iterations:**
+  - TanStack Form field arrays work with render props pattern, accessing field via field parameter
+  - Use field.pushValue() to add array items, field.removeValue(index) to remove
+  - Use field.handleChange(newArray) to update entire array when modifying nested values
+  - Explicit type annotations required for map/filter callbacks to avoid implicit any errors
+  - biome-ignore comments needed when suppressing legitimate linter warnings (e.g., complex generic types)
+  - calculateVariantCount utility handles empty options array gracefully (returns 0)
+  - Form fields should be wrapped in form.Subscribe when conditional rendering based on other field values
+  - Card components provide good visual separation for complex nested form structures
+---
+
+## 2026-01-30 21:29 - US-009
+- Created VariantTableEditor component in apps/web/src/components/products/variant-table-editor.tsx
+- Implemented editable table with columns: Variant Name, SKU, Price, Stock, Image, Available, Actions (Remove)
+- Added inline editing for SKU (Input), Price (PriceInput), Stock (Input type="number"), Image (ImageUpload), Available (Switch)
+- Integrated VariantTableEditor into ProductForm component
+- Modified VariantOptionsBuilder to add onGenerate callback that triggers variant generation
+- Added handleGenerate function that calls generateVariantCombinations and populates generatedVariants form field
+- Added generatedVariants field to ProductForm schema and defaultValues
+- Added Add/Remove variant button functionality
+- Files changed: 
+  - apps/web/src/components/products/variant-table-editor.tsx (new, 217 lines)
+  - apps/web/src/components/products/product-form.tsx (+34 lines)
+  - apps/web/src/components/products/variant-options-builder.tsx (+30 lines)
+- **Learnings for future iterations:**
+  - Inline editing in tables uses direct input components (Input, PriceInput, Switch) with onChange handlers that update form field state
+  - Use field.handleChange(newArray) to update array of items in TanStack Form
+  - Table pattern: map through array, render TableRow for each item, update specific item by creating new array with modified item
+  - ImageUpload component works per-row when included in table cells
+  - Switch component provides immediate toggle without form submission
+  - Add/remove operations use array spread and filter patterns
+  - Empty state pattern: check if array.length === 0 and show placeholder UI
+  - Currency prop passed to PriceInput to handle different currencies (COP, BRL, USD, MXN)
+  - biome-ignore warnings appear when using `any` type but field API requires complex generic types (23 type parameters)
+---
+
+## 2026-01-30 21:37 - US-010
+- Implemented products.createWithVariants mutation in packages/backend/convex/products.ts
+- Mutation creates product with hasVariants flag and all associated variants atomically
+- Validates businessId ownership through requireBusinessOwnership helper
+- Auto-generates currency from business.defaultLanguage setting (es → COP, pt → BRL, default → USD)
+- Calculates maxOrder for product ordering by reducing existing products
+- Creates all variants with position field set to array index for ordering
+- Returns product with populated variants array
+- Files changed: packages/backend/convex/products.ts (+112 lines)
+- **Learnings for future iterations:**
+  - Complex mutations with nested data should validate all inputs before any database writes
+  - Use Promise.all for parallel variant creation would be more efficient, but sequential inserts are safer for maintaining position order
+  - Currency inference from business language follows Echo's multi-LATAM approach
+  - Product price field stores first variant's price for backward compatibility with simple product queries
+  - Variant array filtering with type predicate ensures non-null types: `variants.filter((v): v is NonNullable<typeof v> => v !== null)`
+  - Requires at least one variant (simple products must pass 1 variant with empty name and product details)
+---
+

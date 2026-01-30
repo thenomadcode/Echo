@@ -132,7 +132,7 @@
 				"BROWSER TEST: Add 2 options with 3 values each, verify 'Generate Variants' shows 6 combinations"
 			],
 			"priority": 8,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "UI for variant option configuration"
 		},
@@ -150,7 +150,7 @@
 				"BROWSER TEST: Edit variant price, verify change is reflected in table"
 			],
 			"priority": 9,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "UI for variant management"
 		},
@@ -167,7 +167,7 @@
 				"Typecheck passes"
 			],
 			"priority": 10,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "Backend for product + variant creation"
 		},
