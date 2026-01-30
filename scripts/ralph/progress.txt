@@ -6384,3 +6384,53 @@
 - Use flex layout with gap for clean vertical stacking of product name and SKU
 
 ---
+
+## 2026-01-30 15:59 - S11: Update AI prompts to include variant data
+
+**What was implemented:**
+- Updated `packages/backend/convex/ai/agent.ts`:
+  - Modified `AgentContext` interface to use `productsWithVariants: ProductWithVariants[]`
+  - Updated `loadAgentContext` to eagerly load variants for all products using Promise.all
+  - Added helper functions:
+    - `formatPriceForAI()` - formats price in cents to currency string
+    - `extractVariantOptions()` - extracts options object from option1/2/3Name/Value fields
+    - `transformProductsForAI()` - transforms ProductWithVariants to AI-friendly format
+  - Updated both `buildAgentPrompt` calls to use `transformProductsForAI()`
+  - Removed legacy filtering logic that excluded products with variants
+- Updated `packages/backend/convex/ai/agentPrompt.ts`:
+  - Replaced `Product` interface with new variant-aware structure:
+    - Added `VariantOptions` interface for extracted options
+    - Added `ProductVariant` interface with id, name, price (string), sku, inventoryQuantity, available, options
+    - Updated `Product` to include id, hasVariants, variants array
+  - Removed obsolete helper functions:
+    - Deleted `getBaseProductName()` and `getVariantName()` (no longer needed)
+    - Deleted `groupProductsByVariant()` (replaced with schema-based variant loading)
+  - Completely rewrote `formatProductCatalog()`:
+    - Iterates over products with nested variants structure
+    - For simple products: shows single variant price
+    - For products with variants: shows parent product with all variants listed
+    - Displays variant options (size, color, etc.) extracted from option fields
+    - Shows stock levels per variant
+    - Hides unavailable variants from AI recommendations
+  - Updated system prompt "### Products" section with variant handling instructions:
+    - Explains products with variants vs simple products
+    - Instructs AI to always ask for variant selection
+    - Provides example of how to present variant options
+
+**Files changed:**
+- packages/backend/convex/ai/agent.ts (~140 lines modified)
+- packages/backend/convex/ai/agentPrompt.ts (~90 lines modified, ~50 lines removed)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+
+**Learnings for future iterations:**
+- Eager loading variants with Promise.all in queries is efficient for AI context building
+- Transforming DB schema to AI-friendly format should happen in agent.ts, not in prompt building
+- Options object extracted from option1/2/3 fields makes AI prompts cleaner and easier to parse
+- Removing legacy grouping logic simplifies code significantly when schema properly supports variants
+- AI system prompt should clearly distinguish between simple products and products with variants
+- formatProductCatalog should only format, not transform data structure
+
+---

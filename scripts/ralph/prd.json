@@ -202,7 +202,7 @@
 			"id": "S11",
 			"title": "Update AI prompts to include variant data",
 			"priority": 11,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/ai/agentPrompt.ts buildAgentPrompt:",
