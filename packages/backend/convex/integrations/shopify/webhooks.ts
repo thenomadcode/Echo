@@ -181,7 +181,6 @@ export const handleWebhook = internalAction({
 					}
 
 					const externalProductId = `gid://shopify/Product/${product.id}`;
-					const imageUrl = product.images[0]?.src ?? null;
 
 					const business = await ctx.runQuery(
 						internal.integrations.shopify.queries.getBusinessLanguage,
@@ -197,38 +196,77 @@ export const handleWebhook = internalAction({
 								? "BRL"
 								: "USD";
 
-					let _processedCount = 0;
-					for (const variant of product.variants) {
-						const isOnlyVariant = product.variants.length === 1;
-						const variantTitle =
-							isOnlyVariant || variant.title === "Default Title" || !variant.title
-								? ""
-								: variant.title;
+					let productImageId: string | undefined;
+					const productImageUrl = product.images[0]?.src ?? null;
+					if (productImageUrl) {
+						const storageId = await downloadAndStoreImage(ctx, productImageUrl);
+						if (storageId) {
+							productImageId = storageId;
+						}
+					}
 
-						const name = variantTitle ? `${product.title} - ${variantTitle}` : product.title;
+					const hasVariants = product.variants.length > 1;
+					const variants = [];
+
+					for (let i = 0; i < product.variants.length; i++) {
+						const variant = product.variants[i];
+						if (!variant) continue;
 
 						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
-						const available = variant.inventory_quantity > 0;
+						const variantName =
+							hasVariants && variant.title !== "Default Title" && variant.title
+								? variant.title
+								: "";
 
-						try {
-							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProduct, {
+						let variantImageId: string | undefined;
+						const variantImage = product.images.find((img) => img.id === variant.id);
+						if (variantImage?.src) {
+							const storageId = await downloadAndStoreImage(ctx, variantImage.src);
+							if (storageId) {
+								variantImageId = storageId;
+							}
+						}
+
+						variants.push({
+							externalVariantId: `gid://shopify/ProductVariant/${variant.id}`,
+							name: variantName,
+							sku: variant.sku ?? undefined,
+							barcode: undefined,
+							price: priceInCents,
+							compareAtPrice: undefined,
+							inventoryQuantity: variant.inventory_quantity,
+							available: variant.inventory_quantity > 0,
+							option1Name: undefined,
+							option1Value: undefined,
+							option2Name: undefined,
+							option2Value: undefined,
+							option3Name: undefined,
+							option3Value: undefined,
+							imageId: variantImageId,
+							weight: undefined,
+							weightUnit: undefined,
+							requiresShipping: undefined,
+							position: i,
+						});
+					}
+
+					try {
+						await ctx.runMutation(
+							internal.integrations.shopify.mutations.upsertProductWithVariants,
+							{
 								businessId,
 								externalProductId,
-								shopifyVariantId: `gid://shopify/ProductVariant/${variant.id}`,
-								name,
+								name: product.title,
 								description: product.body_html ?? undefined,
-								price: priceInCents,
+								imageId: productImageId,
 								currency,
-								imageUrl: imageUrl ?? undefined,
-								available,
-							});
-							_processedCount++;
-						} catch (err) {
-							const msg = err instanceof Error ? err.message : "Unknown error";
-							console.error(
-								`Failed to upsert variant ${variant.id} for product ${product.id}: ${msg}`,
-							);
-						}
+								hasVariants,
+								variants,
+							},
+						);
+					} catch (err) {
+						const msg = err instanceof Error ? err.message : "Unknown error";
+						console.error(`Failed to upsert product ${product.id} with variants: ${msg}`);
 					}
 					break;
 				}
