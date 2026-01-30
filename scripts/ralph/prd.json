@@ -306,7 +306,7 @@
 			"id": "S16",
 			"title": "Implement variant image upload to Convex",
 			"priority": 16,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Create image upload helper in packages/backend/convex/lib/imageUpload.ts:",

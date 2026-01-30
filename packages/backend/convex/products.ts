@@ -297,6 +297,33 @@ export const getImageUrl = query({
 	},
 });
 
+export const getProductImageUrl = query({
+	args: {
+		productId: v.id("products"),
+		variantId: v.optional(v.id("productVariants")),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
+			return null;
+		}
+
+		if (args.variantId) {
+			const variant = await ctx.db.get(args.variantId);
+			if (variant?.imageId) {
+				return await ctx.storage.getUrl(variant.imageId);
+			}
+		}
+
+		const product = await ctx.db.get(args.productId);
+		if (product?.imageId) {
+			return await ctx.storage.getUrl(product.imageId);
+		}
+
+		return null;
+	},
+});
+
 export const bulkUpdateAvailability = mutation({
 	args: {
 		productIds: v.array(v.id("products")),

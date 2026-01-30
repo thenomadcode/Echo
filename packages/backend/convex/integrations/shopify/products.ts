@@ -83,6 +83,23 @@ export const importProducts = action({
 					const hasVariants = product.variants.edges.length > 1;
 
 					try {
+						let productImageId: string | undefined;
+						if (product.images.edges[0]?.node.url) {
+							const imageResult = await ctx.runAction(
+								internal.lib.imageUpload.downloadAndUploadImage,
+								{
+									imageUrl: product.images.edges[0].node.url,
+								},
+							);
+							if (imageResult.storageId) {
+								productImageId = imageResult.storageId;
+							} else if (imageResult.error) {
+								console.warn(
+									`Failed to upload product image for ${product.title}: ${imageResult.error}`,
+								);
+							}
+						}
+
 						const { productId } = await ctx.runMutation(
 							internal.integrations.shopify.mutations.upsertParentProduct,
 							{
@@ -91,6 +108,7 @@ export const importProducts = action({
 								name: product.title,
 								description: product.descriptionHtml || undefined,
 								hasVariants,
+								imageId: productImageId,
 								available: product.variants.edges.some((v) => v.node.inventoryQuantity > 0),
 							},
 						);
@@ -126,6 +144,23 @@ export const importProducts = action({
 								| "oz"
 								| undefined;
 
+							let variantImageId: string | undefined;
+							if (variant.image?.url && variant.image.url !== product.images.edges[0]?.node.url) {
+								const imageResult = await ctx.runAction(
+									internal.lib.imageUpload.downloadAndUploadImage,
+									{
+										imageUrl: variant.image.url,
+									},
+								);
+								if (imageResult.storageId) {
+									variantImageId = imageResult.storageId;
+								} else if (imageResult.error) {
+									console.warn(
+										`Failed to upload variant image for ${product.title} - ${variantName}: ${imageResult.error}`,
+									);
+								}
+							}
+
 							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProductVariant, {
 								productId,
 								externalVariantId: variant.id,
@@ -142,6 +177,7 @@ export const importProducts = action({
 								option2Value: option2?.value,
 								option3Name: option3?.name,
 								option3Value: option3?.value,
+								imageId: variantImageId,
 								weight: variant.weight ?? undefined,
 								weightUnit,
 								requiresShipping: variant.requiresShipping,
@@ -262,6 +298,19 @@ export const syncProducts = action({
 					const hasVariants = product.variants.edges.length > 1;
 
 					try {
+						let productImageId: string | undefined;
+						if (product.images.edges[0]?.node.url) {
+							const imageResult = await ctx.runAction(
+								internal.lib.imageUpload.downloadAndUploadImage,
+								{
+									imageUrl: product.images.edges[0].node.url,
+								},
+							);
+							if (imageResult.storageId) {
+								productImageId = imageResult.storageId;
+							}
+						}
+
 						const { productId, isNew: isProductNew } = await ctx.runMutation(
 							internal.integrations.shopify.mutations.upsertParentProduct,
 							{
@@ -270,6 +319,7 @@ export const syncProducts = action({
 								name: product.title,
 								description: product.descriptionHtml || undefined,
 								hasVariants,
+								imageId: productImageId,
 								available: product.variants.edges.some((v) => v.node.inventoryQuantity > 0),
 							},
 						);
@@ -311,6 +361,19 @@ export const syncProducts = action({
 								| "oz"
 								| undefined;
 
+							let variantImageId: string | undefined;
+							if (variant.image?.url && variant.image.url !== product.images.edges[0]?.node.url) {
+								const imageResult = await ctx.runAction(
+									internal.lib.imageUpload.downloadAndUploadImage,
+									{
+										imageUrl: variant.image.url,
+									},
+								);
+								if (imageResult.storageId) {
+									variantImageId = imageResult.storageId;
+								}
+							}
+
 							const { isNew: isVariantNew } = await ctx.runMutation(
 								internal.integrations.shopify.mutations.upsertProductVariant,
 								{
@@ -329,6 +392,7 @@ export const syncProducts = action({
 									option2Value: option2?.value,
 									option3Name: option3?.name,
 									option3Value: option3?.value,
+									imageId: variantImageId,
 									weight: variant.weight ?? undefined,
 									weightUnit,
 									requiresShipping: variant.requiresShipping,

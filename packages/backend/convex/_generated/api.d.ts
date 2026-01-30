@@ -58,6 +58,7 @@ import type * as integrations_whatsapp_types from "../integrations/whatsapp/type
 import type * as integrations_whatsapp_webhook from "../integrations/whatsapp/webhook.js";
 import type * as integrations_whatsapp_window from "../integrations/whatsapp/window.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_imageUpload from "../lib/imageUpload.js";
 import type * as lib_orderNumber from "../lib/orderNumber.js";
 import type * as messages from "../messages.js";
 import type * as notifications from "../notifications.js";
@@ -129,6 +130,7 @@ declare const fullApi: ApiFromModules<{
   "integrations/whatsapp/webhook": typeof integrations_whatsapp_webhook;
   "integrations/whatsapp/window": typeof integrations_whatsapp_window;
   "lib/auth": typeof lib_auth;
+  "lib/imageUpload": typeof lib_imageUpload;
   "lib/orderNumber": typeof lib_orderNumber;
   messages: typeof messages;
   notifications: typeof notifications;

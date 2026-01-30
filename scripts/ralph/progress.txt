@@ -6603,3 +6603,50 @@
 - trackInventory: false bypasses all checks (useful for digital/unlimited products)
 
 ---
+
+## 2026-01-30 16:28 - S16: Implement variant image upload to Convex
+
+**What was implemented:**
+- Created `packages/backend/convex/lib/imageUpload.ts`:
+  - `downloadAndUploadImage` internal action downloads images from external URLs (Shopify CDN)
+  - Validates URL format (HTTPS only), image format (JPEG, PNG, WebP, GIF), size (max 5MB)
+  - Uploads to Convex storage using `ctx.storage.store(blob)`
+  - Returns `{ storageId, error }` for caller to handle success/failure
+  - Security: HTTPS-only URLs, file size limits, content-type validation
+
+- Added `getProductImageUrl` query to `packages/backend/convex/products.ts`:
+  - Takes `productId` and optional `variantId`
+  - Returns variant image if variant has imageId
+  - Falls back to product image if variant has no image
+  - Returns null if neither has image
+  - Uses `ctx.storage.getUrl(imageId)` to get public HTTPS URL
+
+- Updated `packages/backend/convex/integrations/shopify/products.ts`:
+  - `importProducts` action: Downloads product and variant images during import
+  - `syncProducts` action: Downloads product and variant images during sync
+  - Downloads product image (first image from `product.images.edges[0].node.url`)
+  - Downloads variant image if different from product image (`variant.image.url`)
+  - Passes `imageId` to `upsertParentProduct` and `upsertProductVariant` mutations
+  - Logs warnings on image download failures (non-blocking - continues import/sync)
+
+**Files changed:**
+- packages/backend/convex/lib/imageUpload.ts (created, ~76 lines)
+- packages/backend/convex/products.ts (+18 lines - getProductImageUrl query)
+- packages/backend/convex/integrations/shopify/products.ts (+32 lines - image downloads in import/sync)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+- Convex codegen: passes (internal.lib.imageUpload.downloadAndUploadImage available)
+
+**Learnings for future iterations:**
+- Convex storage API: `ctx.storage.store(blob)` returns storageId, `ctx.storage.getUrl(storageId)` returns public URL
+- Use `internalAction` (not `action`) for lib helpers to avoid exposing to frontend
+- Shopify GraphQL query already includes image URLs - just needed to download and upload
+- Download variant image only if different from product image to avoid duplication
+- Image upload errors should be non-blocking - log warning, continue import/sync
+- getProductImageUrl helper provides consistent "variant or product" image resolution
+- Store imageId (storageId) in database, generate public URL on-demand with getUrl
+
+---
+
