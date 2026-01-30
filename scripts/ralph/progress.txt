@@ -17,3 +17,17 @@
 - Always define args with validators, even if empty: `args: {}`
 
 ---
+
+## 2026-01-30 20:53 - US-001
+- Implemented productVariants table schema in packages/backend/convex/schema.ts
+- Added all required fields: productId, name, sku, price, inventoryQuantity, option1-3 Name/Value pairs, imageId, externalVariantId, available, position, createdAt, updatedAt
+- Added optional fields: compareAtPrice, costPrice, barcode, weight, weightUnit, requiresShipping, lastSyncAt
+- Created indexes: by_product, by_sku, by_external_id
+- Files changed: packages/backend/convex/schema.ts
+- **Learnings for future iterations:**
+  - Convex schema uses `v.id("tableName")` for foreign key references (not just v.string())
+  - Product variants follow Shopify-compatible model: up to 3 option name/value pairs
+  - Weight units stored as enum: kg, g, lb, oz
+  - All prices stored in smallest currency unit (centavos/cents) as integers
+  - Soft delete pattern: use `available: v.boolean()` instead of hard deletes
+---
