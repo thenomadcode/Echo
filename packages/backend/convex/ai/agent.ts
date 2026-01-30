@@ -304,14 +304,19 @@ export const processWithAgent = action({
 				timezone: business.timezone,
 				businessHours: business.businessHours,
 			},
-			products: products.map((p: Doc<"products">) => ({
-				name: p.name,
-				price: p.price,
-				currency: p.currency,
-				description: p.description,
-				available: p.available,
-				shopifyProductId: p.shopifyProductId,
-			})),
+			products: products
+				.filter(
+					(p: Doc<"products">) =>
+						!p.hasVariants && p.price !== undefined && p.currency !== undefined,
+				)
+				.map((p: Doc<"products">) => ({
+					name: p.name,
+					price: p.price as number,
+					currency: p.currency as string,
+					description: p.description,
+					available: p.available,
+					shopifyProductId: p.shopifyProductId,
+				})),
 			currentOrder: orderState,
 			language,
 			customerPhone: conversation.customerId,
@@ -361,14 +366,19 @@ export const processWithAgent = action({
 						timezone: business.timezone,
 						businessHours: business.businessHours,
 					},
-					products: products.map((p: Doc<"products">) => ({
-						name: p.name,
-						price: p.price,
-						currency: p.currency,
-						description: p.description,
-						available: p.available,
-						shopifyProductId: p.shopifyProductId,
-					})),
+					products: products
+						.filter(
+							(p: Doc<"products">) =>
+								!p.hasVariants && p.price !== undefined && p.currency !== undefined,
+						)
+						.map((p: Doc<"products">) => ({
+							name: p.name,
+							price: p.price as number,
+							currency: p.currency as string,
+							description: p.description,
+							available: p.available,
+							shopifyProductId: p.shopifyProductId,
+						})),
 					currentOrder: updatedOrderState,
 					language,
 					customerPhone: conversation.customerId,

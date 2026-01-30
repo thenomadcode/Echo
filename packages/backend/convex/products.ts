@@ -7,12 +7,19 @@ export const create = mutation({
 		businessId: v.string(),
 		name: v.string(),
 		description: v.optional(v.string()),
-		price: v.number(),
+		price: v.optional(v.number()),
 		categoryId: v.optional(v.string()),
 		imageId: v.optional(v.string()),
+		hasVariants: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const { business } = await requireBusinessOwnership(ctx, args.businessId as any);
+
+		const hasVariants = args.hasVariants ?? false;
+
+		if (!hasVariants && args.price === undefined) {
+			throw new Error("Price is required for simple products (hasVariants: false)");
+		}
 
 		const now = Date.now();
 
@@ -23,17 +30,16 @@ export const create = mutation({
 
 		const maxOrder = existingProducts.reduce((max, p) => Math.max(max, p.order), -1);
 
+		const currency =
+			business.defaultLanguage === "es" ? "COP" : business.defaultLanguage === "pt" ? "BRL" : "USD";
+
 		const productId = await ctx.db.insert("products", {
 			businessId: args.businessId,
 			name: args.name,
 			description: args.description,
-			price: args.price,
-			currency:
-				business.defaultLanguage === "es"
-					? "COP"
-					: business.defaultLanguage === "pt"
-						? "BRL"
-						: "USD",
+			hasVariants,
+			price: hasVariants ? undefined : args.price,
+			currency: hasVariants ? undefined : currency,
 			categoryId: args.categoryId,
 			imageId: args.imageId,
 			available: true,
@@ -42,6 +48,22 @@ export const create = mutation({
 			createdAt: now,
 			updatedAt: now,
 		});
+
+		if (!hasVariants && args.price !== undefined) {
+			await ctx.db.insert("productVariants", {
+				productId,
+				name: "",
+				price: args.price,
+				inventoryQuantity: 0,
+				inventoryPolicy: "deny",
+				trackInventory: true,
+				requiresShipping: true,
+				available: true,
+				position: 0,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
 
 		return productId;
 	},
@@ -92,10 +114,24 @@ export const deleteProduct = mutation({
 
 		await requireBusinessOwnership(ctx, product.businessId as any);
 
+		const now = Date.now();
+
 		await ctx.db.patch(args.productId, {
 			deleted: true,
-			updatedAt: Date.now(),
+			updatedAt: now,
 		});
+
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.collect();
+
+		for (const variant of variants) {
+			await ctx.db.patch(variant._id, {
+				available: false,
+				updatedAt: now,
+			});
+		}
 
 		return args.productId;
 	},
@@ -121,7 +157,15 @@ export const get = query({
 			return null;
 		}
 
-		return product;
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.collect();
+
+		return {
+			...product,
+			variants: variants.sort((a, b) => a.position - b.position),
+		};
 	},
 });
 
@@ -174,11 +218,40 @@ export const list = query({
 		const limit = args.limit ?? 50;
 
 		const paginatedProducts = allProducts.slice(offset, offset + limit);
+
+		const enrichedProducts = await Promise.all(
+			paginatedProducts.map(async (product) => {
+				const variants = await ctx.db
+					.query("productVariants")
+					.withIndex("by_product", (q) => q.eq("productId", product._id))
+					.collect();
+
+				const variantCount = variants.length;
+				const availableVariants = variants.filter((v) => v.available);
+
+				let minPrice: number | undefined;
+				let maxPrice: number | undefined;
+
+				if (availableVariants.length > 0) {
+					const prices = availableVariants.map((v) => v.price);
+					minPrice = Math.min(...prices);
+					maxPrice = Math.max(...prices);
+				}
+
+				return {
+					...product,
+					variantCount,
+					minPrice,
+					maxPrice,
+				};
+			}),
+		);
+
 		const hasMore = allProducts.length > offset + limit;
 		const nextCursor = hasMore ? offset + limit : undefined;
 
 		return {
-			products: paginatedProducts,
+			products: enrichedProducts,
 			hasMore,
 			nextCursor,
 		};
@@ -300,6 +373,38 @@ export const bulkUpdateCategory = mutation({
 	},
 });
 
+export const getProductWithVariants = query({
+	args: {
+		productId: v.id("products"),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await getAuthUser(ctx);
+		if (!authUser) {
+			return null;
+		}
+
+		const product = await ctx.db.get(args.productId);
+		if (!product) {
+			return null;
+		}
+
+		const isOwner = await isBusinessOwner(ctx, product.businessId as any);
+		if (!isOwner) {
+			return null;
+		}
+
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.collect();
+
+		return {
+			product,
+			variants: variants.sort((a, b) => a.position - b.position),
+		};
+	},
+});
+
 export const seedTestProducts = internalMutation({
 	args: {
 		businessId: v.id("businesses"),
@@ -328,15 +433,31 @@ export const seedTestProducts = internalMutation({
 		for (let i = 0; i < testProducts.length; i++) {
 			const product = testProducts[i];
 			if (!product) continue;
-			await ctx.db.insert("products", {
+
+			const productId = await ctx.db.insert("products", {
 				businessId: args.businessId,
 				name: product.name,
 				description: product.description,
+				hasVariants: false,
 				price: product.price,
 				currency: "USD",
 				available: true,
 				deleted: false,
 				order: i,
+				createdAt: now,
+				updatedAt: now,
+			});
+
+			await ctx.db.insert("productVariants", {
+				productId,
+				name: "",
+				price: product.price,
+				inventoryQuantity: 0,
+				inventoryPolicy: "deny",
+				trackInventory: true,
+				requiresShipping: true,
+				available: true,
+				position: 0,
 				createdAt: now,
 				updatedAt: now,
 			});

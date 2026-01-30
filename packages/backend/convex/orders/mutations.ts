@@ -38,12 +38,31 @@ export const create = mutation({
 				throw new Error(`Product ${product.name} is no longer available`);
 			}
 
+			let unitPrice: number;
+			if (product.hasVariants) {
+				const defaultVariant = await ctx.db
+					.query("productVariants")
+					.withIndex("by_product", (q) => q.eq("productId", item.productId))
+					.first();
+
+				if (!defaultVariant || !defaultVariant.available) {
+					throw new Error(`Product ${product.name} has no available variants`);
+				}
+
+				unitPrice = defaultVariant.price;
+			} else {
+				if (product.price === undefined) {
+					throw new Error(`Product ${product.name} has no price configured`);
+				}
+				unitPrice = product.price;
+			}
+
 			orderItems.push({
 				productId: item.productId,
 				name: product.name,
 				quantity: item.quantity,
-				unitPrice: product.price,
-				totalPrice: product.price * item.quantity,
+				unitPrice,
+				totalPrice: unitPrice * item.quantity,
 			});
 		}
 
@@ -117,14 +136,33 @@ export const addItem = mutation({
 					: item,
 			);
 		} else {
+			let unitPrice: number;
+			if (product.hasVariants) {
+				const defaultVariant = await ctx.db
+					.query("productVariants")
+					.withIndex("by_product", (q) => q.eq("productId", args.productId))
+					.first();
+
+				if (!defaultVariant || !defaultVariant.available) {
+					throw new Error(`Product ${product.name} has no available variants`);
+				}
+
+				unitPrice = defaultVariant.price;
+			} else {
+				if (product.price === undefined) {
+					throw new Error(`Product ${product.name} has no price configured`);
+				}
+				unitPrice = product.price;
+			}
+
 			items = [
 				...order.items,
 				{
 					productId: args.productId,
 					name: product.name,
 					quantity,
-					unitPrice: product.price,
-					totalPrice: product.price * quantity,
+					unitPrice,
+					totalPrice: unitPrice * quantity,
 				},
 			];
 		}

@@ -470,14 +470,18 @@ export const processMessage = action({
 			aiTone: business.aiTone,
 		};
 
-		const productContext = products.map((p: Doc<"products">) => ({
-			name: p.name,
-			price: p.price,
-			currency: p.currency,
-			description: p.description,
-			available: p.available,
-			shopifyProductId: p.shopifyProductId,
-		}));
+		const productContext = products
+			.filter(
+				(p: Doc<"products">) => !p.hasVariants && p.price !== undefined && p.currency !== undefined,
+			)
+			.map((p: Doc<"products">) => ({
+				name: p.name,
+				price: p.price as number,
+				currency: p.currency as string,
+				description: p.description,
+				available: p.available,
+				shopifyProductId: p.shopifyProductId,
+			}));
 
 		let newState = determineNewState(intent, conversation.state ?? "idle");
 

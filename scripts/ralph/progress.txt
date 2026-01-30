@@ -5999,3 +5999,125 @@
 - TanStack Router requires orderId params as `string` type, not `Id<"orders">`
 
 ---
+
+## 2026-01-30 14:47 - S01: Create productVariants schema and migrate products table
+
+**What was implemented:**
+- Created productVariants table in packages/backend/convex/schema.ts with all required fields:
+  - productId (reference to parent product)
+  - name, sku, barcode
+  - price, compareAtPrice, costPrice (all in smallest currency unit - cents)
+  - inventoryQuantity, inventoryPolicy (deny/continue), trackInventory
+  - option1Name/Value, option2Name/Value, option3Name/Value (max 3 option levels)
+  - imageId (variant-specific image overrides product image)
+  - externalVariantId (for Shopify/WooCommerce/TiendaNube sync)
+  - lastSyncAt, weight, weightUnit, requiresShipping, available, position
+  - createdAt, updatedAt
+- Added indexes to productVariants: by_product, by_sku, by_external_id
+- Updated products table:
+  - Added hasVariants boolean field (optional for backward compatibility)
+  - Added externalProductId field (replaces shopifyProductId for multi-platform support)
+  - Added externalVariantId field (deprecated - moved to variants table)
+  - Updated source union to include: manual, shopify, woocommerce, tiendanube
+  - Marked price and currency fields as optional (deprecated - use variants table)
+  - Marked shopifyProductId, shopifyVariantId as deprecated (use externalProductId/variants)
+- Updated products indexes: added by_external_id [businessId, source, externalProductId]
+- Updated orders.items schema to include:
+  - variantId (optional Id<"productVariants">)
+  - variantName (optional string for display like "Small / Red")
+  - sku (optional string for fulfillment)
+  - Kept productId for parent product reference
+
+**Files changed:**
+- packages/backend/convex/schema.ts (+57 lines, -5 lines)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- Pre-commit hooks: lint + typecheck passed
+- Commit: 0265f84
+
+**Learnings for future iterations:**
+- **Schema migration strategy**: Add new fields as optional to maintain backward compatibility with existing data
+- **Deprecated fields pattern**: Keep old fields (price, currency, shopifyProductId) but mark as optional and add comments explaining they're deprecated
+- **Multi-platform support**: Use generic field names (externalProductId, source) instead of platform-specific names to support future integrations (WooCommerce, TiendaNube)
+- **Price storage convention**: All prices stored in smallest currency unit (cents) as integers to avoid floating-point issues
+- **Variant options pattern**: Support max 3 option levels (option1/2/3 with Name/Value pairs) following Shopify's model
+- **Index strategy**: Keep old indexes (by_shopify_id) for backward compatibility while adding new ones (by_external_id)
+- **Order items structure**: Store both productId (parent) and variantId (specific variant) for proper order fulfillment tracking
+
+---
+
+## 2026-01-30 14:53 - S02: Create variant CRUD mutations
+
+**What was implemented:**
+- Created `packages/backend/convex/variants.ts` with full CRUD operations
+- Exported mutations:
+  - `create`: Create new variant with all fields (price, sku, options, inventory, etc.)
+  - `update`: Update existing variant fields
+  - `deleteVariant`: Soft delete (sets available: false, preserves for order history)
+  - `adjustInventory`: Increment/decrement inventory by delta with negative prevention
+- Exported queries:
+  - `list`: List all variants for a product ordered by position
+  - `get`: Get single variant by ID
+- All mutations validate business ownership through product relationship
+- Default values: inventoryPolicy: "deny", trackInventory: true, requiresShipping: true, available: true
+- Soft delete preserves variant data for historical order references
+
+**Files changed:**
+- packages/backend/convex/variants.ts (created, 312 lines)
+- scripts/ralph/prd.json (updated S02 passes: true)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on changed files
+- Commit hash: 7cd5ab9
+
+**Learnings for future iterations:**
+- Auth pattern: Get product via variant.productId, then check isBusinessOwner(product.businessId)
+- Soft delete pattern: Set available: false instead of removing record
+- adjustInventory pattern: Calculate new quantity, validate >= 0, patch with new value
+- All exported functions use JSDoc comments for API documentation (frontend consumers)
+- Inline comments removed - code should be self-documenting
+
+---
+
+## 2026-01-30 14:58 - S03: Update product queries to include variants
+
+**What was implemented:**
+- Updated `products.create` mutation to accept `hasVariants` parameter (default: false)
+  - Price is optional when hasVariants: true, required when false
+  - Automatically creates default variant for simple products with empty name
+  - Sets hasVariants flag on product record
+- Updated `products.get` query to eagerly load variants using by_product index
+  - Returns product with sorted variants array (by position)
+- Updated `products.list` query to enrich products with variant metadata
+  - Calculates variantCount, minPrice, maxPrice for each product
+  - Fetches all variants in parallel using Promise.all
+- Created `getProductWithVariants` helper query for internal use
+  - Returns { product, variants } with auth checks
+- Updated `products.deleteProduct` to cascade soft delete to variants
+  - Sets product.deleted = true
+  - Sets variant.available = false for all variants
+- Updated `seedTestProducts` to create products with hasVariants: false + default variant
+- Fixed type errors in AI agent and orders modules:
+  - AI now filters out variant products (only shows simple products with price)
+  - Orders fetch first available variant price for hasVariants products
+  - Proper error handling for missing price/variants
+
+**Files changed:**
+- packages/backend/convex/products.ts (+120 lines - create, get, list, delete, helper, seed updates)
+- packages/backend/convex/orders/mutations.ts (+40 lines - variant price resolution)
+- packages/backend/convex/ai/agent.ts (+6 lines - filter simple products only)
+- packages/backend/convex/ai/process.ts (+3 lines - filter simple products only)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- `bunx convex typecheck`: passes (0 errors)
+
+**Learnings for future iterations:**
+- When making schema fields optional, must fix ALL consumers with type-safe guards
+- Filter pattern for backward compatibility: `.filter(p => !p.hasVariants && p.price !== undefined)`
+- Default variant creation pattern: empty name, position 0, inherits product price
+- Cascade delete pattern: patch all related records in same mutation with same timestamp
+
+---
