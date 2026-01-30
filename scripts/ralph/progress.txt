@@ -315,3 +315,36 @@
   - upsertProductWithVariants handles create/update/soft-delete atomically, no need for separate markMissingProductsUnavailable call
 ---
 
+
+## 2026-01-30 22:13 - US-015
+- Updated AI prompt structure to include product variants
+- Modified loadAgentContext query in packages/backend/convex/ai/agent.ts to eagerly fetch variants for each product
+- Added ProductVariant interface to agentPrompt.ts with variant-specific fields (name, sku, price, inventoryQuantity, available, option1-3 Name/Value)
+- Updated Product interface to include hasVariants flag and variants array
+- Completely rewrote formatProductCatalog() function to use new variant structure:
+  - Removed old grouping logic based on externalProductId
+  - Products with hasVariants=true show all available variants with stock info
+  - Filter out unavailable variants from display
+  - Show inventory count per variant (e.g., "Small: $25.00 (10 in stock)")
+  - Include SKU for variants when available
+  - Show "[OUT OF STOCK]" for products with no available variants
+- Updated AgentContext interface to type products with variants: `(Doc<"products"> & { variants: Doc<"productVariants">[] })[]`
+- Enhanced system prompt guidance for variant handling:
+  - Ask naturally which variant customer wants ("What size?" not "Select: S/M/L/XL")
+  - Mention low stock for variants
+  - SKU only mentioned if customer asks
+  - Suggest alternatives from same product or similar products when out of stock
+- Updated both buildAgentPrompt calls in processWithAgent to map variant fields correctly
+- Files changed: 
+  - packages/backend/convex/ai/agentPrompt.ts (+71, -50)
+  - packages/backend/convex/ai/agent.ts (+46, -9)
+- Commit: d5c5f3d "feat: US-015 - Update AI prompt structure for variants"
+- **Learnings for future iterations:**
+  - AI context loading should eagerly fetch related data (variants) in parallel with Promise.all
+  - formatProductCatalog now shows variant products grouped naturally with options listed below
+  - TypeScript union types for extending Doc<> with additional fields: `(Doc<"table"> & { field: Type })[]]`
+  - Variant filtering happens at query time (available: true) to keep prompt lean
+  - Stock display in prompt helps AI guide customers toward available options
+  - System prompt guidance should be natural/conversational, not command-list style
+---
+
