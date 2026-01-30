@@ -162,7 +162,7 @@
 			"id": "S09",
 			"title": "Update order schema and creation for variants",
 			"priority": 9,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/schema.ts orders.items structure:",

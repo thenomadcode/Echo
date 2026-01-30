@@ -1,3 +1,42 @@
+## 2026-01-30 15:40 - S09: Update order schema and creation for variants
+
+**What was implemented:**
+- Updated `packages/backend/convex/orders/mutations.ts`:
+  - Added `matchVariant()` helper function that matches variants based on productQuery
+    - Tries exact SKU match first
+    - Falls back to variant name matching
+    - Falls back to option values matching (e.g., "small red" matches option1Value=small, option2Value=red)
+  - Updated `create` mutation to accept optional `productQuery` in items array
+  - Added variant resolution logic:
+    - If productQuery provided, uses matchVariant() to find specific variant
+    - If no match or no query, uses first available variant
+    - Stores variantId, variantName, sku in order items
+  - Added inventory tracking:
+    - Checks variant.inventoryQuantity before order creation
+    - Throws error if insufficient stock and inventoryPolicy is "deny"
+    - Decrements inventory after order creation via scheduler
+  - Created `decrementInventory` internal mutation:
+    - Scheduled to run after order creation
+    - Decrements inventoryQuantity for all variants in order
+    - Marks variant unavailable if stock reaches 0 and inventoryPolicy is "deny"
+- Schema updates (already done in S01):
+  - orders.items now has variantId, variantName, sku fields
+
+**Files changed:**
+- packages/backend/convex/orders/mutations.ts (+152 lines, -9 lines)
+
+**Verification:**
+- `bunx convex typecheck`: passes (0 errors)
+- `bun run check-types`: passes (0 errors)
+
+**Learnings for future iterations:**
+- Variant matching should try multiple strategies (SKU → name → option values)
+- Use scheduler.runAfter(0, ...) to run post-order mutations asynchronously
+- Internal mutations are perfect for background inventory updates
+- When matching option values, check if query contains all options OR any option matches
+
+---
+
 ## 2026-01-27 16:00 - S09: Clear processing state on timeout
 
 **What was implemented:**
