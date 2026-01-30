@@ -227,6 +227,10 @@ export const Route = createFileRoute("/path")({
 - Use Base UI primitives for accessible components
 - shadcn/ui components live in `apps/web/src/components/ui/`
 - Prefer using existing shadcn/ui components over building custom ones
+- Dynamic form arrays: Use `useState` with array of objects, map over for rendering
+- Inline editing in tables: Wrap Input components in TableCell, update state onChange
+- Tag-based input: Split comma-separated string, display as badges with remove buttons
+- Dialog for complex row actions: Use Dialog component for image upload, additional fields
 
 ### Custom Hooks
 ```typescript
