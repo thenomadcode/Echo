@@ -75,6 +75,38 @@ export default defineSchema({
 		.index("by_category", ["categoryId", "deleted", "available"])
 		.index("by_shopify_id", ["businessId", "shopifyProductId"]),
 
+	productVariants: defineTable({
+		productId: v.id("products"),
+		name: v.string(),
+		sku: v.optional(v.string()),
+		price: v.number(),
+		inventoryQuantity: v.number(),
+		option1Name: v.optional(v.string()),
+		option1Value: v.optional(v.string()),
+		option2Name: v.optional(v.string()),
+		option2Value: v.optional(v.string()),
+		option3Name: v.optional(v.string()),
+		option3Value: v.optional(v.string()),
+		imageId: v.optional(v.string()),
+		externalVariantId: v.optional(v.string()),
+		available: v.boolean(),
+		position: v.number(),
+		compareAtPrice: v.optional(v.number()),
+		costPrice: v.optional(v.number()),
+		barcode: v.optional(v.string()),
+		weight: v.optional(v.number()),
+		weightUnit: v.optional(
+			v.union(v.literal("kg"), v.literal("g"), v.literal("lb"), v.literal("oz")),
+		),
+		requiresShipping: v.optional(v.boolean()),
+		lastSyncAt: v.optional(v.number()),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_product", ["productId"])
+		.index("by_sku", ["sku"])
+		.index("by_external_id", ["externalVariantId"]),
+
 	// WhatsApp Integration tables
 	whatsappConnections: defineTable({
 		businessId: v.id("businesses"),

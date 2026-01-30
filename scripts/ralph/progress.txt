@@ -1,0 +1,19 @@
+## Codebase Patterns
+
+### Convex Schema Patterns
+- Use `v` from `convex/values` for type validators
+- All tables define `createdAt` and `updatedAt` as `v.number()` (UTC timestamps)
+- Multi-tenant: All business-specific tables have `businessId: v.id("businesses")` or `v.string()`
+- Indexes follow pattern: `.index("by_[field]", ["field1", "field2"])`
+- Relationships use `v.id("tableName")` for foreign keys
+- Common optional fields use `v.optional(v.type())`
+- Nested objects use `v.object({ ... })`
+- Unions for enums: `v.union(v.literal("a"), v.literal("b"))`
+
+### Backend Query/Mutation Patterns
+- Import from `"./_generated/server"`
+- Use `query({ args: {...}, handler: async (ctx) => {...} })`
+- Use `mutation({ args: {...}, handler: async (ctx, args) => {...} })`
+- Always define args with validators, even if empty: `args: {}`
+
+---
