@@ -189,8 +189,11 @@ export const markProductsUnavailable = internalMutation({
 	handler: async (ctx, args): Promise<number> => {
 		const products = await ctx.db
 			.query("products")
-			.withIndex("by_shopify_id", (q) =>
-				q.eq("businessId", args.businessId).eq("shopifyProductId", args.shopifyProductId),
+			.withIndex("by_external_id", (q) =>
+				q
+					.eq("businessId", args.businessId)
+					.eq("source", "shopify")
+					.eq("externalProductId", args.shopifyProductId),
 			)
 			.collect();
 
@@ -204,6 +207,19 @@ export const markProductsUnavailable = internalMutation({
 				updatedAt: now,
 			});
 			count++;
+
+			const variants = await ctx.db
+				.query("productVariants")
+				.withIndex("by_product", (q) => q.eq("productId", product._id))
+				.collect();
+
+			for (const variant of variants) {
+				await ctx.db.patch(variant._id, {
+					available: false,
+					lastSyncAt: now,
+					updatedAt: now,
+				});
+			}
 		}
 
 		return count;
@@ -242,7 +258,7 @@ export const markMissingProductsUnavailable = internalMutation({
 });
 
 /**
- * Mark variants that no longer exist in Shopify as unavailable
+ * Mark variants that no longer exist in Shopify as unavailable (for full sync)
  */
 export const markMissingVariantsUnavailable = internalMutation({
 	args: {
@@ -278,6 +294,37 @@ export const markMissingVariantsUnavailable = internalMutation({
 					});
 					count++;
 				}
+			}
+		}
+
+		return count;
+	},
+});
+
+export const markMissingProductVariantsUnavailable = internalMutation({
+	args: {
+		productId: v.id("products"),
+		seenExternalVariantIds: v.array(v.string()),
+	},
+	handler: async (ctx, args): Promise<number> => {
+		const variants = await ctx.db
+			.query("productVariants")
+			.withIndex("by_product", (q) => q.eq("productId", args.productId))
+			.filter((q) => q.eq(q.field("available"), true))
+			.collect();
+
+		const seenSet = new Set(args.seenExternalVariantIds);
+		const now = Date.now();
+		let count = 0;
+
+		for (const variant of variants) {
+			if (variant.externalVariantId && !seenSet.has(variant.externalVariantId)) {
+				await ctx.db.patch(variant._id, {
+					available: false,
+					lastSyncAt: now,
+					updatedAt: now,
+				});
+				count++;
 			}
 		}
 

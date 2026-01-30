@@ -167,62 +167,71 @@ export const handleWebhook = internalAction({
 						return;
 					}
 
+					const shopifyProductId = `gid://shopify/Product/${product.id}`;
+
+					// If product is not active, mark product and all variants unavailable
 					if (product.status !== "active") {
 						if (args.topic === "products/update") {
 							await ctx.runMutation(
 								internal.integrations.shopify.mutations.markProductsUnavailable,
 								{
 									businessId,
-									shopifyProductId: `gid://shopify/Product/${product.id}`,
+									shopifyProductId,
 								},
 							);
 						}
 						return;
 					}
 
-					const shopifyProductId = `gid://shopify/Product/${product.id}`;
-					const imageUrl = product.images[0]?.src ?? null;
+					// Upsert parent product
+					const hasVariants = product.variants.length > 1;
 
-					const business = await ctx.runQuery(
-						internal.integrations.shopify.queries.getBusinessLanguage,
+					const { productId } = await ctx.runMutation(
+						internal.integrations.shopify.mutations.upsertParentProduct,
 						{
 							businessId,
+							externalProductId: shopifyProductId,
+							name: product.title,
+							description: product.body_html || undefined,
+							hasVariants,
+							available: product.variants.some((v) => v.inventory_quantity > 0),
 						},
 					);
 
-					const currency =
-						business?.defaultLanguage === "es"
-							? "COP"
-							: business?.defaultLanguage === "pt"
-								? "BRL"
-								: "USD";
+					// Track all variant IDs seen in this webhook payload
+					const seenVariantIds: string[] = [];
 
-					let _processedCount = 0;
+					// Upsert each variant
 					for (const variant of product.variants) {
-						const isOnlyVariant = product.variants.length === 1;
-						const variantTitle =
-							isOnlyVariant || variant.title === "Default Title" || !variant.title
-								? ""
-								: variant.title;
+						const variantId = `gid://shopify/ProductVariant/${variant.id}`;
+						seenVariantIds.push(variantId);
 
-						const name = variantTitle ? `${product.title} - ${variantTitle}` : product.title;
+						// Extract variant options from title
+						// For single variants with "Default Title", use empty name
+						const isDefaultVariant =
+							product.variants.length === 1 &&
+							(!variant.title || variant.title === "Default Title");
+						const variantName = isDefaultVariant ? "" : variant.title || "";
+
+						// Parse options (Shopify REST webhook doesn't provide structured options)
+						// We'll store the title as-is and leave option fields empty for webhook updates
+						// Full option extraction happens in GraphQL import
 
 						const priceInCents = Math.round(Number.parseFloat(variant.price) * 100);
-						const available = variant.inventory_quantity > 0;
 
 						try {
-							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProduct, {
-								businessId,
-								shopifyProductId,
-								shopifyVariantId: `gid://shopify/ProductVariant/${variant.id}`,
-								name,
-								description: product.body_html ?? undefined,
+							await ctx.runMutation(internal.integrations.shopify.mutations.upsertProductVariant, {
+								productId,
+								externalVariantId: variantId,
+								name: variantName,
+								sku: variant.sku || undefined,
 								price: priceInCents,
-								currency,
-								imageUrl: imageUrl ?? undefined,
-								available,
+								inventoryQuantity: variant.inventory_quantity,
+								inventoryPolicy: "deny", // REST webhook doesn't provide inventory policy
+								requiresShipping: true, // Default for webhook sync
+								position: 0, // REST webhook doesn't provide position reliably
+								// Option fields left undefined - full sync via GraphQL import provides these
 							});
-							_processedCount++;
 						} catch (err) {
 							const msg = err instanceof Error ? err.message : "Unknown error";
 							console.error(
@@ -230,6 +239,16 @@ export const handleWebhook = internalAction({
 							);
 						}
 					}
+
+					// Mark variants that were deleted in Shopify (no longer in webhook payload)
+					await ctx.runMutation(
+						internal.integrations.shopify.mutations.markMissingProductVariantsUnavailable,
+						{
+							productId,
+							seenExternalVariantIds: seenVariantIds,
+						},
+					);
+
 					break;
 				}
 
