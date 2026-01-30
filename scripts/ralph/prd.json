@@ -81,7 +81,7 @@
 			"id": "S05",
 			"title": "Update Shopify webhooks for variant sync",
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/integrations/shopify/webhooks.ts handleWebhook:",

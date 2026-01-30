@@ -6159,3 +6159,47 @@
 
 ---
 
+
+## 2026-01-30 14:15 - S05: Update Shopify webhooks for variant sync
+
+**What was implemented:**
+- Rewrote products/update webhook handler to properly sync parent product + variants:
+  - Upserts parent product using `upsertParentProduct` mutation
+  - Determines `hasVariants` from variant count (>1 = multi-variant product)
+  - Iterates through all variants in webhook payload
+  - Upserts each variant using `upsertProductVariant` mutation
+  - Tracks seen variant IDs to detect deletions
+- Created `markMissingProductVariantsUnavailable` mutation:
+  - Webhook-specific variant cleanup (scoped to single product)
+  - Marks variants not in webhook payload as unavailable (soft delete)
+  - Preserves variants for order history
+- Updated `markProductsUnavailable` mutation:
+  - Changed index from `by_shopify_id` to `by_external_id` (new schema)
+  - Cascades unavailable status to ALL associated variants
+  - Used by products/delete webhook and inactive product handling
+- Webhook variant sync approach:
+  - REST webhook doesn't provide structured options (Shopify limitation)
+  - Stores variant title as-is, leaves option fields undefined
+  - Full option extraction happens during GraphQL import action
+  - Default values: inventoryPolicy="deny", requiresShipping=true, position=0
+- All mutations track lastSyncAt/lastShopifySyncAt for audit trail
+
+**Files changed:**
+- packages/backend/convex/integrations/shopify/webhooks.ts (replaced old per-variant product creation with proper parent+variant sync)
+- packages/backend/convex/integrations/shopify/mutations.ts (+31 lines for markMissingProductVariantsUnavailable, updated markProductsUnavailable to cascade to variants)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+- Git hooks passed (pre-commit lint + typecheck)
+
+**Learnings for future iterations:**
+- Shopify REST webhook (products/update) doesn't provide structured options like GraphQL query
+- Webhook payload has variant.title (e.g. "Small / Red") but not separated option1/option2 fields
+- Solution: Store title as variant name, leave option fields undefined for webhook updates
+- Full sync via GraphQL importProducts action extracts complete option structure
+- markMissingProductVariantsUnavailable scoped to single product (webhook use case)
+- markMissingVariantsUnavailable checks ALL products (full sync use case)
+- Cascade pattern: mark parent unavailable → also mark children unavailable
+
+---
