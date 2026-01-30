@@ -1,6 +1,10 @@
-import { calculateVariantCount } from "@echo/backend/convex/lib/variantGeneration";
+import {
+	calculateVariantCount,
+	generateVariantCombinations,
+} from "@echo/backend/convex/lib/variantGeneration";
 import { Plus, X } from "lucide-react";
 
+import type { GeneratedVariant } from "@/components/products/variant-table-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,11 +18,35 @@ export interface VariantOption {
 interface VariantOptionsBuilderProps {
 	// biome-ignore lint/suspicious/noExplicitAny: TanStack Form FieldApi requires 23 type parameters
 	field: any;
+	onGenerate?: (variants: GeneratedVariant[]) => void;
 }
 
-export function VariantOptionsBuilder({ field }: VariantOptionsBuilderProps) {
-	const options = field.state.value || [];
+export function VariantOptionsBuilder({ field, onGenerate }: VariantOptionsBuilderProps) {
+	const options: VariantOption[] = field.state.value || [];
 	const variantCount = calculateVariantCount(options);
+
+	const handleGenerate = () => {
+		const validOptions = options.filter(
+			(opt) =>
+				opt.name.trim() !== "" && opt.values.length > 0 && opt.values.every((v) => v.trim() !== ""),
+		);
+
+		if (validOptions.length === 0) {
+			return;
+		}
+
+		const baseVariants = generateVariantCombinations(validOptions);
+		const generatedVariants: GeneratedVariant[] = baseVariants.map((base) => ({
+			...base,
+			sku: "",
+			price: 0,
+			inventoryQuantity: 0,
+			imageId: "",
+			available: true,
+		}));
+
+		onGenerate?.(generatedVariants);
+	};
 
 	const addOption = () => {
 		if (options.length >= 3) {
@@ -184,7 +212,12 @@ export function VariantOptionsBuilder({ field }: VariantOptionsBuilderProps) {
 							You can customize pricing, SKU, and inventory for each variant in the next step
 						</p>
 					</div>
-					<Button type="button" variant="secondary" disabled={variantCount === 0}>
+					<Button
+						type="button"
+						variant="secondary"
+						disabled={variantCount === 0}
+						onClick={handleGenerate}
+					>
 						Generate {variantCount} Variant{variantCount === 1 ? "" : "s"}
 					</Button>
 				</div>

@@ -1,14 +1,7 @@
-import { api } from "@echo/backend/convex/_generated/api";
-import type { Id } from "@echo/backend/convex/_generated/dataModel";
-import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery } from "convex/react";
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { z } from "zod";
-
 import type { VariantOption } from "@/components/products/variant-options-builder";
 import { VariantOptionsBuilder } from "@/components/products/variant-options-builder";
+import type { GeneratedVariant } from "@/components/products/variant-table-editor";
+import { VariantTableEditor } from "@/components/products/variant-table-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,6 +25,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@echo/backend/convex/_generated/api";
+import type { Id } from "@echo/backend/convex/_generated/dataModel";
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery } from "convex/react";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
 
 interface ProductFormProps {
 	businessId: string;
@@ -80,6 +81,22 @@ export function ProductForm({
 				values: z.array(z.string()),
 			}),
 		),
+		generatedVariants: z.array(
+			z.object({
+				name: z.string(),
+				sku: z.string(),
+				price: z.number(),
+				inventoryQuantity: z.number(),
+				imageId: z.string(),
+				available: z.boolean(),
+				option1Name: z.string().optional(),
+				option1Value: z.string().optional(),
+				option2Name: z.string().optional(),
+				option2Value: z.string().optional(),
+				option3Name: z.string().optional(),
+				option3Value: z.string().optional(),
+			}),
+		),
 	});
 
 	const form = useForm({
@@ -91,6 +108,7 @@ export function ProductForm({
 			imageId: initialData?.imageId || "",
 			hasVariants: false,
 			variantOptions: [] as VariantOption[],
+			generatedVariants: [] as GeneratedVariant[],
 		},
 		onSubmit: async ({ value }) => {
 			try {
@@ -251,9 +269,23 @@ export function ProductForm({
 									)}
 								</form.Field>
 							) : (
-								<form.Field name="variantOptions">
-									{(field) => <VariantOptionsBuilder field={field} />}
-								</form.Field>
+								<>
+									<form.Field name="variantOptions">
+										{(optionsField) => (
+											<form.Field name="generatedVariants">
+												{(variantsField) => (
+													<VariantOptionsBuilder
+														field={optionsField}
+														onGenerate={(variants) => variantsField.handleChange(variants)}
+													/>
+												)}
+											</form.Field>
+										)}
+									</form.Field>
+									<form.Field name="generatedVariants">
+										{(field) => <VariantTableEditor field={field} currency={currency} />}
+									</form.Field>
+								</>
 							)
 						}
 					</form.Subscribe>
