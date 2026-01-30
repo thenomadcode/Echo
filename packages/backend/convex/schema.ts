@@ -57,14 +57,27 @@ export default defineSchema({
 		categoryId: v.optional(v.string()),
 		imageId: v.optional(v.string()),
 		name: v.string(),
-		price: v.number(),
-		currency: v.string(),
+		// Product variants support
+		hasVariants: v.optional(v.boolean()),
+		// Legacy fields - kept for backward compatibility (deprecated - use variants table)
+		price: v.optional(v.number()),
+		currency: v.optional(v.string()),
 		available: v.boolean(),
 		deleted: v.boolean(),
 		order: v.number(),
 		description: v.optional(v.string()),
-		// Shopify sync fields
-		source: v.optional(v.union(v.literal("manual"), v.literal("shopify"))),
+		// Integration sync fields
+		source: v.optional(
+			v.union(
+				v.literal("manual"),
+				v.literal("shopify"),
+				v.literal("woocommerce"),
+				v.literal("tiendanube"),
+			),
+		),
+		externalProductId: v.optional(v.string()), // External system product ID (Shopify/WooCommerce/TiendaNube)
+		externalVariantId: v.optional(v.string()), // Deprecated - moved to variants table
+		// Deprecated Shopify fields - use externalProductId instead
 		shopifyProductId: v.optional(v.string()),
 		shopifyVariantId: v.optional(v.string()),
 		lastShopifySyncAt: v.optional(v.number()),
@@ -73,7 +86,43 @@ export default defineSchema({
 	})
 		.index("by_business", ["businessId", "deleted"])
 		.index("by_category", ["categoryId", "deleted", "available"])
-		.index("by_shopify_id", ["businessId", "shopifyProductId"]),
+		.index("by_shopify_id", ["businessId", "shopifyProductId"])
+		.index("by_external_id", ["businessId", "source", "externalProductId"]),
+
+	productVariants: defineTable({
+		productId: v.id("products"),
+		name: v.string(), // Variant name (e.g., "Small / Red" or empty for simple products)
+		sku: v.optional(v.string()),
+		barcode: v.optional(v.string()),
+		price: v.number(), // Price in smallest currency unit (cents)
+		compareAtPrice: v.optional(v.number()), // Original/compare-at price
+		costPrice: v.optional(v.number()), // Cost to business
+		inventoryQuantity: v.number(),
+		inventoryPolicy: v.union(v.literal("deny"), v.literal("continue")), // deny = out of stock stops sales
+		trackInventory: v.boolean(),
+		// Variant options (max 3 option levels)
+		option1Name: v.optional(v.string()), // e.g., "Size"
+		option1Value: v.optional(v.string()), // e.g., "Small"
+		option2Name: v.optional(v.string()), // e.g., "Color"
+		option2Value: v.optional(v.string()), // e.g., "Red"
+		option3Name: v.optional(v.string()), // e.g., "Material"
+		option3Value: v.optional(v.string()), // e.g., "Cotton"
+		imageId: v.optional(v.string()), // Variant-specific image (overrides product image)
+		externalVariantId: v.optional(v.string()), // External system variant ID (Shopify/WooCommerce/TiendaNube)
+		lastSyncAt: v.optional(v.number()),
+		weight: v.optional(v.number()),
+		weightUnit: v.optional(
+			v.union(v.literal("kg"), v.literal("g"), v.literal("lb"), v.literal("oz")),
+		),
+		requiresShipping: v.boolean(),
+		available: v.boolean(),
+		position: v.number(), // Sort order
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_product", ["productId"])
+		.index("by_sku", ["sku"])
+		.index("by_external_id", ["externalVariantId"]),
 
 	// WhatsApp Integration tables
 	whatsappConnections: defineTable({
@@ -243,7 +292,10 @@ export default defineSchema({
 		items: v.array(
 			v.object({
 				productId: v.id("products"),
+				variantId: v.optional(v.id("productVariants")),
 				name: v.string(),
+				variantName: v.optional(v.string()),
+				sku: v.optional(v.string()),
 				quantity: v.number(),
 				unitPrice: v.number(),
 				totalPrice: v.number(),
