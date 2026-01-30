@@ -59,7 +59,7 @@
 			"id": "S04",
 			"title": "Rewrite Shopify import to create products with variants",
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"acceptanceCriteria": [
 				"Update packages/backend/convex/integrations/shopify/products.ts importProducts action:",

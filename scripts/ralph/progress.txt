@@ -6121,3 +6121,41 @@
 - Cascade delete pattern: patch all related records in same mutation with same timestamp
 
 ---
+
+## 2026-01-30 15:24 - S04: Rewrite Shopify import to create products with variants
+
+**What was implemented:**
+- Updated SHOPIFY_PRODUCTS_QUERY to fetch variant images, options, inventory policy, weight, barcode, compare-at price
+- Created `upsertParentProduct` mutation to handle parent products with `hasVariants` boolean
+- Created `upsertProductVariant` mutation with all variant fields: SKU, barcode, price, compareAtPrice, costPrice, inventory, options (1-3 levels), image, weight, shipping, position
+- Rewrote `importProducts` action to create ONE parent product per Shopify product (not N products per variant)
+- Create separate productVariant records for each Shopify variant with option mapping (option1Name/Value, option2Name/Value, option3Name/Value)
+- Updated `syncProducts` action with same parent+variants pattern
+- Created `markMissingVariantsUnavailable` mutation to soft-delete variants no longer in Shopify
+- Updated `ShopifyGraphQLResponse` types to include new variant fields
+- Map Shopify inventory policy ("CONTINUE" → "continue", "DENY" → "deny")
+- Map Shopify weight units (KILOGRAMS → kg, GRAMS → g, etc.)
+- Extract variant name from selectedOptions array, join with " / " separator
+- Set hasVariants = true if variants.length > 1, false if single variant
+
+**Files changed:**
+- packages/backend/convex/integrations/shopify/products.ts (~150 lines changed - rewrote import/sync logic)
+- packages/backend/convex/integrations/shopify/mutations.ts (+210 lines - upsertParentProduct, upsertProductVariant, markMissingVariantsUnavailable)
+- packages/backend/convex/integrations/shopify/types.ts (+13 lines - extended ShopifyGraphQLResponse with variant fields)
+- packages/backend/convex/integrations/shopify/utils.ts (+15 lines - extended SHOPIFY_PRODUCTS_QUERY)
+
+**Verification:**
+- `bun run check-types`: passes (0 errors)
+- LSP diagnostics: 0 errors on all changed files
+- Pre-commit hooks: passed (lint + typecheck)
+
+**Learnings for future iterations:**
+- Shopify GraphQL selectedOptions array format: `[{ name: "Size", value: "Small" }, { name: "Color", value: "Red" }]`
+- Shopify inventory policy enum: "DENY" (stop sales when out of stock) or "CONTINUE" (allow backorders)
+- Shopify weight unit enum: KILOGRAMS, GRAMS, POUNDS, OUNCES (must lowercase and map to schema values)
+- Variant name generation: filter out "Default Title", join remaining option values with " / "
+- Import count now reports products imported (not individual variants) - matches S04 acceptance criteria
+- Mark S04 ultrawork: true due to extensive GraphQL query changes, type definitions, and import logic rewrite
+
+---
+
