@@ -91,7 +91,7 @@ interface ProductsPageProps {
 
 function ProductsPage({ businessId }: ProductsPageProps) {
 	const navigate = useNavigate();
-	const productsData = useQuery(api.products.list, {
+	const productsData = useQuery(api.products.listWithVariants, {
 		businessId,
 		limit: 100,
 	});
@@ -359,6 +359,9 @@ function ProductsPage({ businessId }: ProductsPageProps) {
 									categoryId={product.categoryId}
 									imageId={product.imageId}
 									available={product.available}
+									hasVariants={product.hasVariants}
+									variants={product.variants}
+									variantCount={product.variantCount}
 									selected={selectedProducts.has(product._id)}
 									onSelectChange={(selected) => handleSelectProduct(product._id, selected)}
 								/>

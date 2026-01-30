@@ -1,14 +1,19 @@
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { formatCurrency, getPriceRange, getTotalStock } from "@/lib/formatting";
+import { cn } from "@/lib/utils";
 import { api } from "@echo/backend/convex/_generated/api";
 import type { Id } from "@echo/backend/convex/_generated/dataModel";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { formatCurrency } from "@/lib/formatting";
-import { cn } from "@/lib/utils";
+interface ProductVariant {
+	price: number;
+	inventoryQuantity: number;
+}
 
 interface ProductCardProps {
 	productId: Id<"products">;
@@ -19,6 +24,9 @@ interface ProductCardProps {
 	categoryId?: string;
 	imageId?: string;
 	available: boolean;
+	hasVariants: boolean;
+	variants: ProductVariant[];
+	variantCount: number;
 	selected?: boolean;
 	onSelectChange?: (selected: boolean) => void;
 }
@@ -32,6 +40,9 @@ export function ProductCard({
 	categoryId,
 	imageId,
 	available,
+	hasVariants,
+	variants,
+	variantCount,
 	selected = false,
 	onSelectChange,
 }: ProductCardProps) {
@@ -41,6 +52,11 @@ export function ProductCard({
 	const imageUrl = useQuery(api.products.getImageUrl, imageId ? { storageId: imageId } : "skip");
 
 	const category = categories?.find((c) => c._id === categoryId);
+	const currencyCode = currency as "COP" | "BRL" | "MXN" | "USD";
+	const priceDisplay = hasVariants
+		? getPriceRange(variants, currencyCode)
+		: formatCurrency(price, currencyCode);
+	const totalStock = getTotalStock(variants);
 
 	const handleCardClick = () => {
 		navigate({ to: `/products/${productId}` });
@@ -105,9 +121,32 @@ export function ProductCard({
 					<div className="flex items-start justify-between gap-2">
 						<h3 className="line-clamp-2 font-semibold leading-tight">{name}</h3>
 					</div>
-					<p className="font-bold text-lg text-primary">
-						{formatCurrency(price, currency as "COP" | "BRL" | "MXN" | "USD")}
-					</p>
+					<p className="font-bold text-lg text-primary">{priceDisplay}</p>
+					{hasVariants && variantCount > 0 && (
+						<div className="flex items-center gap-2">
+							<Badge variant="secondary" className="text-xs">
+								{variantCount} variant{variantCount === 1 ? "" : "s"}
+							</Badge>
+							<span
+								className={cn(
+									"text-muted-foreground text-xs",
+									totalStock === 0 && "text-destructive",
+								)}
+							>
+								{totalStock} in stock
+							</span>
+						</div>
+					)}
+					{!hasVariants && (
+						<span
+							className={cn(
+								"text-muted-foreground text-xs",
+								totalStock === 0 && "text-destructive",
+							)}
+						>
+							{totalStock} in stock
+						</span>
+					)}
 					{category && <p className="text-muted-foreground text-sm">{category.name}</p>}
 				</div>
 			</CardContent>

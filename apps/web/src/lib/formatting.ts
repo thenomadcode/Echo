@@ -126,3 +126,60 @@ export function formatRelativeTime(timestamp: number): string {
 	// For times beyond 24 hours, show absolute time
 	return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
+
+/**
+ * Variant data for price and stock calculations.
+ */
+export interface VariantForCalculation {
+	price: number;
+	inventoryQuantity: number;
+}
+
+/**
+ * Gets the price range string for a list of variants.
+ *
+ * @param variants - Array of variants with price field
+ * @param currency - Currency code for formatting
+ * @returns Formatted price range string (e.g., "$25 - $30") or single price if all same
+ *
+ * @example
+ * getPriceRange([{price: 2500}, {price: 3000}], "USD") // "$25.00 - $30.00"
+ * getPriceRange([{price: 2500}, {price: 2500}], "USD") // "$25.00"
+ * getPriceRange([], "USD") // ""
+ */
+export function getPriceRange(
+	variants: VariantForCalculation[],
+	currency: Currency = "USD",
+): string {
+	if (!variants || variants.length === 0) {
+		return "";
+	}
+
+	const prices = variants.map((v) => v.price);
+	const minPrice = Math.min(...prices);
+	const maxPrice = Math.max(...prices);
+
+	if (minPrice === maxPrice) {
+		return formatCurrency(minPrice, currency);
+	}
+
+	return `${formatCurrency(minPrice, currency)} - ${formatCurrency(maxPrice, currency)}`;
+}
+
+/**
+ * Gets the total stock across all variants.
+ *
+ * @param variants - Array of variants with inventoryQuantity field
+ * @returns Total inventory quantity
+ *
+ * @example
+ * getTotalStock([{inventoryQuantity: 10}, {inventoryQuantity: 15}]) // 25
+ * getTotalStock([]) // 0
+ */
+export function getTotalStock(variants: VariantForCalculation[]): number {
+	if (!variants || variants.length === 0) {
+		return 0;
+	}
+
+	return variants.reduce((total, v) => total + v.inventoryQuantity, 0);
+}
