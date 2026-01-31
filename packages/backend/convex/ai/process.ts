@@ -493,6 +493,14 @@ export const processMessage = action({
 
 			newState = determineNewState(intent, currentState);
 
+			const extractedName = extractCustomerName(args.message, intent);
+			if (extractedName && conversation.customerRecordId) {
+				await ctx.runMutation(internal.customers.updateNameInternal, {
+					customerId: conversation.customerRecordId,
+					name: extractedName,
+				});
+			}
+
 			const orderUpdate = handleOrderIntent(intent, accumulatedPendingOrder, products);
 			if (orderUpdate.pendingOrder !== undefined) {
 				accumulatedPendingOrder = orderUpdate.pendingOrder;
@@ -910,6 +918,38 @@ function calculateOrderTotal(items: PendingOrderItem[]): number {
 		const price = item.price ?? 0;
 		return sum + price * item.quantity;
 	}, 0);
+}
+
+function extractCustomerName(message: string, intent: Intent): string | null {
+	if (intent.type === "delivery_choice" && intent.address) {
+		const addressMatch = intent.address.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/);
+		if (addressMatch) {
+			const potentialName = addressMatch[1];
+			const words = potentialName.split(/\s+/);
+			if (words.length >= 2 && words.length <= 4) {
+				return potentialName;
+			}
+		}
+	}
+
+	const myNamePattern =
+		/(?:my name is|me llamo|mi nombre es|meu nome é|soy|i'm|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i;
+	const myNameMatch = message.match(myNamePattern);
+	if (myNameMatch) {
+		return myNameMatch[1];
+	}
+
+	const forSomeonePattern = /(?:for|para|por)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/;
+	const forSomeoneMatch = message.match(forSomeonePattern);
+	if (forSomeoneMatch) {
+		const name = forSomeoneMatch[1];
+		const words = name.split(/\s+/);
+		if (words.length >= 2) {
+			return name;
+		}
+	}
+
+	return null;
 }
 
 function getEscalatedConversationResponse(language: string): string {

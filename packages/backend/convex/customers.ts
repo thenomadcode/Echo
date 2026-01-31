@@ -426,6 +426,30 @@ export const getContextInternal = internalQuery({
 	},
 });
 
+// Internal mutation to update customer name (used by AI flow)
+export const updateNameInternal = internalMutation({
+	args: {
+		customerId: v.id("customers"),
+		name: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const customer = await ctx.db.get(args.customerId);
+		if (!customer) {
+			return null;
+		}
+
+		// Only update if name is not already set or if the new name is more complete
+		if (!customer.name || args.name.length > customer.name.length) {
+			await ctx.db.patch(args.customerId, {
+				name: args.name,
+				updatedAt: Date.now(),
+			});
+		}
+
+		return args.customerId;
+	},
+});
+
 export const deleteCustomer = mutation({
 	args: {
 		customerId: v.id("customers"),
