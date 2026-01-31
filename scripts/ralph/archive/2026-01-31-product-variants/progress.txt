@@ -1,0 +1,497 @@
+## Codebase Patterns
+
+### Convex Schema Patterns
+- Use `v` from `convex/values` for type validators
+- All tables define `createdAt` and `updatedAt` as `v.number()` (UTC timestamps)
+- Multi-tenant: All business-specific tables have `businessId: v.id("businesses")` or `v.string()`
+- Indexes follow pattern: `.index("by_[field]", ["field1", "field2"])`
+- Relationships use `v.id("tableName")` for foreign keys
+- Common optional fields use `v.optional(v.type())`
+- Nested objects use `v.object({ ... })`
+- Unions for enums: `v.union(v.literal("a"), v.literal("b"))`
+
+### Backend Query/Mutation Patterns
+- Import from `"./_generated/server"`
+- Use `query({ args: {...}, handler: async (ctx) => {...} })`
+- Use `mutation({ args: {...}, handler: async (ctx, args) => {...} })`
+- Always define args with validators, even if empty: `args: {}`
+
+---
+
+## 2026-01-30 20:53 - US-001
+- Implemented productVariants table schema in packages/backend/convex/schema.ts
+- Added all required fields: productId, name, sku, price, inventoryQuantity, option1-3 Name/Value pairs, imageId, externalVariantId, available, position, createdAt, updatedAt
+- Added optional fields: compareAtPrice, costPrice, barcode, weight, weightUnit, requiresShipping, lastSyncAt
+- Created indexes: by_product, by_sku, by_external_id
+- Files changed: packages/backend/convex/schema.ts
+- **Learnings for future iterations:**
+  - Convex schema uses `v.id("tableName")` for foreign key references (not just v.string())
+  - Product variants follow Shopify-compatible model: up to 3 option name/value pairs
+  - Weight units stored as enum: kg, g, lb, oz
+  - All prices stored in smallest currency unit (centavos/cents) as integers
+  - Soft delete pattern: use `available: v.boolean()` instead of hard deletes
+---
+
+## 2026-01-30 20:56 - US-002
+- Updated products table schema in packages/backend/convex/schema.ts:
+  - Added hasVariants boolean field (default: false)
+  - Expanded source field to support 'manual' | 'shopify' | 'woocommerce' | 'tiendanube'
+  - Renamed shopifyProductId to externalProductId
+  - Renamed lastShopifySyncAt to lastSyncAt
+  - Updated index from by_shopify_id to by_external_id with [businessId, source, externalProductId]
+- Updated all Shopify integration files:
+  - packages/backend/convex/integrations/shopify/mutations.ts (upsertProduct, upsertProductWithStats, markProductsUnavailable, deleteConnectionAndClearProducts)
+  - packages/backend/convex/integrations/shopify/products.ts (importProducts, syncProducts)
+  - packages/backend/convex/integrations/shopify/webhooks.ts (handleWebhook)
+- Updated all AI files to use new field names:
+  - packages/backend/convex/ai/agentPrompt.ts
+  - packages/backend/convex/ai/response.ts
+  - packages/backend/convex/ai/agent.ts
+  - packages/backend/convex/ai/prompts.ts
+  - packages/backend/convex/ai/process.ts
+- **Learnings for future iterations:**
+  - When renaming schema fields, must update:
+    1. Schema definition
+    2. All mutations using the field
+    3. All queries/filters using withIndex
+    4. TypeScript interfaces in AI/integration code
+  - The hasVariants field is now required on all product inserts (defaults to false for existing Shopify imports)
+  - E-commerce provider source is now generic, supporting future integrations beyond Shopify
+  - Compound indexes require all fields in the index definition when querying
+---
+
+## 2026-01-30 21:08 - US-003
+- Updated orders table schema in packages/backend/convex/schema.ts:
+  - Added variantId field (optional v.id("productVariants"))
+  - Added variantName field (optional v.string())
+  - Added sku field (optional v.string())
+- Updated OrderItem type in packages/backend/convex/orders/types.ts with same fields
+- Files changed: packages/backend/convex/schema.ts, packages/backend/convex/orders/types.ts
+- **Learnings for future iterations:**
+  - Order items schema changes are backward compatible with existing orders (all new fields are optional)
+  - TypeScript types should match Convex schema validators exactly
+  - Orders can now track both simple products and specific variants
+  - Future mutations will use variantId to fetch price from productVariants table instead of products table
+---
+
+## 2026-01-30 21:05 - US-004
+- Implemented variant CRUD mutations in packages/backend/convex/variants.ts
+- Created 4 mutations: create, update, deleteVariant, adjustInventory
+- All mutations validate businessId ownership through parent product
+- Fixed products.ts to include hasVariants field in product creation
+- Files changed: packages/backend/convex/variants.ts (new), packages/backend/convex/products.ts
+- **Learnings for future iterations:**
+  - Variant mutations follow same pattern as product mutations (get parent, validate ownership, perform operation)
+  - Soft delete pattern: mark available: false instead of hard delete
+  - Position field auto-increments if not specified (max position + 1)
+  - Inventory adjustments prevent negative values with validation
+  - All schema changes require updating existing insert statements
+---
+
+## 2026-01-30 21:11 - US-005
+- Implemented variant query functions in packages/backend/convex/variants.ts
+- Added variants.list query to fetch all variants for a product (sorted by position)
+- Added variants.get query to fetch a single variant by ID
+- Implemented products.getWithVariants query in packages/backend/convex/products.ts to fetch product with all its variants
+- Implemented products.listWithVariants query to fetch product list with variant data and counts
+- All queries respect businessId ownership through parent product validation
+- Files changed: packages/backend/convex/variants.ts (+62), packages/backend/convex/products.ts (+108)
+- **Learnings for future iterations:**
+  - Product list queries with variants use Promise.all to fetch variants for each product in parallel
+  - Variants are sorted by position field for consistent ordering
+  - Auth pattern: check user authentication, get parent entity, verify ownership via isBusinessOwner
+  - Query functions return null/empty array instead of throwing errors for unauthorized access
+  - Variant count can be calculated during list queries for UI badges/summaries
+---
+## 2026-01-30 21:15 - US-006
+- Created variant generation utility in packages/backend/convex/lib/variantGeneration.ts
+- Implemented generateVariantCombinations() function supporting 1-3 options
+- Implemented calculateVariantCount() helper for UI display
+- Handles all edge cases: single option, two options, three options
+- Auto-generates variant names: single option returns value only, multiple options use " / " separator
+- TypeScript interfaces: VariantOption (input), GeneratedVariant (output with option1-3 Name/Value pairs)
+- Files changed: packages/backend/convex/lib/variantGeneration.ts (new)
+- **Learnings for future iterations:**
+  - Utility functions for complex logic belong in packages/backend/convex/lib/
+  - Shopify-compatible means max 3 options (option1, option2, option3)
+  - Variant names follow format: "Value1 / Value2 / Value3" for multi-option, just "Value1" for single option
+  - TypeScript interfaces should be exported for reuse in mutations/queries
+  - Validation should happen at function entry (throw early for invalid inputs)
+  - Combinatorial generation uses nested loops: 1 for single, 2 for double, 3 for triple options
+---
+
+
+## 2026-01-30 21:18 - US-007
+- Implemented variant toggle in ProductForm component (apps/web/src/components/products/product-form.tsx)
+- Added Switch UI component import and hasVariants field to form state
+- Created toggle UI with label "This product has variants" and helpful description
+- Implemented conditional rendering using form.Subscribe:
+  - When toggle OFF: shows simple product price field (existing behavior)
+  - When toggle ON: shows placeholder message for variant options builder (US-008)
+- Toggle state persists in form defaultValues
+- All acceptance criteria met except browser test (manual verification needed)
+- Files changed: apps/web/src/components/products/product-form.tsx (+62, -23 lines)
+- **Learnings for future iterations:**
+  - Use form.Subscribe with selector to reactively show/hide sections based on form field values
+  - Switch component from @/components/ui/switch uses Base UI primitives with checked/onCheckedChange props
+  - Conditional form sections should use form.Subscribe, not useState for toggle state
+  - Placeholder UI for future features helps visualize the complete user experience
+  - Toggle descriptions should explain what enabling the feature does for the user
+---
+## 2026-01-30 21:23 - US-008
+- Created VariantOptionsBuilder component in apps/web/src/components/products/variant-options-builder.tsx
+- Implemented dynamic option fields with max 3 options (Shopify-compatible)
+- Each option has name field and values array with add/remove buttons
+- Integrated calculateVariantCount utility to display variant count
+- Added "Generate X Variants" button (disabled when count is 0)
+- Integrated component into ProductForm component when hasVariants toggle is enabled
+- Added variantOptions field to form state and Zod validation schema
+- Files changed: apps/web/src/components/products/variant-options-builder.tsx (new), apps/web/src/components/products/product-form.tsx
+- **Learnings for future iterations:**
+  - TanStack Form field arrays work with render props pattern, accessing field via field parameter
+  - Use field.pushValue() to add array items, field.removeValue(index) to remove
+  - Use field.handleChange(newArray) to update entire array when modifying nested values
+  - Explicit type annotations required for map/filter callbacks to avoid implicit any errors
+  - biome-ignore comments needed when suppressing legitimate linter warnings (e.g., complex generic types)
+  - calculateVariantCount utility handles empty options array gracefully (returns 0)
+  - Form fields should be wrapped in form.Subscribe when conditional rendering based on other field values
+  - Card components provide good visual separation for complex nested form structures
+---
+
+## 2026-01-30 21:29 - US-009
+- Created VariantTableEditor component in apps/web/src/components/products/variant-table-editor.tsx
+- Implemented editable table with columns: Variant Name, SKU, Price, Stock, Image, Available, Actions (Remove)
+- Added inline editing for SKU (Input), Price (PriceInput), Stock (Input type="number"), Image (ImageUpload), Available (Switch)
+- Integrated VariantTableEditor into ProductForm component
+- Modified VariantOptionsBuilder to add onGenerate callback that triggers variant generation
+- Added handleGenerate function that calls generateVariantCombinations and populates generatedVariants form field
+- Added generatedVariants field to ProductForm schema and defaultValues
+- Added Add/Remove variant button functionality
+- Files changed: 
+  - apps/web/src/components/products/variant-table-editor.tsx (new, 217 lines)
+  - apps/web/src/components/products/product-form.tsx (+34 lines)
+  - apps/web/src/components/products/variant-options-builder.tsx (+30 lines)
+- **Learnings for future iterations:**
+  - Inline editing in tables uses direct input components (Input, PriceInput, Switch) with onChange handlers that update form field state
+  - Use field.handleChange(newArray) to update array of items in TanStack Form
+  - Table pattern: map through array, render TableRow for each item, update specific item by creating new array with modified item
+  - ImageUpload component works per-row when included in table cells
+  - Switch component provides immediate toggle without form submission
+  - Add/remove operations use array spread and filter patterns
+  - Empty state pattern: check if array.length === 0 and show placeholder UI
+  - Currency prop passed to PriceInput to handle different currencies (COP, BRL, USD, MXN)
+  - biome-ignore warnings appear when using `any` type but field API requires complex generic types (23 type parameters)
+---
+
+## 2026-01-30 21:37 - US-010
+- Implemented products.createWithVariants mutation in packages/backend/convex/products.ts
+- Mutation creates product with hasVariants flag and all associated variants atomically
+- Validates businessId ownership through requireBusinessOwnership helper
+- Auto-generates currency from business.defaultLanguage setting (es → COP, pt → BRL, default → USD)
+- Calculates maxOrder for product ordering by reducing existing products
+- Creates all variants with position field set to array index for ordering
+- Returns product with populated variants array
+- Files changed: packages/backend/convex/products.ts (+112 lines)
+- **Learnings for future iterations:**
+  - Complex mutations with nested data should validate all inputs before any database writes
+  - Use Promise.all for parallel variant creation would be more efficient, but sequential inserts are safer for maintaining position order
+  - Currency inference from business language follows Echo's multi-LATAM approach
+  - Product price field stores first variant's price for backward compatibility with simple product queries
+  - Variant array filtering with type predicate ensures non-null types: `variants.filter((v): v is NonNullable<typeof v> => v !== null)`
+  - Requires at least one variant (simple products must pass 1 variant with empty name and product details)
+---
+
+## 2026-01-30 21:40 - US-011
+- Implemented products.updateWithVariants mutation in packages/backend/convex/products.ts
+- Mutation handles product-level updates (name, description, category, image)
+- Supports updating existing variants via variantsToUpdate array parameter
+- Supports adding new variants via variantsToAdd array parameter (auto-calculates position from max existing position)
+- Supports removing variants via variantsToRemove array parameter (soft delete using available: false)
+- All variant operations validate that variants belong to the specified product
+- Validates businessId ownership through requireBusinessOwnership
+- Returns updated product with all variants sorted by position
+- Files changed: packages/backend/convex/products.ts (+196 lines), scripts/ralph/prd.json (+1 line)
+- **Learnings for future iterations:**
+  - Update mutations should accept arrays of operations to enable batch updates in single transaction
+  - Position auto-increment for new variants ensures proper ordering: maxPosition + 1 + arrayIndex
+  - Variant ownership validation prevents cross-product variant manipulation attacks
+  - Soft delete pattern (available: false) preserves data for order history and analytics
+  - Optional parameters allow partial updates - only specified fields are modified
+  - Return full product + variants after update for UI state refresh without additional query
+---
+
+
+## 2026-01-30 21:44 - US-012
+- Implemented product list variant display in apps/web/src/routes/_authenticated/products/index.tsx
+- Updated query from api.products.list to api.products.listWithVariants to fetch variant data
+- Created helper functions in apps/web/src/lib/formatting.ts:
+  - getPriceRange(): calculates price range string or single price
+  - getTotalStock(): sums inventoryQuantity across all variants
+- Updated ProductTable component (apps/web/src/components/products/product-table.tsx):
+  - Added Price Range column showing "$25.00 - $30.00" for products with varying prices
+  - Added Stock column with total inventory across variants
+  - Added variant count badge showing "3 variants"
+  - Implemented expandable rows using Collapsible component from shadcn/ui
+  - Nested variant details table shows: variant name, SKU, price, stock, availability
+  - ChevronDown/ChevronUp icons indicate expand/collapse state
+- Updated ProductCard component (apps/web/src/components/products/product-card.tsx):
+  - Displays price range instead of single price for variant products
+  - Shows variant count badge below price
+  - Shows total stock count across all variants
+  - Stock count displays in red when 0
+- Files changed: 
+  - apps/web/src/routes/_authenticated/products/index.tsx (+5, -1)
+  - apps/web/src/lib/formatting.ts (+44 new)
+  - apps/web/src/components/products/product-table.tsx (+143, -16)
+  - apps/web/src/components/products/product-card.tsx (+31, -5)
+- Commit: adde9be "feat: US-012 - Display products with variants in product list"
+- **Learnings for future iterations:**
+  - Use Collapsible component from @/components/ui/collapsible for expandable content in tables
+  - ChevronDown/ChevronUp from lucide-react provide clear visual indicators for expand state
+  - Helper functions for calculations (price range, stock totals) keep components clean
+  - Badge component with "outline" variant works well for metadata display (variant counts)
+  - Conditional rendering based on hasVariants flag prevents showing variant UI for simple products
+  - Table-in-table pattern (nested variant details) requires careful indentation for visual hierarchy
+  - formatCurrency helper from @/lib/formatting handles multi-currency display consistently
+  - State management for expandable rows uses Map<string, boolean> for efficient lookups
+---
+
+## 2026-01-30 21:10 - US-013
+- Implemented Shopify import for products with variants
+- Updated SHOPIFY_PRODUCTS_QUERY to fetch variant options, images, and all variant fields
+- Updated ShopifyGraphQLResponse type to include new fields: selectedOptions, image, compareAtPrice, barcode, weight, etc.
+- Created downloadAndStoreImage helper function in utils.ts to download from Shopify CDN and store in Convex storage
+- Created upsertProductWithVariants internal mutation in mutations.ts that:
+  - Creates or updates parent product + N variants atomically
+  - Maps Shopify selectedOptions to option1/2/3 Name/Value pairs
+  - Handles variant soft-delete (marks missing variants as unavailable)
+  - Tracks externalProductId and externalVariantId for sync
+- Refactored importProducts action to:
+  - Create 1 parent product + N variants (instead of N separate products)
+  - Download and store product and variant images
+  - Map Shopify variant fields to Echo variant schema
+  - Handle single-variant products as simple products (hasVariants: false)
+  - Convert Shopify weight units to grams for consistency
+- Refactored syncProducts action with same variant-based logic
+- Removed old mutations: upsertProduct, upsertProductWithStats, markMissingProductsUnavailable (replaced by upsertProductWithVariants)
+- Files changed:
+  - packages/backend/convex/integrations/shopify/utils.ts (+28 lines: new query fields, downloadAndStoreImage)
+  - packages/backend/convex/integrations/shopify/types.ts (+25 lines: new type fields)
+  - packages/backend/convex/integrations/shopify/mutations.ts (+144 lines: upsertProductWithVariants)
+  - packages/backend/convex/integrations/shopify/products.ts (~200 lines refactored: new import/sync logic)
+- **Learnings for future iterations:**
+  - Shopify GraphQL uses selectedOptions array instead of legacy option1/option2/option3
+  - Shopify weight units: KILOGRAMS, POUNDS, OUNCES, GRAMS → normalize to grams for storage
+  - ctx.storage.store() is available in actions, not mutations (for downloading external images)
+  - Single-variant products should have hasVariants: false (not true with 1 variant)
+  - Variant title "Default Title" should be treated as empty string (simple product)
+  - upsertProductWithVariants handles create/update/soft-delete in one transaction
+  - Map selectedOptions to option1Name/Value, option2Name/Value, option3Name/Value for consistency with manual products
+  - Image download pattern: action downloads → ctx.storage.store() → returns storage ID
+  - Shopify compareAtPrice can be null (no sale/original price)
+---
+
+
+## 2026-01-30 22:04 - US-014
+- Implemented Shopify webhook handler for variant updates in packages/backend/convex/integrations/shopify/webhooks.ts
+- Refactored products/create and products/update webhook handlers to use upsertProductWithVariants mutation instead of creating separate products per variant
+- Webhook now creates 1 parent product + N variants (matching import/sync behavior)
+- Added downloadAndStoreImage import from utils.ts for image handling in webhooks
+- Downloads product and variant images from Shopify CDN and stores in Convex storage
+- Maps webhook REST API data to variant schema (externalVariantId, name, sku, price, inventoryQuantity, available, position)
+- Handles single-variant products as simple products (hasVariants: false)
+- Marks products unavailable when webhook receives non-active status
+- Updates lastSyncAt timestamp on all variant operations
+- Files changed: packages/backend/convex/integrations/shopify/webhooks.ts (+63, -25 lines)
+- Commit: 55528c2 "feat: US-014 - Create Shopify webhook handler for variant updates"
+- **Learnings for future iterations:**
+  - Webhook REST API differs from GraphQL API: variants array directly in product, no nested edges/nodes
+  - Webhook handlers are internalAction so ctx.storage is available for downloadAndStoreImage
+  - Image matching for variants in webhook: product.images.find(img => img.id === variant.id)
+  - Variant position uses array index i for consistent ordering
+  - Webhook payloads don't include option names/values (only available in GraphQL), so leave option1-3 Name/Value as undefined
+  - compareAtPrice and barcode also not in webhook payload (GraphQL only)
+  - Old webhook pattern created N separate products (one per variant) - new pattern creates 1 product + N variants
+  - upsertProductWithVariants handles create/update/soft-delete atomically, no need for separate markMissingProductsUnavailable call
+---
+
+
+## 2026-01-30 22:13 - US-015
+- Updated AI prompt structure to include product variants
+- Modified loadAgentContext query in packages/backend/convex/ai/agent.ts to eagerly fetch variants for each product
+- Added ProductVariant interface to agentPrompt.ts with variant-specific fields (name, sku, price, inventoryQuantity, available, option1-3 Name/Value)
+- Updated Product interface to include hasVariants flag and variants array
+- Completely rewrote formatProductCatalog() function to use new variant structure:
+  - Removed old grouping logic based on externalProductId
+  - Products with hasVariants=true show all available variants with stock info
+  - Filter out unavailable variants from display
+  - Show inventory count per variant (e.g., "Small: $25.00 (10 in stock)")
+  - Include SKU for variants when available
+  - Show "[OUT OF STOCK]" for products with no available variants
+- Updated AgentContext interface to type products with variants: `(Doc<"products"> & { variants: Doc<"productVariants">[] })[]`
+- Enhanced system prompt guidance for variant handling:
+  - Ask naturally which variant customer wants ("What size?" not "Select: S/M/L/XL")
+  - Mention low stock for variants
+  - SKU only mentioned if customer asks
+  - Suggest alternatives from same product or similar products when out of stock
+- Updated both buildAgentPrompt calls in processWithAgent to map variant fields correctly
+- Files changed: 
+  - packages/backend/convex/ai/agentPrompt.ts (+71, -50)
+  - packages/backend/convex/ai/agent.ts (+46, -9)
+- Commit: d5c5f3d "feat: US-015 - Update AI prompt structure for variants"
+- **Learnings for future iterations:**
+  - AI context loading should eagerly fetch related data (variants) in parallel with Promise.all
+  - formatProductCatalog now shows variant products grouped naturally with options listed below
+  - TypeScript union types for extending Doc<> with additional fields: `(Doc<"table"> & { field: Type })[]]`
+  - Variant filtering happens at query time (available: true) to keep prompt lean
+  - Stock display in prompt helps AI guide customers toward available options
+  - System prompt guidance should be natural/conversational, not command-list style
+---
+
+
+## 2026-01-31 07:31 - US-016
+- Implemented AI variant selection in conversation flow
+- Updated update_order tool schema to accept optional variant_specification field
+- Created findVariant utility function with helper matchers: matchesExactVariantName, matchesSku, matchesAnyOptionValue, matchesPartialVariantName
+- Updated executeUpdateOrder to detect product variants, find matching variant, and return helpful error messages
+- Updated conversation schema to include variantId in pendingOrder items
+- Updated updateOrderState mutation to accept variantId parameter
+- Updated orders.mutations.create to accept variantId, validate variant ownership and availability, populate variant fields (variantName, sku)
+- Updated executeSubmitOrder to pass variantId when creating orders
+- AI now automatically detects variant products and requests specification before adding to cart
+- AI provides clear error messages listing available variants when customer input doesn't match
+- Files changed:
+  - packages/backend/convex/ai/agent.ts (+146 lines) - variant matching logic, executeUpdateOrder, buildOrderState type update
+  - packages/backend/convex/ai/tools.ts (+2 lines) - variant_specification parameter
+  - packages/backend/convex/orders/mutations.ts (+31 lines) - variant handling in order creation
+  - packages/backend/convex/schema.ts (+2 lines) - variantId in conversations and updateOrderState
+- Commit: d9b1c4a "feat: US-016 - Implement AI variant selection in conversation"
+- **Learnings for future iterations:**
+  - Variant matching uses multi-tier strategy: exact name → SKU → option values → partial name
+  - Tool schema changes require updating both tools.ts interface and agent.ts implementation
+  - Variant selection is mandatory for variant products - AI must ask before adding to cart
+  - Helper functions with clear names (matchesExactVariantName) are better than comments for self-documenting code
+  - When updating schema validators, also update all mutations that use those fields
+  - Type safety requires updating both Convex schema (v.id) and TypeScript interfaces simultaneously
+  - Error messages should list available options to help user make valid choice
+  - Existing helper functions need type updates when underlying data structures change (products now have variants array)
+---
+
+## 2026-01-31 08:32 - US-017
+- Implemented inventory tracking per variant
+- Added trackInventory boolean field to productVariants schema (default: true)
+- Updated all variant creation points to include trackInventory: true:
+  - variants.ts create mutation
+  - products.ts createWithVariants and updateWithVariants mutations
+  - integrations/shopify/mutations.ts upsertProductWithVariants
+- Added inventory validation in orders.mutations.create:
+  - Check variant stock before allowing order if trackInventory is true
+  - Throw error with available/requested quantities if insufficient stock
+- Added inventory decrement logic in orders.delivery.setPaymentMethod:
+  - Created decrementInventory internal mutation
+  - Decrements inventoryQuantity when order status changes to "confirmed"
+  - Auto-marks variant unavailable when stock reaches 0
+  - Only affects variants with trackInventory: true
+- Added inventory increment logic in orders.status.cancel:
+  - Restores inventoryQuantity when confirmed/paid order is cancelled
+  - Auto-marks variant available when stock goes above 0
+  - Only affects variants with trackInventory: true
+- Files changed:
+  - packages/backend/convex/schema.ts (+1 field)
+  - packages/backend/convex/variants.ts (+1 line)
+  - packages/backend/convex/products.ts (+2 lines)
+  - packages/backend/convex/integrations/shopify/mutations.ts (+2 lines)
+  - packages/backend/convex/orders/mutations.ts (+6 lines validation)
+  - packages/backend/convex/orders/delivery.ts (+28 lines decrementInventory)
+  - packages/backend/convex/orders/status.ts (+32 lines incrementInventory)
+- Typecheck passes
+- **Learnings for future iterations:**
+  - Inventory tracking uses trackInventory flag to allow unlimited orders for some variants
+  - Stock validation happens at order creation time (early validation)
+  - Stock decrement happens when order is confirmed (setPaymentMethod with "cash")
+  - Stock increment happens when confirmed/paid orders are cancelled
+  - Auto-availability management: available=false when stock=0, available=true when stock>0
+  - Internal mutations use internalMutation from _generated/server, not scheduled async
+  - Helper functions for inventory operations keep code DRY and testable
+---
+
+## 2026-01-31 08:37 - US-018
+- Implemented variant display in order detail view (apps/web/src/routes/_authenticated/orders.$orderId.tsx)
+- Updated order items table to show:
+  - Product name as clickable Link to product detail page
+  - Variant name below product name (text-sm text-muted-foreground)
+  - SKU below variant name if exists (text-xs text-muted-foreground)
+- Added Link import from @tanstack/react-router
+- Used conditional rendering to only show variant name and SKU when they exist
+- Wrapped all product info in div with space-y-1 for proper vertical spacing
+- Commit: 236f45a "feat: US-018 - Display variant details in order view"
+- Files changed: apps/web/src/routes/_authenticated/orders.$orderId.tsx (+19, -2)
+- **Learnings for future iterations:**
+  - Link component from @tanstack/react-router uses to/params pattern for type-safe routing
+  - Conditional rendering with && operator keeps DOM clean (no empty divs)
+  - Text sizing hierarchy: default → text-sm → text-xs for visual importance
+  - text-muted-foreground class provides semantic muted color consistently
+  - space-y-1 provides 4px vertical spacing between stacked elements
+  - Hover states on links use hover:underline for clear affordance
+  - Order items are already stored with variant metadata from US-003, just needed UI display
+  - Browser testing confirmed all variant info displays correctly
+---
+
+## 2026-01-31 08:46 - US-019
+- Implemented variant image delivery via WhatsApp/Instagram/Messenger
+- Added send_product_image tool to AI tools (packages/backend/convex/ai/tools.ts):
+  - Tool accepts product_name, optional variant_specification, and optional caption
+  - Added SendProductImageArgs TypeScript interface
+- Implemented executeSendProductImage function in agent.ts:
+  - Uses findProduct and findVariant utilities to locate the correct product/variant
+  - Retrieves imageId from variant (with fallback to product imageId)
+  - Generates public HTTPS URL using ctx.storage.getUrl(imageId)
+  - Sends image via WhatsApp or Meta (Instagram/Messenger) using existing sendMessage actions
+  - Returns clear error messages when product/variant not found or no image available
+- Wired up send_product_image tool in executeToolCall switch statement
+- Updated AI system prompt (packages/backend/convex/ai/agentPrompt.ts):
+  - Added send_product_image to tools list
+  - Added Product Images section with guidance: send only when customer requests, don't proactively send
+  - AI responds naturally to requests like "show me", "send pic", "how does it look"
+- Typecheck passes
+- Commit: 5f52d3f "feat: US-019 - Implement variant image delivery via WhatsApp"
+- Files changed:
+  - packages/backend/convex/ai/tools.ts (+28 lines: new tool + TypeScript interface)
+  - packages/backend/convex/ai/agent.ts (+97 lines: executeSendProductImage function + tool wiring + import)
+  - packages/backend/convex/ai/agentPrompt.ts (+8 lines: updated prompt guidance)
+- **Learnings for future iterations:**
+  - Image IDs stored as v.string() in schema, not v.id("_storage"), requires cast when calling ctx.storage.getUrl()
+  - Variant image fallback pattern: variant.imageId ?? product.imageId ensures product-level image used when variant has none
+  - Tool execution pattern: validate inputs → fetch data → generate URL → send via channel-appropriate action
+  - AI prompt guidance should be clear about WHEN to use tools (reactive, not proactive for images)
+  - WhatsApp and Meta (Instagram/Messenger) share same sendMessage action signature for images
+  - Product/variant lookup uses existing findProduct/findVariant utilities for consistency
+---
+
+## 2026-01-31 08:50 - US-020
+- Implemented bulk variant operations for efficient multi-variant management
+- Added variants.bulkUpdatePrices mutation (packages/backend/convex/variants.ts):
+  - Accepts array of {variantId, price, compareAtPrice?} updates
+  - Validates businessId ownership for each variant through parent product
+  - Updates all variants in single operation with same timestamp
+  - Returns {success: true, updatedCount: N} result
+- Added variants.bulkAdjustInventory mutation (packages/backend/convex/variants.ts):
+  - Accepts array of {variantId, adjustment} adjustments
+  - Validates businessId ownership for each variant through parent product
+  - Prevents negative inventory with clear error messages showing current and requested values
+  - Updates all variants in single operation with same timestamp
+  - Returns {success: true, adjustedCount: N} result
+- Both mutations follow existing ownership validation pattern: get variant → get product → requireBusinessOwnership
+- Typecheck passes
+- Commit: db905f5 "feat: US-020 - Create bulk variant operations"
+- Files changed: packages/backend/convex/variants.ts (+113 lines: 2 new bulk mutations)
+- **Learnings for future iterations:**
+  - Bulk operations iterate through array with for-of loop, validating ownership per item
+  - Ownership validation uses same pattern as single operations (requireBusinessOwnership)
+  - Error messages for bulk operations include variant ID context for debugging
+  - Negative inventory validation provides helpful context: current value, attempted adjustment
+  - Return objects include counts for confirmation in UI (updatedCount, adjustedCount)
+  - Using const now = Date.now() at top ensures all updates get same timestamp
+  - Bulk mutations accept arrays of objects with specific structure (v.array(v.object({...})))
+---
+

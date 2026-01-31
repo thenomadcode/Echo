@@ -1,0 +1,350 @@
+{
+	"project": "Echo",
+	"branchName": "tnc-239-handle-product-variants",
+	"description": "Product Variants - Enable full product variant support (size, color, SKU, inventory tracking) across Echo's product catalog, e-commerce provider integrations, and AI conversation flow. Customers can browse and order specific variants through natural conversation with the AI assistant.",
+	"userStories": [
+		{
+			"id": "US-001",
+			"title": "Create productVariants table schema",
+			"description": "As a developer, I need to define the productVariants table schema in Convex to store variant-specific data (price, SKU, inventory, options, images).",
+			"acceptanceCriteria": [
+				"Define productVariants table with all required fields: productId, name, sku, price, inventoryQuantity, option1Name/Value, option2Name/Value, option3Name/Value, imageId, externalVariantId, available, position, createdAt, updatedAt",
+				"Add indexes: by_product, by_sku, by_external_id",
+				"Add optional fields: compareAtPrice, costPrice, barcode, weight, weightUnit, requiresShipping, lastSyncAt",
+				"Typecheck passes"
+			],
+			"priority": 1,
+			"passes": true,
+			"ultrawork": true,
+			"notes": "Foundation for all variant features"
+		},
+		{
+			"id": "US-002",
+			"title": "Update products table schema for variants",
+			"description": "As a developer, I need to update the products table to support the variant system with hasVariants flag and generic provider sync fields.",
+			"acceptanceCriteria": [
+				"Add hasVariants boolean field (default: false)",
+				"Add source field: 'manual' | 'shopify' | 'woocommerce' | 'tiendanube'",
+				"Rename shopifyProductId to externalProductId",
+				"Add lastSyncAt field for sync tracking",
+				"Update indexes to include source and externalProductId",
+				"Typecheck passes"
+			],
+			"priority": 2,
+			"passes": true,
+			"ultrawork": true,
+			"notes": "Schema migration for existing products"
+		},
+		{
+			"id": "US-003",
+			"title": "Update orders.items schema to include variantId",
+			"description": "As a developer, I need to update the order items structure to reference specific variants instead of just products.",
+			"acceptanceCriteria": [
+				"Add variantId field to order items",
+				"Add variantName field to order items",
+				"Add sku field to order items",
+				"Ensure unitPrice comes from variant.price",
+				"Typecheck passes"
+			],
+			"priority": 3,
+			"passes": true,
+			"ultrawork": true,
+			"notes": "Order schema update for variant tracking"
+		},
+		{
+			"id": "US-004",
+			"title": "Create variant CRUD mutations",
+			"description": "As a developer, I need to implement backend mutations for creating, updating, and deleting product variants.",
+			"acceptanceCriteria": [
+				"Implement variants.create mutation with all variant fields",
+				"Implement variants.update mutation for editing variant details",
+				"Implement variants.delete mutation (soft delete with available flag)",
+				"Implement variants.adjustInventory mutation for stock changes",
+				"All mutations validate businessId ownership through parent product",
+				"Typecheck passes"
+			],
+			"priority": 4,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Backend variant management"
+		},
+		{
+			"id": "US-005",
+			"title": "Create variant query functions",
+			"description": "As a developer, I need to implement backend queries for fetching variants and products with their variants.",
+			"acceptanceCriteria": [
+				"Implement variants.list query to fetch variants for a product",
+				"Implement variants.get query to fetch single variant",
+				"Implement products.getWithVariants query to fetch product + all variants",
+				"Implement products.listWithVariants query for product list with variant counts",
+				"All queries respect businessId ownership",
+				"Typecheck passes"
+			],
+			"priority": 5,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Backend variant queries"
+		},
+		{
+			"id": "US-006",
+			"title": "Create variant generation logic",
+			"description": "As a developer, I need to implement logic to generate variant combinations from option values (e.g., 3 sizes × 2 colors = 6 variants).",
+			"acceptanceCriteria": [
+				"Create utility function to generate variant combinations from options",
+				"Support up to 3 options (Shopify-compatible limit)",
+				"Generate variant names automatically (e.g., 'Small / Red')",
+				"Handle edge cases: single option, no options",
+				"Typecheck passes"
+			],
+			"priority": 6,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Utility for bulk variant creation"
+		},
+		{
+			"id": "US-007",
+			"title": "Create product form with variant toggle",
+			"description": "As a business owner, I want to create a product with a toggle to enable variants so I can choose between simple and complex products.",
+			"acceptanceCriteria": [
+				"Create/edit product form with 'This product has variants' toggle",
+				"When disabled: show simple product fields (name, description, price, image)",
+				"When enabled: show variant options builder",
+				"Toggle state persists in form",
+				"Typecheck passes",
+				"BROWSER TEST: Navigate to create product, toggle variants on/off, verify form fields change"
+			],
+			"priority": 7,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "UI for variant toggle"
+		},
+		{
+			"id": "US-008",
+			"title": "Create variant options builder UI",
+			"description": "As a business owner, I want to add and configure variant options (Size, Color, Material) with their values so I can define product variations.",
+			"acceptanceCriteria": [
+				"Show option builder with max 3 options",
+				"Each option has name field and values list",
+				"Add/remove option buttons",
+				"Add/remove value buttons per option",
+				"Display 'Generate Variants' button showing combination count",
+				"Typecheck passes",
+				"BROWSER TEST: Add 2 options with 3 values each, verify 'Generate Variants' shows 6 combinations"
+			],
+			"priority": 8,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "UI for variant option configuration"
+		},
+		{
+			"id": "US-009",
+			"title": "Create variant table editor UI",
+			"description": "As a business owner, I want to edit variant details (price, SKU, inventory, image) in a table so I can manage all variants efficiently.",
+			"acceptanceCriteria": [
+				"Display variants in table with columns: Name, SKU, Price, Stock, Image, Available",
+				"Inline edit for price, SKU, inventory fields",
+				"Image upload per variant",
+				"Toggle availability per variant",
+				"Add/remove variant buttons",
+				"Typecheck passes",
+				"BROWSER TEST: Edit variant price, verify change is reflected in table"
+			],
+			"priority": 9,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "UI for variant management"
+		},
+		{
+			"id": "US-010",
+			"title": "Implement product creation with variants",
+			"description": "As a business owner, I want to save a product with variants so that the product and all its variants are created in the database.",
+			"acceptanceCriteria": [
+				"Create mutation that saves product with hasVariants flag",
+				"Create all variants in productVariants table",
+				"Set position field for variant ordering",
+				"Handle simple products (create 1 variant with empty name)",
+				"Return created product with variants",
+				"Typecheck passes"
+			],
+			"priority": 10,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Backend for product + variant creation"
+		},
+		{
+			"id": "US-011",
+			"title": "Implement product update with variant changes",
+			"description": "As a business owner, I want to edit product and variant details so that changes are persisted to the database.",
+			"acceptanceCriteria": [
+				"Update mutation for product-level fields (name, description, category, image)",
+				"Update mutation for variant-level fields (price, SKU, inventory, options, image)",
+				"Support adding new variants to existing product",
+				"Support removing variants (soft delete)",
+				"Validate businessId ownership",
+				"Typecheck passes"
+			],
+			"priority": 11,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Backend for product + variant updates"
+		},
+		{
+			"id": "US-012",
+			"title": "Display products with variants in product list",
+			"description": "As a business owner, I want to see products with variant information in the list so I can manage my catalog efficiently.",
+			"acceptanceCriteria": [
+				"Product list shows parent products (not individual variants)",
+				"Show price range if variants have different prices: '$25 - $30'",
+				"Show total stock across all variants: '20 in stock'",
+				"Show variant count badge: '3 variants'",
+				"Expandable variant list showing each variant with price and stock",
+				"Typecheck passes",
+				"BROWSER TEST: Navigate to products page, verify variant count badges display, expand product to see variants"
+			],
+			"priority": 12,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "UI for product list with variants"
+		},
+		{
+			"id": "US-013",
+			"title": "Create Shopify import for products with variants",
+			"description": "As a business owner with Shopify, I want to import products with variants so that Echo matches my Shopify catalog structure.",
+			"acceptanceCriteria": [
+				"Import creates 1 parent product + N variants (not N separate products)",
+				"Map Shopify product fields to Echo product (title, description, image)",
+				"Map Shopify variant fields to Echo variant (title, price, SKU, inventory, options, image)",
+				"Download and upload images to Convex storage",
+				"Store externalProductId and externalVariantId for sync",
+				"Handle single-variant products as simple products (hasVariants: false)",
+				"Typecheck passes"
+			],
+			"priority": 13,
+			"passes": true,
+			"ultrawork": true,
+			"notes": "Shopify integration for variants"
+		},
+		{
+			"id": "US-014",
+			"title": "Create Shopify webhook handler for variant updates",
+			"description": "As a business owner, I want variant changes in Shopify to sync automatically so Echo always shows current pricing and stock.",
+			"acceptanceCriteria": [
+				"Handle products/update webhook for variant changes",
+				"Update variant price when changed in Shopify",
+				"Update variant inventory when changed in Shopify",
+				"Create new variants added in Shopify",
+				"Mark variants unavailable when deleted in Shopify",
+				"Download and update variant images",
+				"Update lastSyncAt timestamp",
+				"Typecheck passes"
+			],
+			"priority": 14,
+			"passes": true,
+			"ultrawork": true,
+			"notes": "Shopify webhook sync for variants"
+		},
+		{
+			"id": "US-015",
+			"title": "Update AI prompt structure for variants",
+			"description": "As a developer, I need to update the AI prompt to include product variants so the AI can recommend and handle variant selection.",
+			"acceptanceCriteria": [
+				"Query products with variants eagerly in AI context",
+				"Format product data with variants array in prompt",
+				"Include variant name, price, SKU, inventory, options in prompt",
+				"Filter out unavailable variants",
+				"Add system prompt guidance for variant handling",
+				"Typecheck passes"
+			],
+			"priority": 15,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "AI integration for variant recommendations"
+		},
+		{
+			"id": "US-016",
+			"title": "Implement AI variant selection in conversation",
+			"description": "As a customer, I want the AI to handle variant selection in chat so I can specify which variant I want (size, color, etc).",
+			"acceptanceCriteria": [
+				"AI detects when product has variants and asks clarifying questions",
+				"AI extracts variant options from customer message (e.g., 'red' → color=red)",
+				"AI matches customer input to specific variant",
+				"AI confirms variant selection before adding to order",
+				"AI handles ambiguous requests by asking for clarification",
+				"Order stores variantId instead of just productId",
+				"Typecheck passes"
+			],
+			"priority": 16,
+			"passes": true,
+			"ultrawork": true,
+			"notes": "AI conversation flow for variants"
+		},
+		{
+			"id": "US-017",
+			"title": "Implement inventory tracking per variant",
+			"description": "As a business owner, I want stock levels tracked per variant so I don't oversell.",
+			"acceptanceCriteria": [
+				"Each variant has inventoryQuantity field",
+				"Each variant has trackInventory flag (default: true)",
+				"When order is placed: check variant stock before allowing",
+				"Decrement variant stock when order is confirmed",
+				"Mark variant unavailable if stock reaches 0",
+				"If trackInventory: false, allow unlimited orders",
+				"Typecheck passes"
+			],
+			"priority": 17,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Inventory management per variant"
+		},
+		{
+			"id": "US-018",
+			"title": "Display variant details in order view",
+			"description": "As a business owner, I want to see which variant was ordered so I can fulfill correctly.",
+			"acceptanceCriteria": [
+				"Order detail shows variant name (e.g., 'Small / Red')",
+				"Show SKU if available",
+				"Show quantity and total price per item",
+				"Link to parent product and specific variant",
+				"Typecheck passes",
+				"BROWSER TEST: View order detail, verify variant name and SKU display correctly"
+			],
+			"priority": 18,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "UI for order variant display"
+		},
+		{
+			"id": "US-019",
+			"title": "Implement variant image delivery via WhatsApp",
+			"description": "As a customer, I want to see product images in chat so I know what I'm ordering.",
+			"acceptanceCriteria": [
+				"Retrieve product/variant image from Convex storage",
+				"Generate public HTTPS URL using ctx.storage.getUrl()",
+				"Use variant image if available, fallback to product image",
+				"Send image via WhatsApp Media API",
+				"Works for Instagram DMs and Messenger",
+				"Typecheck passes"
+			],
+			"priority": 19,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Image delivery for messaging platforms"
+		},
+		{
+			"id": "US-020",
+			"title": "Create bulk variant operations",
+			"description": "As a business owner, I want to bulk update variant prices and inventory so I can manage multiple variants efficiently.",
+			"acceptanceCriteria": [
+				"Implement variants.bulkUpdatePrices mutation",
+				"Implement variants.bulkAdjustInventory mutation",
+				"Support updating multiple variants in single operation",
+				"Validate businessId ownership",
+				"Typecheck passes"
+			],
+			"priority": 20,
+			"passes": true,
+			"ultrawork": false,
+			"notes": "Bulk operations for variant management"
+		}
+	]
+}
