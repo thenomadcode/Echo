@@ -452,13 +452,12 @@ export const processMessage = action({
 			conversationHistory,
 			productNames,
 		});
-		const intent = intentResult.intents[0] ?? { type: "unknown" as const };
+		const intents =
+			intentResult.intents.length > 0 ? intentResult.intents : [{ type: "unknown" as const }];
 		const intentTokens = intentResult.tokensUsed;
 
 		const failureCount = 0;
 		const escalationResult = detectEscalation(args.message, conversationHistory, failureCount);
-
-		const shouldEscalate = escalationResult.shouldEscalate || intent.type === "escalation_request";
 
 		const businessContext = {
 			name: business.name,
@@ -479,39 +478,73 @@ export const processMessage = action({
 			externalProductId: p.externalProductId,
 		}));
 
-		let newState = determineNewState(intent, conversation.state ?? "idle");
+		let currentState: string = conversation.state ?? "idle";
+		let newState: string = currentState;
+		let accumulatedPendingOrder = conversation.pendingOrder;
+		let accumulatedPendingDelivery = conversation.pendingDelivery;
+		let finalCheckoutResult: CheckoutResult = {};
+		let shouldEscalate = escalationResult.shouldEscalate;
 
-		const orderUpdate = handleOrderIntent(intent, conversation.pendingOrder, products);
+		for (const intent of intents) {
+			if (intent.type === "escalation_request") {
+				shouldEscalate = true;
+				break;
+			}
 
-		const checkoutResult = await handleCheckoutIntent(
-			ctx,
-			intent,
-			conversation,
-			conversation.state ?? "idle",
-		);
+			newState = determineNewState(intent, currentState);
+
+			const orderUpdate = handleOrderIntent(intent, accumulatedPendingOrder, products);
+			if (orderUpdate.pendingOrder !== undefined) {
+				accumulatedPendingOrder = orderUpdate.pendingOrder;
+			}
+
+			const checkoutResult = await handleCheckoutIntent(
+				ctx,
+				intent,
+				{
+					...conversation,
+					pendingOrder: accumulatedPendingOrder,
+					pendingDelivery: accumulatedPendingDelivery,
+				},
+				currentState,
+			);
+
+			if (checkoutResult.pendingDelivery) {
+				accumulatedPendingDelivery = checkoutResult.pendingDelivery;
+			}
+
+			if (checkoutResult.orderId || checkoutResult.error) {
+				finalCheckoutResult = checkoutResult;
+			}
+
+			currentState = newState;
+		}
+
+		const lastIntent = intents[intents.length - 1] ?? { type: "unknown" as const };
 
 		const responseResult = await ctx.runAction(api.ai.response.generateResponse, {
-			intent: serializeIntent(intent),
+			intent: serializeIntent(lastIntent),
 			conversationHistory,
 			businessContext,
 			products: productContext,
 			language: detectedLanguage,
-			conversationState: conversation.state ?? "idle",
-			checkoutContext: checkoutResult.orderId
+			conversationState: newState,
+			checkoutContext: finalCheckoutResult.orderId
 				? {
-						orderNumber: checkoutResult.orderNumber,
-						paymentLink: checkoutResult.paymentLink,
-						paymentMethod: intent.type === "payment_choice" ? intent.paymentMethod : undefined,
+						orderNumber: finalCheckoutResult.orderNumber,
+						paymentLink: finalCheckoutResult.paymentLink,
+						paymentMethod:
+							lastIntent.type === "payment_choice" ? lastIntent.paymentMethod : undefined,
 					}
-				: conversation.pendingOrder
+				: accumulatedPendingOrder
 					? {
-							pendingOrderSummary: conversation.pendingOrder.items
+							pendingOrderSummary: accumulatedPendingOrder.items
 								.map(
 									(item: { quantity: number; productQuery: string }) =>
 										`${item.quantity}x ${item.productQuery}`,
 								)
 								.join(", "),
-							pendingOrderTotal: conversation.pendingOrder.total,
+							pendingOrderTotal: accumulatedPendingOrder.total,
 						}
 					: undefined,
 			customerContext: customerContext ?? undefined,
@@ -527,19 +560,22 @@ export const processMessage = action({
 				reason: escalationResult.reason || "Customer requested human assistance",
 				customerId: conversation.customerId,
 			});
-		} else if (checkoutResult.orderId) {
+		} else if (finalCheckoutResult.orderId) {
 			await ctx.runMutation(internal.ai.process.updateConversation, {
 				conversationId: args.conversationId,
 				state: newState,
 				clearPendingData: true,
 			});
-		} else if (checkoutResult.pendingDelivery) {
+		} else if (finalCheckoutResult.pendingDelivery) {
 			await ctx.runMutation(internal.ai.process.updateConversation, {
 				conversationId: args.conversationId,
 				state: newState,
-				pendingDelivery: checkoutResult.pendingDelivery,
+				pendingDelivery: finalCheckoutResult.pendingDelivery,
 			});
-		} else if (newState !== conversation.state || orderUpdate.pendingOrder !== undefined) {
+		} else if (
+			newState !== conversation.state ||
+			accumulatedPendingOrder !== conversation.pendingOrder
+		) {
 			const isReturningToOrdering =
 				newState === "ordering" &&
 				(conversation.state === "confirming" || conversation.state === "payment");
@@ -547,7 +583,7 @@ export const processMessage = action({
 			await ctx.runMutation(internal.ai.process.updateConversation, {
 				conversationId: args.conversationId,
 				state: newState,
-				pendingOrder: orderUpdate.pendingOrder,
+				pendingOrder: accumulatedPendingOrder,
 				clearPendingDelivery: isReturningToOrdering,
 			});
 		}
@@ -565,7 +601,7 @@ export const processMessage = action({
 		await ctx.runMutation(internal.ai.process.logAIInteraction, {
 			conversationId: args.conversationId,
 			messageId,
-			intent: serializeIntent(intent),
+			intent: serializeIntent(lastIntent),
 			prompt: `Message: ${args.message}`,
 			response,
 			model: "gpt-4o-mini",
@@ -575,7 +611,7 @@ export const processMessage = action({
 
 		return {
 			response,
-			intent,
+			intent: lastIntent,
 			shouldEscalate,
 			detectedLanguage,
 			messageId,

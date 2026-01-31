@@ -34,3 +34,19 @@
 
 ---
 
+
+## 2026-01-31 19:50 - US-001
+- Implemented multi-intent detection in intent classifier
+- Updated classifyIntent action to return { intents: Intent[], tokensUsed: number }
+- Modified INTENT_CLASSIFICATION_PROMPT to enable multi-intent detection with examples
+- Updated parseJsonResponse to handle both array and single object for backwards compatibility
+- Modified processMessage to use intents[0] for backwards compatibility (US-002 will expand this)
+- Files changed:
+  - packages/backend/convex/ai/intent.ts (added multi-intent support)
+  - packages/backend/convex/ai/process.ts (backwards compatible change)
+- **Learnings for future iterations:**
+  - Multi-intent detection requires updating the prompt to explicitly request array format
+  - parseJsonResponse needs robust fallback handling for malformed AI responses
+  - Backwards compatibility achieved by using intents[0] in existing code
+  - All intent examples in prompt must be converted to array format for consistency
+---
