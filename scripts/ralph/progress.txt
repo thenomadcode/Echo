@@ -468,3 +468,30 @@
   - Product/variant lookup uses existing findProduct/findVariant utilities for consistency
 ---
 
+## 2026-01-31 08:50 - US-020
+- Implemented bulk variant operations for efficient multi-variant management
+- Added variants.bulkUpdatePrices mutation (packages/backend/convex/variants.ts):
+  - Accepts array of {variantId, price, compareAtPrice?} updates
+  - Validates businessId ownership for each variant through parent product
+  - Updates all variants in single operation with same timestamp
+  - Returns {success: true, updatedCount: N} result
+- Added variants.bulkAdjustInventory mutation (packages/backend/convex/variants.ts):
+  - Accepts array of {variantId, adjustment} adjustments
+  - Validates businessId ownership for each variant through parent product
+  - Prevents negative inventory with clear error messages showing current and requested values
+  - Updates all variants in single operation with same timestamp
+  - Returns {success: true, adjustedCount: N} result
+- Both mutations follow existing ownership validation pattern: get variant → get product → requireBusinessOwnership
+- Typecheck passes
+- Commit: db905f5 "feat: US-020 - Create bulk variant operations"
+- Files changed: packages/backend/convex/variants.ts (+113 lines: 2 new bulk mutations)
+- **Learnings for future iterations:**
+  - Bulk operations iterate through array with for-of loop, validating ownership per item
+  - Ownership validation uses same pattern as single operations (requireBusinessOwnership)
+  - Error messages for bulk operations include variant ID context for debugging
+  - Negative inventory validation provides helpful context: current value, attempted adjustment
+  - Return objects include counts for confirmation in UI (updatedCount, adjustedCount)
+  - Using const now = Date.now() at top ensures all updates get same timestamp
+  - Bulk mutations accept arrays of objects with specific structure (v.array(v.object({...})))
+---
+
