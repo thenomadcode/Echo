@@ -14,7 +14,7 @@ async function listExistingWebhooks(
 	shop: string,
 	accessToken: string,
 ): Promise<Array<{ id: number; topic: string; address: string }>> {
-	const response = await fetch(`https://${shop}/admin/api/2024-01/webhooks.json`, {
+	const response = await fetch(`https://${shop}/admin/api/2026-01/webhooks.json`, {
 		method: "GET",
 		headers: {
 			"X-Shopify-Access-Token": accessToken,
@@ -37,7 +37,7 @@ async function registerSingleWebhook(
 	topic: string,
 	address: string,
 ): Promise<number> {
-	const response = await fetch(`https://${shop}/admin/api/2024-01/webhooks.json`, {
+	const response = await fetch(`https://${shop}/admin/api/2026-01/webhooks.json`, {
 		method: "POST",
 		headers: {
 			"X-Shopify-Access-Token": accessToken,

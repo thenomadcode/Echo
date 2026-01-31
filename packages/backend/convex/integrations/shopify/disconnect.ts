@@ -34,7 +34,7 @@ export const disconnect = action({
 		if (webhookIds && webhookIds.length > 0) {
 			for (const webhookId of webhookIds) {
 				try {
-					await fetch(`https://${shop}/admin/api/2024-01/webhooks/${webhookId}.json`, {
+					await fetch(`https://${shop}/admin/api/2026-01/webhooks/${webhookId}.json`, {
 						method: "DELETE",
 						headers: {
 							"X-Shopify-Access-Token": accessToken,
@@ -47,7 +47,7 @@ export const disconnect = action({
 		}
 
 		try {
-			await fetch(`https://${shop}/admin/api/2024-01/access_tokens/current.json`, {
+			await fetch(`https://${shop}/admin/api/2026-01/access_tokens/current.json`, {
 				method: "DELETE",
 				headers: {
 					"X-Shopify-Access-Token": accessToken,

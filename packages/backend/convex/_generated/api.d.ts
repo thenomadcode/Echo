@@ -71,6 +71,11 @@ import type * as orders_status from "../orders/status.js";
 import type * as orders_types from "../orders/types.js";
 import type * as privateData from "../privateData.js";
 import type * as products from "../products.js";
+import type * as testing_checkShopify from "../testing/checkShopify.js";
+import type * as testing_createWhatsAppConnection from "../testing/createWhatsAppConnection.js";
+import type * as testing_debugData from "../testing/debugData.js";
+import type * as testing_debugWebhook from "../testing/debugWebhook.js";
+import type * as testing_sendTestWebhook from "../testing/sendTestWebhook.js";
 import type * as variants from "../variants.js";
 
 import type {
@@ -143,6 +148,11 @@ declare const fullApi: ApiFromModules<{
   "orders/types": typeof orders_types;
   privateData: typeof privateData;
   products: typeof products;
+  "testing/checkShopify": typeof testing_checkShopify;
+  "testing/createWhatsAppConnection": typeof testing_createWhatsAppConnection;
+  "testing/debugData": typeof testing_debugData;
+  "testing/debugWebhook": typeof testing_debugWebhook;
+  "testing/sendTestWebhook": typeof testing_sendTestWebhook;
   variants: typeof variants;
 }>;
 

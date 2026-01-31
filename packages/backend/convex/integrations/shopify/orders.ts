@@ -129,7 +129,7 @@ export const createOrder = action({
 
 		try {
 			const response = await fetch(
-				`https://${shopifyConnection.shop}/admin/api/2024-01/draft_orders.json`,
+				`https://${shopifyConnection.shop}/admin/api/2026-01/draft_orders.json`,
 				{
 					method: "POST",
 					headers: {
@@ -290,7 +290,7 @@ export const createOrderInternal = internalAction({
 
 		try {
 			const response = await fetch(
-				`https://${shopifyConnection.shop}/admin/api/2024-01/draft_orders.json`,
+				`https://${shopifyConnection.shop}/admin/api/2026-01/draft_orders.json`,
 				{
 					method: "POST",
 					headers: {

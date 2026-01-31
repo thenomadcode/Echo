@@ -180,27 +180,6 @@ export function ProductForm({
 					}}
 					className="space-y-6"
 				>
-					<form.Field name="hasVariants">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
-									<Label htmlFor={field.name} className="text-base">
-										This product has variants
-									</Label>
-									<div className="text-muted-foreground text-sm">
-										Enable this if your product comes in different sizes, colors, or other
-										variations
-									</div>
-								</div>
-								<Switch
-									id={field.name}
-									checked={field.state.value}
-									onCheckedChange={(checked) => field.handleChange(checked)}
-								/>
-							</div>
-						)}
-					</form.Field>
-
 					<form.Field name="name">
 						{(field) => (
 							<div className="space-y-2">
@@ -242,53 +221,29 @@ export function ProductForm({
 						)}
 					</form.Field>
 
-					<form.Subscribe selector={(state) => state.values.hasVariants}>
-						{(hasVariants) =>
-							!hasVariants ? (
-								<form.Field name="price">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor={field.name}>
-												Price <span className="text-red-500">*</span>
-											</Label>
-											<PriceInput
-												id={field.name}
-												name={field.name}
-												currency={currency}
-												value={field.state.value}
-												onChange={(valueInCents) => field.handleChange(valueInCents)}
-												placeholder="0.00"
-											/>
-											{field.state.meta.errors.length > 0 &&
-												field.state.meta.errors.map((error, i) => (
-													<p key={i} className="text-red-500 text-sm">
-														{String(error)}
-													</p>
-												))}
-										</div>
-									)}
-								</form.Field>
-							) : (
-								<>
-									<form.Field name="variantOptions">
-										{(optionsField) => (
-											<form.Field name="generatedVariants">
-												{(variantsField) => (
-													<VariantOptionsBuilder
-														field={optionsField}
-														onGenerate={(variants) => variantsField.handleChange(variants)}
-													/>
-												)}
-											</form.Field>
-										)}
-									</form.Field>
-									<form.Field name="generatedVariants">
-										{(field) => <VariantTableEditor field={field} currency={currency} />}
-									</form.Field>
-								</>
-							)
-						}
-					</form.Subscribe>
+					<form.Field name="price">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor={field.name}>
+									Price <span className="text-red-500">*</span>
+								</Label>
+								<PriceInput
+									id={field.name}
+									name={field.name}
+									currency={currency}
+									value={field.state.value}
+									onChange={(valueInCents) => field.handleChange(valueInCents)}
+									placeholder="0.00"
+								/>
+								{field.state.meta.errors.length > 0 &&
+									field.state.meta.errors.map((error, i) => (
+										<p key={i} className="text-red-500 text-sm">
+											{String(error)}
+										</p>
+									))}
+							</div>
+						)}
+					</form.Field>
 
 					<form.Field name="categoryId">
 						{(field) => (
@@ -395,6 +350,51 @@ export function ProductForm({
 							</div>
 						)}
 					</form.Field>
+
+					<form.Field name="hasVariants">
+						{(field) => (
+							<div className="flex items-center justify-between rounded-lg border p-4">
+								<div className="space-y-0.5">
+									<Label htmlFor={field.name} className="text-base">
+										This product has variants
+									</Label>
+									<div className="text-muted-foreground text-sm">
+										Enable this if your product comes in different sizes, colors, or other
+										variations
+									</div>
+								</div>
+								<Switch
+									id={field.name}
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked)}
+								/>
+							</div>
+						)}
+					</form.Field>
+
+					<form.Subscribe selector={(state) => state.values.hasVariants}>
+						{(hasVariants) =>
+							hasVariants ? (
+								<div key="variant-options" className="space-y-6">
+									<form.Field name="variantOptions">
+										{(optionsField) => (
+											<form.Field name="generatedVariants">
+												{(variantsField) => (
+													<VariantOptionsBuilder
+														field={optionsField}
+														onGenerate={(variants) => variantsField.handleChange(variants)}
+													/>
+												)}
+											</form.Field>
+										)}
+									</form.Field>
+									<form.Field name="generatedVariants">
+										{(field) => <VariantTableEditor field={field} currency={currency} />}
+									</form.Field>
+								</div>
+							) : null
+						}
+					</form.Subscribe>
 
 					<div className="flex gap-2">
 						<Button type="submit" className="flex-1">

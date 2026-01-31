@@ -173,6 +173,7 @@ export const updateSyncStatus = internalMutation({
 	args: {
 		businessId: v.id("businesses"),
 		status: v.union(v.literal("success"), v.literal("partial"), v.literal("failed")),
+		errorMessage: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const connection = await ctx.db
@@ -184,6 +185,7 @@ export const updateSyncStatus = internalMutation({
 			await ctx.db.patch(connection._id, {
 				lastSyncAt: Date.now(),
 				lastSyncStatus: args.status,
+				lastSyncError: args.errorMessage,
 			});
 		}
 	},

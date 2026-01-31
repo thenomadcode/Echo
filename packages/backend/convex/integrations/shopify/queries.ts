@@ -32,6 +32,7 @@ export const getConnectionStatus = query({
 			shop: connection.shop,
 			lastSyncAt: connection.lastSyncAt ?? null,
 			lastSyncStatus: connection.lastSyncStatus ?? null,
+			lastSyncError: connection.lastSyncError ?? null,
 			scopes: connection.scopes,
 		};
 	},

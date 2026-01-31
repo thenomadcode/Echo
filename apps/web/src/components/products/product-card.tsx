@@ -13,6 +13,8 @@ import { toast } from "sonner";
 interface ProductVariant {
 	price: number;
 	inventoryQuantity: number;
+	weight?: number;
+	weightUnit?: "kg" | "g" | "lb" | "oz";
 }
 
 interface ProductCardProps {

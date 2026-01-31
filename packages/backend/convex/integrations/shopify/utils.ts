@@ -64,9 +64,15 @@ export const SHOPIFY_PRODUCTS_QUERY = `
                 image {
                   url
                 }
-                weight
-                weightUnit
-                requiresShipping
+                inventoryItem {
+                  measurement {
+                    weight {
+                      value
+                      unit
+                    }
+                  }
+                  requiresShipping
+                }
                 position
               }
             }

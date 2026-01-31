@@ -40,7 +40,7 @@ export const importProducts = action({
 
 		try {
 			while (hasNextPage) {
-				const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+				const response = await fetch(`https://${shop}/admin/api/2026-01/graphql.json`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -124,14 +124,15 @@ export const importProducts = action({
 						const variantName =
 							hasVariants && variant.title !== "Default Title" ? variant.title : "";
 
-						const weightInGrams = variant.weight
-							? variant.weightUnit === "KILOGRAMS"
-								? variant.weight * 1000
-								: variant.weightUnit === "POUNDS"
-									? variant.weight * 453.592
-									: variant.weightUnit === "OUNCES"
-										? variant.weight * 28.3495
-										: variant.weight
+						const weightData = variant.inventoryItem?.measurement?.weight;
+						const weightInGrams = weightData?.value
+							? weightData.unit === "KILOGRAMS"
+								? weightData.value * 1000
+								: weightData.unit === "POUNDS"
+									? weightData.value * 453.592
+									: weightData.unit === "OUNCES"
+										? weightData.value * 28.3495
+										: weightData.value
 							: undefined;
 
 						const weightUnit = weightInGrams ? ("g" as const) : undefined;
@@ -154,7 +155,7 @@ export const importProducts = action({
 							imageId: variantImageId,
 							weight: weightInGrams,
 							weightUnit: weightUnit,
-							requiresShipping: variant.requiresShipping,
+							requiresShipping: variant.inventoryItem?.requiresShipping,
 							position: variant.position,
 						});
 					}
@@ -185,19 +186,23 @@ export const importProducts = action({
 			}
 
 			const status = errors.length === 0 ? "success" : imported > 0 ? "partial" : "failed";
+			const errorMessage = errors.length > 0 ? errors.join("; ") : undefined;
 			await ctx.runMutation(internal.integrations.shopify.mutations.updateSyncStatus, {
 				businessId: args.businessId,
 				status,
+				errorMessage,
 			});
 
 			return { imported, skipped, errors };
 		} catch (error) {
 			const message = error instanceof Error ? error.message : "Unknown error";
+			const allErrors = [...errors, message];
 			await ctx.runMutation(internal.integrations.shopify.mutations.updateSyncStatus, {
 				businessId: args.businessId,
 				status: "failed",
+				errorMessage: allErrors.join("; "),
 			});
-			return { imported, skipped, errors: [...errors, message] };
+			return { imported, skipped, errors: allErrors };
 		}
 	},
 });
@@ -240,7 +245,7 @@ export const syncProducts = action({
 
 		try {
 			while (hasNextPage) {
-				const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+				const response = await fetch(`https://${shop}/admin/api/2026-01/graphql.json`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -323,14 +328,15 @@ export const syncProducts = action({
 						const variantName =
 							hasVariants && variant.title !== "Default Title" ? variant.title : "";
 
-						const weightInGrams = variant.weight
-							? variant.weightUnit === "KILOGRAMS"
-								? variant.weight * 1000
-								: variant.weightUnit === "POUNDS"
-									? variant.weight * 453.592
-									: variant.weightUnit === "OUNCES"
-										? variant.weight * 28.3495
-										: variant.weight
+						const weightData = variant.inventoryItem?.measurement?.weight;
+						const weightInGrams = weightData?.value
+							? weightData.unit === "KILOGRAMS"
+								? weightData.value * 1000
+								: weightData.unit === "POUNDS"
+									? weightData.value * 453.592
+									: weightData.unit === "OUNCES"
+										? weightData.value * 28.3495
+										: weightData.value
 							: undefined;
 
 						const weightUnit = weightInGrams ? ("g" as const) : undefined;
@@ -353,7 +359,7 @@ export const syncProducts = action({
 							imageId: variantImageId,
 							weight: weightInGrams,
 							weightUnit: weightUnit,
-							requiresShipping: variant.requiresShipping,
+							requiresShipping: variant.inventoryItem?.requiresShipping,
 							position: variant.position,
 						});
 					}
@@ -390,19 +396,23 @@ export const syncProducts = action({
 
 			const status =
 				errors.length === 0 ? "success" : updated + added + removed > 0 ? "partial" : "failed";
+			const errorMessage = errors.length > 0 ? errors.join("; ") : undefined;
 			await ctx.runMutation(internal.integrations.shopify.mutations.updateSyncStatus, {
 				businessId: args.businessId,
 				status,
+				errorMessage,
 			});
 
 			return { updated, added, removed, errors };
 		} catch (error) {
 			const message = error instanceof Error ? error.message : "Unknown error";
+			const allErrors = [...errors, message];
 			await ctx.runMutation(internal.integrations.shopify.mutations.updateSyncStatus, {
 				businessId: args.businessId,
 				status: "failed",
+				errorMessage: allErrors.join("; "),
 			});
-			return { updated, added, removed, errors: [...errors, message] };
+			return { updated, added, removed, errors: allErrors };
 		}
 	},
 });

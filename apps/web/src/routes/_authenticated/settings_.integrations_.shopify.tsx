@@ -303,6 +303,7 @@ function ShopifySettingsPage() {
 								<SyncStatus
 									lastSyncAt={connectionStatus.lastSyncAt ?? null}
 									status={connectionStatus.lastSyncStatus ?? null}
+									lastSyncError={connectionStatus.lastSyncError ?? null}
 								/>
 							</div>
 						</CardContent>

@@ -1,6 +1,6 @@
 /**
  * Shopify Integration Types
- * Based on Shopify Admin API 2024-01
+ * Based on Shopify Admin API 2026-01
  */
 
 // ============================================================================
@@ -60,9 +60,15 @@ export type ShopifyGraphQLResponse = {
 								image: {
 									url: string;
 								} | null;
-								weight: number | null;
-								weightUnit: string | null;
-								requiresShipping: boolean;
+								inventoryItem: {
+									measurement: {
+										weight: {
+											value: number;
+											unit: "GRAMS" | "KILOGRAMS" | "OUNCES" | "POUNDS";
+										} | null;
+									} | null;
+									requiresShipping?: boolean;
+								} | null;
 								position: number;
 							};
 						}>;

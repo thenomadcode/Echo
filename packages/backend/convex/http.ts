@@ -340,8 +340,12 @@ async function handleIncomingMessage(
 	ctx: Parameters<Parameters<typeof httpAction>[0]>[0],
 	payload: unknown,
 ): Promise<Response> {
+	console.log("[WhatsApp Webhook] Received payload:", JSON.stringify(payload));
+
 	const toPhoneNumber = extractToPhoneNumber(payload);
+	console.log("[WhatsApp Webhook] Extracted toPhoneNumber:", toPhoneNumber);
 	if (!toPhoneNumber) {
+		console.log("[WhatsApp Webhook] No toPhoneNumber found, returning OK");
 		return new Response("OK", { status: 200 });
 	}
 
@@ -349,16 +353,20 @@ async function handleIncomingMessage(
 		internal.integrations.whatsapp.webhook.getBusinessByPhoneNumber,
 		{ phoneNumber: toPhoneNumber },
 	);
+	console.log("[WhatsApp Webhook] Business lookup result:", businessLookup);
 
 	if (!businessLookup) {
+		console.log("[WhatsApp Webhook] No business found for phone:", toPhoneNumber);
 		return new Response("OK", { status: 200 });
 	}
 
 	const provider = new TwilioWhatsAppProvider(businessLookup.credentials, toPhoneNumber);
 
 	const parsedMessage = provider.parseWebhook(payload);
+	console.log("[WhatsApp Webhook] Parsed message:", parsedMessage);
 
 	if (!parsedMessage) {
+		console.log("[WhatsApp Webhook] Failed to parse message");
 		return new Response("OK", { status: 200 });
 	}
 

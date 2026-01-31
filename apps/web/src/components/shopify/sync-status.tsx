@@ -9,9 +9,10 @@ export type SyncStatusType = "success" | "partial" | "failed" | null;
 interface SyncStatusProps {
 	lastSyncAt: number | null;
 	status: SyncStatusType;
+	lastSyncError?: string | null;
 }
 
-export function SyncStatus({ lastSyncAt, status }: SyncStatusProps) {
+export function SyncStatus({ lastSyncAt, status, lastSyncError }: SyncStatusProps) {
 	if (lastSyncAt === null) {
 		return (
 			<div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -27,17 +28,22 @@ export function SyncStatus({ lastSyncAt, status }: SyncStatusProps) {
 	});
 
 	return (
-		<div className="flex items-center gap-3">
-			<Tooltip>
-				<TooltipTrigger className="cursor-help text-muted-foreground text-sm">
-					{relativeTime}
-				</TooltipTrigger>
-				<TooltipContent>
-					<p>{absoluteTime}</p>
-				</TooltipContent>
-			</Tooltip>
+		<div className="flex flex-col gap-2">
+			<div className="flex items-center gap-3">
+				<Tooltip>
+					<TooltipTrigger className="cursor-help text-muted-foreground text-sm">
+						{relativeTime}
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>{absoluteTime}</p>
+					</TooltipContent>
+				</Tooltip>
 
-			{status && <SyncStatusIcon status={status} />}
+				{status && <SyncStatusIcon status={status} />}
+			</div>
+			{lastSyncError && (status === "failed" || status === "partial") && (
+				<div className="text-destructive text-xs">{lastSyncError}</div>
+			)}
 		</div>
 	);
 }

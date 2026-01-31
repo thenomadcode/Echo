@@ -33,6 +33,8 @@ interface ProductVariant {
 	option2Value?: string;
 	option3Name?: string;
 	option3Value?: string;
+	weight?: number;
+	weightUnit?: "kg" | "g" | "lb" | "oz";
 }
 
 interface Product {

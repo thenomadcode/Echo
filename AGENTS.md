@@ -133,6 +133,44 @@ turbo -F @echo/backend <command>  # Run command in backend
 ### Tests
 No test framework is currently configured. When adding tests, prefer Vitest.
 
+### Browser Testing with Chrome DevTools MCP
+
+**IMPORTANT**: Always test UI changes and user flows using Chrome DevTools MCP whenever possible.
+
+**Why Chrome DevTools MCP?**
+- Verifies actual user experience, not just code correctness
+- Catches rendering issues, JavaScript errors, and runtime bugs
+- Tests real browser interactions (clicks, form fills, navigation)
+- Provides screenshots and snapshots for verification
+- Faster than manual testing
+
+**When to use Chrome DevTools MCP:**
+- After implementing new UI features or components
+- After fixing bugs that affect user-facing functionality
+- When changes involve user interactions (forms, buttons, navigation)
+- To verify error states and edge cases
+- Before marking work as complete
+
+**Example workflow:**
+```typescript
+// 1. Navigate to the page
+await navigate_page({ url: "http://localhost:3001/settings" })
+
+// 2. Take snapshot to see current state
+await take_snapshot()
+
+// 3. Interact with UI elements
+await click({ uid: "button-import-products" })
+
+// 4. Verify expected outcome
+await wait_for({ text: "Import successful" })
+
+// 5. Take screenshot for evidence
+await take_screenshot({ filePath: "test-result.png" })
+```
+
+**Available in**: Chrome DevTools MCP server (pre-configured in this project)
+
 ---
 
 ## Linting & Formatting

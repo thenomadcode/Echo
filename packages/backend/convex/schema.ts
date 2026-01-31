@@ -356,6 +356,7 @@ export default defineSchema({
 		lastSyncStatus: v.optional(
 			v.union(v.literal("success"), v.literal("partial"), v.literal("failed")),
 		),
+		lastSyncError: v.optional(v.string()), // last sync error message
 		createdAt: v.number(),
 	})
 		.index("by_business", ["businessId"])
