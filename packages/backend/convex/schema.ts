@@ -76,7 +76,9 @@ export default defineSchema({
 		),
 		externalProductId: v.optional(v.string()),
 		shopifyVariantId: v.optional(v.string()),
+		shopifyProductId: v.optional(v.string()),
 		lastSyncAt: v.optional(v.number()),
+		lastShopifySyncAt: v.optional(v.number()),
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	})

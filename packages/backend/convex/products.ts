@@ -766,3 +766,20 @@ export const listWithVariants = query({
 		};
 	},
 });
+
+export const migrateAddHasVariantsField = internalMutation({
+	args: {},
+	handler: async (ctx) => {
+		const allProducts = await ctx.db.query("products").collect();
+		let migratedCount = 0;
+
+		for (const product of allProducts) {
+			if ((product as any).hasVariants === undefined) {
+				await ctx.db.patch(product._id, { hasVariants: false });
+				migratedCount++;
+			}
+		}
+
+		return { migratedCount, total: allProducts.length };
+	},
+});
