@@ -348,3 +348,69 @@
   - System prompt guidance should be natural/conversational, not command-list style
 ---
 
+
+## 2026-01-31 07:31 - US-016
+- Implemented AI variant selection in conversation flow
+- Updated update_order tool schema to accept optional variant_specification field
+- Created findVariant utility function with helper matchers: matchesExactVariantName, matchesSku, matchesAnyOptionValue, matchesPartialVariantName
+- Updated executeUpdateOrder to detect product variants, find matching variant, and return helpful error messages
+- Updated conversation schema to include variantId in pendingOrder items
+- Updated updateOrderState mutation to accept variantId parameter
+- Updated orders.mutations.create to accept variantId, validate variant ownership and availability, populate variant fields (variantName, sku)
+- Updated executeSubmitOrder to pass variantId when creating orders
+- AI now automatically detects variant products and requests specification before adding to cart
+- AI provides clear error messages listing available variants when customer input doesn't match
+- Files changed:
+  - packages/backend/convex/ai/agent.ts (+146 lines) - variant matching logic, executeUpdateOrder, buildOrderState type update
+  - packages/backend/convex/ai/tools.ts (+2 lines) - variant_specification parameter
+  - packages/backend/convex/orders/mutations.ts (+31 lines) - variant handling in order creation
+  - packages/backend/convex/schema.ts (+2 lines) - variantId in conversations and updateOrderState
+- Commit: d9b1c4a "feat: US-016 - Implement AI variant selection in conversation"
+- **Learnings for future iterations:**
+  - Variant matching uses multi-tier strategy: exact name → SKU → option values → partial name
+  - Tool schema changes require updating both tools.ts interface and agent.ts implementation
+  - Variant selection is mandatory for variant products - AI must ask before adding to cart
+  - Helper functions with clear names (matchesExactVariantName) are better than comments for self-documenting code
+  - When updating schema validators, also update all mutations that use those fields
+  - Type safety requires updating both Convex schema (v.id) and TypeScript interfaces simultaneously
+  - Error messages should list available options to help user make valid choice
+  - Existing helper functions need type updates when underlying data structures change (products now have variants array)
+---
+
+## 2026-01-31 08:32 - US-017
+- Implemented inventory tracking per variant
+- Added trackInventory boolean field to productVariants schema (default: true)
+- Updated all variant creation points to include trackInventory: true:
+  - variants.ts create mutation
+  - products.ts createWithVariants and updateWithVariants mutations
+  - integrations/shopify/mutations.ts upsertProductWithVariants
+- Added inventory validation in orders.mutations.create:
+  - Check variant stock before allowing order if trackInventory is true
+  - Throw error with available/requested quantities if insufficient stock
+- Added inventory decrement logic in orders.delivery.setPaymentMethod:
+  - Created decrementInventory internal mutation
+  - Decrements inventoryQuantity when order status changes to "confirmed"
+  - Auto-marks variant unavailable when stock reaches 0
+  - Only affects variants with trackInventory: true
+- Added inventory increment logic in orders.status.cancel:
+  - Restores inventoryQuantity when confirmed/paid order is cancelled
+  - Auto-marks variant available when stock goes above 0
+  - Only affects variants with trackInventory: true
+- Files changed:
+  - packages/backend/convex/schema.ts (+1 field)
+  - packages/backend/convex/variants.ts (+1 line)
+  - packages/backend/convex/products.ts (+2 lines)
+  - packages/backend/convex/integrations/shopify/mutations.ts (+2 lines)
+  - packages/backend/convex/orders/mutations.ts (+6 lines validation)
+  - packages/backend/convex/orders/delivery.ts (+28 lines decrementInventory)
+  - packages/backend/convex/orders/status.ts (+32 lines incrementInventory)
+- Typecheck passes
+- **Learnings for future iterations:**
+  - Inventory tracking uses trackInventory flag to allow unlimited orders for some variants
+  - Stock validation happens at order creation time (early validation)
+  - Stock decrement happens when order is confirmed (setPaymentMethod with "cash")
+  - Stock increment happens when confirmed/paid orders are cancelled
+  - Auto-availability management: available=false when stock=0, available=true when stock>0
+  - Internal mutations use internalMutation from _generated/server, not scheduled async
+  - Helper functions for inventory operations keep code DRY and testable
+---

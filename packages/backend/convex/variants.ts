@@ -52,6 +52,7 @@ export const create = mutation({
 			sku: args.sku,
 			price: args.price,
 			inventoryQuantity: args.inventoryQuantity,
+			trackInventory: true,
 			option1Name: args.option1Name,
 			option1Value: args.option1Value,
 			option2Name: args.option2Name,

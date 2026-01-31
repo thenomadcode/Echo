@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
-import { mutation } from "../_generated/server";
+import { internalMutation, mutation } from "../_generated/server";
 import { requireBusinessOwnership } from "../lib/auth";
 
 export const setDeliveryInfo = mutation({
@@ -69,6 +69,10 @@ export const setPaymentMethod = mutation({
 		await ctx.db.patch(args.orderId, updates);
 
 		if (args.paymentMethod === "cash") {
+			await ctx.scheduler.runAfter(0, internal.orders.delivery.decrementInventory, {
+				orderId: args.orderId,
+			});
+
 			const shopifyConnection = await ctx.db
 				.query("shopifyConnections")
 				.withIndex("by_business", (q) => q.eq("businessId", order.businessId))
@@ -82,5 +86,40 @@ export const setPaymentMethod = mutation({
 		}
 
 		return args.orderId;
+	},
+});
+
+export const decrementInventory = internalMutation({
+	args: {
+		orderId: v.id("orders"),
+	},
+	handler: async (ctx, args) => {
+		const order = await ctx.db.get(args.orderId);
+		if (!order) {
+			return;
+		}
+
+		for (const item of order.items) {
+			if (!item.variantId) {
+				continue;
+			}
+
+			const variant = await ctx.db.get(item.variantId);
+			if (!variant || !variant.trackInventory) {
+				continue;
+			}
+
+			const newInventory = variant.inventoryQuantity - item.quantity;
+			const updates: Record<string, unknown> = {
+				inventoryQuantity: Math.max(0, newInventory),
+				updatedAt: Date.now(),
+			};
+
+			if (newInventory <= 0) {
+				updates.available = false;
+			}
+
+			await ctx.db.patch(item.variantId, updates);
+		}
 	},
 });

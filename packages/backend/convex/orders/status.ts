@@ -27,9 +27,43 @@ export const cancel = mutation({
 			updatedAt: now,
 		});
 
+		if (order.status === "confirmed" || order.status === "paid") {
+			await incrementInventory(ctx, args.orderId);
+		}
+
 		return args.orderId;
 	},
 });
+
+async function incrementInventory(ctx: { db: any }, orderId: any): Promise<void> {
+	const order = await ctx.db.get(orderId);
+	if (!order) {
+		return;
+	}
+
+	for (const item of order.items) {
+		if (!item.variantId) {
+			continue;
+		}
+
+		const variant = await ctx.db.get(item.variantId);
+		if (!variant || !variant.trackInventory) {
+			continue;
+		}
+
+		const newInventory = variant.inventoryQuantity + item.quantity;
+		const updates: Record<string, unknown> = {
+			inventoryQuantity: newInventory,
+			updatedAt: Date.now(),
+		};
+
+		if (!variant.available && newInventory > 0) {
+			updates.available = true;
+		}
+
+		await ctx.db.patch(item.variantId, updates);
+	}
+}
 
 export const markPreparing = mutation({
 	args: {

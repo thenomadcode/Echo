@@ -56,6 +56,12 @@ export const create = mutation({
 					throw new Error(`Variant ${variant.name} is not available`);
 				}
 
+				if (variant.trackInventory && variant.inventoryQuantity < item.quantity) {
+					throw new Error(
+						`Insufficient stock for ${variant.name}. Available: ${variant.inventoryQuantity}, Requested: ${item.quantity}`,
+					);
+				}
+
 				variantData = {
 					name: variant.name,
 					sku: variant.sku,

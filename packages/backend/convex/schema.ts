@@ -90,6 +90,7 @@ export default defineSchema({
 		sku: v.optional(v.string()),
 		price: v.number(),
 		inventoryQuantity: v.number(),
+		trackInventory: v.boolean(),
 		option1Name: v.optional(v.string()),
 		option1Value: v.optional(v.string()),
 		option2Name: v.optional(v.string()),
