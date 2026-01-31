@@ -146,6 +146,33 @@ export const ORDER_TOOLS: Tool[] = [
 			},
 		},
 	},
+	{
+		type: "function",
+		function: {
+			name: "send_product_image",
+			description:
+				"Send a product or variant image to the customer. Use when customer asks to see a product, wants visual confirmation, or would benefit from seeing what they're ordering.",
+			parameters: {
+				type: "object",
+				properties: {
+					product_name: {
+						type: "string",
+						description: "Name of the product (must match available products)",
+					},
+					variant_specification: {
+						type: "string",
+						description:
+							"For products with variants: specify which variant to show (e.g., 'Small', 'Red', 'Small / Red'). Leave empty for simple products.",
+					},
+					caption: {
+						type: "string",
+						description: "Optional caption for the image (e.g., product name, price, availability)",
+					},
+				},
+				required: ["product_name"],
+			},
+		},
+	},
 ];
 
 export interface ToolCall {
@@ -182,6 +209,12 @@ export interface EscalateArgs {
 
 export interface CreateDeletionRequestArgs {
 	confirmed: boolean;
+}
+
+export interface SendProductImageArgs {
+	product_name: string;
+	variant_specification?: string;
+	caption?: string;
 }
 
 // ============================================

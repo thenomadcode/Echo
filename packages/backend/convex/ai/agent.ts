@@ -13,6 +13,7 @@ import type {
 	EscalateArgs,
 	SaveCustomerAddressArgs,
 	SaveCustomerPreferenceArgs,
+	SendProductImageArgs,
 	SetDeliveryArgs,
 	SubmitOrderArgs,
 	ToolCall,
@@ -564,6 +565,13 @@ async function executeToolCall(
 				toolCall.arguments as unknown as AddCustomerNoteArgs,
 				conversation,
 			);
+		case "send_product_image":
+			return executeSendProductImage(
+				ctx,
+				toolCall.arguments as unknown as SendProductImageArgs,
+				conversation,
+				products,
+			);
 		default:
 			return { success: false, message: `Unknown tool: ${toolCall.name}` };
 	}
@@ -969,5 +977,94 @@ async function executeAddCustomerNote(
 	return {
 		success: result.success,
 		message: result.message,
+	};
+}
+
+async function executeSendProductImage(
+	ctx: ActionContext,
+	args: SendProductImageArgs,
+	conversation: Doc<"conversations">,
+	products: (Doc<"products"> & { variants: Doc<"productVariants">[] })[],
+): Promise<ToolExecutionResult> {
+	const product = findProduct(args.product_name, products);
+
+	if (!product) {
+		return {
+			success: false,
+			message: `Product "${args.product_name}" not found`,
+		};
+	}
+
+	let imageId: string | undefined;
+	let selectedVariant: Doc<"productVariants"> | undefined;
+
+	if (product.hasVariants && product.variants.length > 0) {
+		if (args.variant_specification) {
+			selectedVariant = findVariant(args.variant_specification, product.variants);
+
+			if (!selectedVariant) {
+				const availableOptions = product.variants
+					.filter((v) => v.available)
+					.map((v) => v.name)
+					.join(", ");
+				return {
+					success: false,
+					message: `Variant "${args.variant_specification}" not found for ${product.name}. Available: ${availableOptions}`,
+				};
+			}
+
+			imageId = selectedVariant.imageId ?? product.imageId;
+		} else {
+			const availableOptions = product.variants
+				.filter((v) => v.available)
+				.map((v) => v.name)
+				.join(", ");
+			return {
+				success: false,
+				message: `Product "${product.name}" has variants. Please specify which one: ${availableOptions}`,
+			};
+		}
+	} else {
+		imageId = product.imageId;
+	}
+
+	if (!imageId) {
+		return {
+			success: false,
+			message: `No image available for ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ""}`,
+		};
+	}
+
+	const imageUrl = await ctx.storage.getUrl(imageId as Id<"_storage">);
+
+	if (!imageUrl) {
+		return {
+			success: false,
+			message: "Failed to generate image URL",
+		};
+	}
+
+	const caption = args.caption || product.name;
+
+	if (conversation.channel === "whatsapp") {
+		await ctx.runAction(api.integrations.whatsapp.actions.sendMessage, {
+			conversationId: conversation._id,
+			content: caption,
+			type: "image",
+			imageUrl,
+			caption,
+		});
+	} else {
+		await ctx.runAction(api.integrations.meta.actions.sendMessage, {
+			conversationId: conversation._id,
+			content: caption,
+			type: "image",
+			imageUrl,
+		});
+	}
+
+	return {
+		success: true,
+		message: `Sent image for ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ""}`,
 	};
 }

@@ -414,3 +414,26 @@
   - Internal mutations use internalMutation from _generated/server, not scheduled async
   - Helper functions for inventory operations keep code DRY and testable
 ---
+
+## 2026-01-31 08:37 - US-018
+- Implemented variant display in order detail view (apps/web/src/routes/_authenticated/orders.$orderId.tsx)
+- Updated order items table to show:
+  - Product name as clickable Link to product detail page
+  - Variant name below product name (text-sm text-muted-foreground)
+  - SKU below variant name if exists (text-xs text-muted-foreground)
+- Added Link import from @tanstack/react-router
+- Used conditional rendering to only show variant name and SKU when they exist
+- Wrapped all product info in div with space-y-1 for proper vertical spacing
+- Commit: 236f45a "feat: US-018 - Display variant details in order view"
+- Files changed: apps/web/src/routes/_authenticated/orders.$orderId.tsx (+19, -2)
+- **Learnings for future iterations:**
+  - Link component from @tanstack/react-router uses to/params pattern for type-safe routing
+  - Conditional rendering with && operator keeps DOM clean (no empty divs)
+  - Text sizing hierarchy: default → text-sm → text-xs for visual importance
+  - text-muted-foreground class provides semantic muted color consistently
+  - space-y-1 provides 4px vertical spacing between stacked elements
+  - Hover states on links use hover:underline for clear affordance
+  - Order items are already stored with variant metadata from US-003, just needed UI display
+  - Browser testing confirmed all variant info displays correctly
+---
+

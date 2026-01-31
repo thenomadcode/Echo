@@ -309,7 +309,7 @@
 				"BROWSER TEST: View order detail, verify variant name and SKU display correctly"
 			],
 			"priority": 18,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "UI for order variant display"
 		},
