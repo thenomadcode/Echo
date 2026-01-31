@@ -277,3 +277,20 @@
   - Fact extraction relies on AI to normalize customer language into consistent statements
 ---
 
+## 2026-01-31 20:56 - US-011
+- Implemented conversation summary generation after successful order completion
+- Added trigger in packages/backend/convex/ai/process.ts after conversation state changes to 'completed'
+- Uses ctx.scheduler.runAfter(0, internal.ai.summary.processConversationMemory) for non-blocking execution
+- Summary generation only triggers when newState === "completed" AND conversation.customerRecordId exists
+- Wrapped in try-catch to ensure summary generation failures don't break the main order flow
+- Files changed:
+  - packages/backend/convex/ai/process.ts (added summary trigger after successful checkout)
+- **Learnings for future iterations:**
+  - Summary infrastructure was already complete: generateConversationSummary and processConversationMemory actions exist
+  - State transition to "completed" happens in determineNewState when payment_choice intent is processed in "payment" state
+  - Use ctx.scheduler.runAfter(0, ...) for background tasks that shouldn't block the main flow
+  - Summary generation in background ensures order creation success isn't delayed by summary processing
+  - Pattern: After state change mutation → Check conditions → Schedule background task → Wrap in try-catch
+  - conversationSummaries table already has schema with sentiment, keyEvents, orderIds for rich summaries
+---
+

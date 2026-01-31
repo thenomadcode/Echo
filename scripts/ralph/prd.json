@@ -192,9 +192,9 @@
 				"Typecheck passes"
 			],
 			"priority": 11,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Added summary generation trigger in processMessage after successful order completion. Uses ctx.scheduler.runAfter to schedule processConversationMemory in background."
 		}
 	]
 }
