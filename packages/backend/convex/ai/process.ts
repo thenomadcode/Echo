@@ -537,24 +537,27 @@ export const processMessage = action({
 			products: productContext,
 			language: detectedLanguage,
 			conversationState: newState,
-			checkoutContext: finalCheckoutResult.orderId
-				? {
-						orderNumber: finalCheckoutResult.orderNumber,
-						paymentLink: finalCheckoutResult.paymentLink,
-						paymentMethod:
-							lastIntent.type === "payment_choice" ? lastIntent.paymentMethod : undefined,
-					}
-				: accumulatedPendingOrder
+			checkoutContext:
+				finalCheckoutResult.success !== undefined
 					? {
-							pendingOrderSummary: accumulatedPendingOrder.items
-								.map(
-									(item: { quantity: number; productQuery: string }) =>
-										`${item.quantity}x ${item.productQuery}`,
-								)
-								.join(", "),
-							pendingOrderTotal: accumulatedPendingOrder.total,
+							success: finalCheckoutResult.success,
+							orderNumber: finalCheckoutResult.orderNumber,
+							paymentLink: finalCheckoutResult.paymentLink,
+							error: finalCheckoutResult.error,
+							paymentMethod:
+								lastIntent.type === "payment_choice" ? lastIntent.paymentMethod : undefined,
 						}
-					: undefined,
+					: accumulatedPendingOrder
+						? {
+								pendingOrderSummary: accumulatedPendingOrder.items
+									.map(
+										(item: { quantity: number; productQuery: string }) =>
+											`${item.quantity}x ${item.productQuery}`,
+									)
+									.join(", "),
+								pendingOrderTotal: accumulatedPendingOrder.total,
+							}
+						: undefined,
 			customerContext: customerContext ?? undefined,
 		});
 		const response = responseResult.response;
@@ -568,11 +571,17 @@ export const processMessage = action({
 				reason: escalationResult.reason || "Customer requested human assistance",
 				customerId: conversation.customerId,
 			});
-		} else if (finalCheckoutResult.orderId) {
+		} else if (finalCheckoutResult.success === true) {
 			await ctx.runMutation(internal.ai.process.updateConversation, {
 				conversationId: args.conversationId,
 				state: newState,
 				clearPendingData: true,
+			});
+		} else if (finalCheckoutResult.success === false) {
+			newState = "confirming";
+			await ctx.runMutation(internal.ai.process.updateConversation, {
+				conversationId: args.conversationId,
+				state: newState,
 			});
 		} else if (finalCheckoutResult.pendingDelivery) {
 			await ctx.runMutation(internal.ai.process.updateConversation, {
@@ -696,6 +705,7 @@ interface PendingDelivery {
 }
 
 interface CheckoutResult {
+	success?: boolean;
 	pendingDelivery?: PendingDelivery;
 	orderId?: Id<"orders">;
 	orderNumber?: string;
@@ -874,6 +884,18 @@ async function handleCheckoutIntent(
 				contactPhone: conversation.customerId,
 			});
 
+			const verifiedOrder = await ctx.runQuery(internal.ai.process.getOrderDetails, {
+				orderId,
+			});
+
+			if (!verifiedOrder) {
+				console.error("Order verification failed: Order not found in database", { orderId });
+				return {
+					success: false,
+					error: "Failed to create order - verification failed",
+				};
+			}
+
 			if (pendingDelivery) {
 				await ctx.runMutation(api.orders.delivery.setDeliveryInfo, {
 					orderId,
@@ -895,18 +917,16 @@ async function handleCheckoutIntent(
 				});
 			}
 
-			const order = await ctx.runQuery(internal.ai.process.getOrderDetails, {
-				orderId,
-			});
-
 			return {
+				success: true,
 				orderId,
-				orderNumber: order?.orderNumber,
+				orderNumber: verifiedOrder.orderNumber,
 				paymentLink,
 			};
 		} catch (error) {
 			console.error("Checkout error:", error);
 			return {
+				success: false,
 				error: error instanceof Error ? error.message : "Failed to create order",
 			};
 		}

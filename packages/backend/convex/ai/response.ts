@@ -64,11 +64,13 @@ interface ResponseGenerationResult {
 
 const checkoutContextValidator = v.optional(
 	v.object({
+		success: v.optional(v.boolean()),
 		orderNumber: v.optional(v.string()),
 		paymentLink: v.optional(v.string()),
 		paymentMethod: v.optional(v.union(v.literal("cash"), v.literal("card"))),
 		pendingOrderSummary: v.optional(v.string()),
 		pendingOrderTotal: v.optional(v.number()),
+		error: v.optional(v.string()),
 	}),
 );
 
@@ -101,11 +103,13 @@ const customerContextValidator = v.optional(
 );
 
 interface CheckoutContext {
+	success?: boolean;
 	orderNumber?: string;
 	paymentLink?: string;
 	paymentMethod?: "cash" | "card";
 	pendingOrderSummary?: string;
 	pendingOrderTotal?: number;
+	error?: string;
 }
 
 export const generateResponse = action({
@@ -273,14 +277,26 @@ function buildContextInstruction(
 			const paymentMethod = intent.paymentMethod;
 			const orderNumber = checkoutContext?.orderNumber ?? "your order";
 			const paymentLink = checkoutContext?.paymentLink;
+			const success = checkoutContext?.success;
+			const error = checkoutContext?.error;
 
-			if (paymentMethod === "cash") {
-				return `Customer chose to pay with cash. Order ${orderNumber} is confirmed! Thank them and let them know their order will be ready in approximately 15-20 minutes. Provide the order number for reference.`;
+			if (success === false) {
+				return `CRITICAL: Order creation FAILED. ${error ? `Error: ${error}.` : ""} NEVER say "order placed" or "order confirmed". Instead say: "Had trouble creating your order. Let me try again - can you confirm what you want to order?" Be apologetic and helpful.`;
 			}
-			if (paymentMethod === "card" && paymentLink) {
-				return `Customer chose to pay with card. Order ${orderNumber} has been created. Provide this payment link: ${paymentLink}. Let them know that once payment is complete, their order will begin preparation. The link expires in 24 hours.`;
+
+			if (success === true) {
+				if (paymentMethod === "cash") {
+					return `Customer chose to pay with cash. Order ${orderNumber} is confirmed! Thank them and let them know their order will be ready in approximately 15-20 minutes. Provide the order number for reference.`;
+				}
+				if (paymentMethod === "card" && paymentLink) {
+					return `Customer chose to pay with card. Order ${orderNumber} has been created. Provide this payment link: ${paymentLink}. Let them know that once payment is complete, their order will begin preparation. The link expires in 24 hours.`;
+				}
+				if (paymentMethod === "card" && !paymentLink) {
+					return "Customer chose to pay with card. Order was created but there was an issue generating the payment link. Apologize and suggest they try again or choose cash payment.";
+				}
 			}
-			return "Customer chose to pay with card. There was an issue generating the payment link. Apologize and suggest they try again or choose cash payment.";
+
+			return "Customer chose payment method but order status is unclear. Apologize and ask them to try again.";
 		}
 
 		case "address_provided": {

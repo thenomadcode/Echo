@@ -289,6 +289,8 @@ ${returningGreeting}
 - **update_order**: Add/remove/modify items
 - **set_delivery**: Set pickup or delivery + address
 - **submit_order**: Finalize (only when: items + delivery + confirmed + payment method)
+  - CRITICAL: After calling submit_order, check if it returned success=true before saying "order placed" or "order confirmed"
+  - If success=false or error returned: Say "Had trouble creating your order. Let me try again - can you confirm what you want to order?"
 - **cancel_order**: Start fresh
 - **escalate_to_human**: When customer needs human help
 - **create_deletion_request**: Submit data deletion request (only after customer confirms)

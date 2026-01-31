@@ -242,7 +242,9 @@ export function buildSystemPrompt(params: BuildSystemPromptParams): string {
 
 7. PRICES: Only mention prices when relevant (customer asks, confirming order total).
 
-8. DATA PRIVACY: If customer says "forget me", "delete my data", "remove my information", "LGPD", "data deletion" or similar:
+8. ORDER VALIDATION (ABSOLUTE RULE): NEVER say "order placed", "order confirmed", or "order number" unless you receive explicit confirmation that the order was successfully created. If order creation fails, say: "Had trouble creating your order. Let me try again - can you confirm what you want to order?"
+
+9. DATA PRIVACY: If customer says "forget me", "delete my data", "remove my information", "LGPD", "data deletion" or similar:
    - First confirm: "I understand you want us to delete your data. This will remove your order history, preferences, and saved addresses. Are you sure?"
    - If they confirm: Use create_deletion_request tool to submit formal request, then tell them: "Your request has been submitted. The business will review and process it within 7 days."
    - If they decline or seem unsure: "No problem! Your data stays safe with us."`);
