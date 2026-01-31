@@ -808,6 +808,17 @@ async function handleCheckoutIntent(
 			};
 		}
 
+		if (intent.deliveryType === "delivery" && intent.address && conversation.customerRecordId) {
+			try {
+				await ctx.runAction(api.ai.customerHistory.updateCustomerAddress, {
+					customerId: conversation.customerRecordId,
+					address: intent.address,
+				});
+			} catch (error) {
+				console.error("Failed to save customer address:", error);
+			}
+		}
+
 		return {
 			pendingDelivery: {
 				type: intent.deliveryType,
@@ -817,6 +828,17 @@ async function handleCheckoutIntent(
 	}
 
 	if (intent.type === "address_provided" && currentState === "confirming") {
+		if (intent.address && conversation.customerRecordId) {
+			try {
+				await ctx.runAction(api.ai.customerHistory.updateCustomerAddress, {
+					customerId: conversation.customerRecordId,
+					address: intent.address,
+				});
+			} catch (error) {
+				console.error("Failed to save customer address:", error);
+			}
+		}
+
 		return {
 			pendingDelivery: {
 				type: "delivery",
