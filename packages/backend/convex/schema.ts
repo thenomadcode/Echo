@@ -194,6 +194,7 @@ export default defineSchema({
 						productQuery: v.string(),
 						quantity: v.number(),
 						productId: v.optional(v.id("products")),
+						variantId: v.optional(v.id("productVariants")),
 						price: v.optional(v.number()),
 					}),
 				),

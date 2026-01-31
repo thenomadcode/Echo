@@ -10,6 +10,7 @@ export const create = mutation({
 		items: v.array(
 			v.object({
 				productId: v.id("products"),
+				variantId: v.optional(v.id("productVariants")),
 				quantity: v.number(),
 			}),
 		),
@@ -20,7 +21,10 @@ export const create = mutation({
 
 		const orderItems: {
 			productId: (typeof args.items)[number]["productId"];
+			variantId?: (typeof args.items)[number]["variantId"];
 			name: string;
+			variantName?: string;
+			sku?: string;
 			quantity: number;
 			unitPrice: number;
 			totalPrice: number;
@@ -38,12 +42,38 @@ export const create = mutation({
 				throw new Error(`Product ${product.name} is no longer available`);
 			}
 
+			let variantData: { name?: string; sku?: string; price: number } | null = null;
+
+			if (item.variantId) {
+				const variant = await ctx.db.get(item.variantId);
+				if (!variant) {
+					throw new Error(`Variant not found: ${item.variantId}`);
+				}
+				if (variant.productId !== item.productId) {
+					throw new Error(`Variant ${item.variantId} does not belong to product ${item.productId}`);
+				}
+				if (!variant.available) {
+					throw new Error(`Variant ${variant.name} is not available`);
+				}
+
+				variantData = {
+					name: variant.name,
+					sku: variant.sku,
+					price: variant.price,
+				};
+			}
+
+			const unitPrice = variantData?.price ?? product.price;
+
 			orderItems.push({
 				productId: item.productId,
+				variantId: item.variantId,
 				name: product.name,
+				variantName: variantData?.name,
+				sku: variantData?.sku,
 				quantity: item.quantity,
-				unitPrice: product.price,
-				totalPrice: product.price * item.quantity,
+				unitPrice,
+				totalPrice: unitPrice * item.quantity,
 			});
 		}
 

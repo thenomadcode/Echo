@@ -27,6 +27,11 @@ export const ORDER_TOOLS: Tool[] = [
 									type: "string",
 									description: "Name of the product (must match available products)",
 								},
+								variant_specification: {
+									type: "string",
+									description:
+										"For products with variants: specify which variant (e.g., 'Small', 'Red', 'Small / Red'). Leave empty to ask customer which variant they want.",
+								},
 								quantity: {
 									type: "number",
 									description: "Quantity (for add/set_quantity actions)",
@@ -152,6 +157,7 @@ export interface UpdateOrderArgs {
 	action: "add" | "remove" | "set_quantity" | "clear";
 	items?: Array<{
 		product_name: string;
+		variant_specification?: string;
 		quantity?: number;
 	}>;
 }

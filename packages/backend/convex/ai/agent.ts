@@ -150,6 +150,7 @@ export const updateOrderState = internalMutation({
 						productQuery: v.string(),
 						quantity: v.number(),
 						productId: v.optional(v.id("products")),
+						variantId: v.optional(v.id("productVariants")),
 						price: v.optional(v.number()),
 					}),
 				),
@@ -229,7 +230,7 @@ export const getOrderDetails = internalQuery({
 
 function buildOrderState(
 	conversation: Doc<"conversations">,
-	products: Doc<"products">[],
+	products: (Doc<"products"> & { variants: Doc<"productVariants">[] })[],
 ): OrderState | null {
 	const pending = conversation.pendingOrder;
 	if (!pending || pending.items.length === 0) {
@@ -259,7 +260,10 @@ function buildOrderState(
 	return { items, total, currency, delivery };
 }
 
-function findProduct(name: string, products: Doc<"products">[]): Doc<"products"> | undefined {
+function findProduct(
+	name: string,
+	products: (Doc<"products"> & { variants: Doc<"productVariants">[] })[],
+): (Doc<"products"> & { variants: Doc<"productVariants">[] }) | undefined {
 	const normalized = name.toLowerCase().trim();
 
 	const exact = products.find((p) => p.available && p.name.toLowerCase() === normalized);
@@ -270,6 +274,59 @@ function findProduct(name: string, products: Doc<"products">[]): Doc<"products">
 
 	const reverse = products.find((p) => p.available && normalized.includes(p.name.toLowerCase()));
 	return reverse;
+}
+
+function matchesExactVariantName(variant: Doc<"productVariants">, normalized: string): boolean {
+	return variant.available && variant.name.toLowerCase() === normalized;
+}
+
+function matchesSku(variant: Doc<"productVariants">, normalized: string): boolean {
+	return variant.available && variant.sku?.toLowerCase() === normalized;
+}
+
+function matchesAnyOptionValue(variant: Doc<"productVariants">, normalized: string): boolean {
+	if (!variant.available) return false;
+
+	const option1Match = !!(
+		variant.option1Value && normalized.includes(variant.option1Value.toLowerCase())
+	);
+	const option2Match = !!(
+		variant.option2Value && normalized.includes(variant.option2Value.toLowerCase())
+	);
+	const option3Match = !!(
+		variant.option3Value && normalized.includes(variant.option3Value.toLowerCase())
+	);
+
+	return option1Match || option2Match || option3Match;
+}
+
+function matchesPartialVariantName(variant: Doc<"productVariants">, normalized: string): boolean {
+	return variant.available && variant.name.toLowerCase().includes(normalized);
+}
+
+function findVariant(
+	variantSpec: string,
+	variants: Doc<"productVariants">[],
+): Doc<"productVariants"> | undefined {
+	if (!variants || variants.length === 0) {
+		return undefined;
+	}
+
+	const normalized = variantSpec.toLowerCase().trim();
+
+	const exactName = variants.find((v) => matchesExactVariantName(v, normalized));
+	if (exactName) return exactName;
+
+	const bySku = variants.find((v) => matchesSku(v, normalized));
+	if (bySku) return bySku;
+
+	const byOption = variants.find((v) => matchesAnyOptionValue(v, normalized));
+	if (byOption) return byOption;
+
+	const partialName = variants.find((v) => matchesPartialVariantName(v, normalized));
+	if (partialName) return partialName;
+
+	return undefined;
 }
 
 function getEscalatedResponse(language: string): string {
@@ -453,7 +510,7 @@ async function executeToolCall(
 	ctx: ActionContext,
 	toolCall: ToolCall,
 	conversation: Doc<"conversations">,
-	products: Doc<"products">[],
+	products: (Doc<"products"> & { variants: Doc<"productVariants">[] })[],
 ): Promise<ToolExecutionResult> {
 	switch (toolCall.name) {
 		case "update_order":
@@ -516,7 +573,7 @@ async function executeUpdateOrder(
 	ctx: ActionContext,
 	args: UpdateOrderArgs,
 	conversation: Doc<"conversations">,
-	products: Doc<"products">[],
+	products: (Doc<"products"> & { variants: Doc<"productVariants">[] })[],
 ): Promise<ToolExecutionResult> {
 	const currentItems = conversation.pendingOrder?.items ?? [];
 
@@ -545,7 +602,45 @@ async function executeUpdateOrder(
 				};
 			}
 
-			const existingIdx = newItems.findIndex((i) => i.productId === product._id);
+			let selectedVariant: Doc<"productVariants"> | undefined;
+			let selectedPrice = product.price;
+			let selectedVariantName: string | undefined;
+
+			if (product.hasVariants && product.variants.length > 0) {
+				if (item.variant_specification) {
+					selectedVariant = findVariant(item.variant_specification, product.variants);
+
+					if (!selectedVariant) {
+						const availableOptions = product.variants
+							.filter((v) => v.available)
+							.map((v) => v.name)
+							.join(", ");
+						return {
+							success: false,
+							message: `Variant "${item.variant_specification}" not found for ${product.name}. Available: ${availableOptions}`,
+						};
+					}
+
+					selectedPrice = selectedVariant.price;
+					selectedVariantName = selectedVariant.name;
+				} else {
+					const availableOptions = product.variants
+						.filter((v) => v.available)
+						.map((v) => v.name)
+						.join(", ");
+					return {
+						success: false,
+						message: `Product "${product.name}" has variants. Please specify which one: ${availableOptions}`,
+					};
+				}
+			}
+
+			const existingIdx = selectedVariant
+				? newItems.findIndex(
+						(i) => i.productId === product._id && i.variantId === selectedVariant._id,
+					)
+				: newItems.findIndex((i) => i.productId === product._id && !i.variantId);
+
 			const qty = item.quantity ?? 1;
 
 			if (existingIdx >= 0) {
@@ -558,10 +653,13 @@ async function executeUpdateOrder(
 				}
 			} else {
 				newItems.push({
-					productQuery: product.name,
+					productQuery: selectedVariantName
+						? `${product.name} (${selectedVariantName})`
+						: product.name,
 					quantity: qty,
 					productId: product._id,
-					price: product.price,
+					variantId: selectedVariant?._id,
+					price: selectedPrice,
 				});
 			}
 		} else if (args.action === "remove") {
@@ -678,6 +776,7 @@ async function executeSubmitOrder(
 			conversationId: conversation._id,
 			items: validItems.map((item) => ({
 				productId: item.productId,
+				variantId: item.variantId,
 				quantity: item.quantity,
 			})),
 			contactPhone: conversation.customerId,
