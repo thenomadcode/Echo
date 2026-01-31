@@ -390,3 +390,47 @@ export const Route = createFileRoute("/dashboard")({
 | Build | `bun run build` |
 | Add dependency | `bun add <pkg>` in workspace |
 | Convex deploy | `bunx convex deploy` in backend |
+
+---
+
+## Project Knowledge (ByteRover)
+
+ByteRover is a project-level knowledge repository that persists across sessions. It helps AI agents avoid re-discovering patterns, conventions, and decisions.
+
+### Quick Start
+
+```bash
+# Check if ByteRover is running
+brv status
+
+# Query existing knowledge before starting work
+brv query "How is authentication implemented?"
+
+# Curate new knowledge after completing work
+brv curate "Auth uses JWT with 24h expiry in httpOnly cookies" -f apps/web/src/lib/auth.ts
+```
+
+### When to Use
+
+**Query before working** to understand:
+- Existing patterns and conventions
+- Architecture decisions
+- Implementation details
+
+**Curate after working** to capture:
+- Feature implementations
+- Bug fixes and root causes
+- Architecture decisions
+
+### Skill Location
+
+ByteRover skills are available in two locations:
+- **OpenCode**: `.opencode/skills/byterover/` (primary for OpenCode agents)
+- **Claude**: `.claude/skills/byterover/` (for Claude Desktop compatibility)
+
+Both locations contain:
+- `SKILL.md` - Quick reference and best practices
+- `WORKFLOWS.md` - Detailed usage patterns
+- `TROUBLESHOOTING.md` - Error handling guide
+
+**Note**: The skill must be loaded using `load_skills=["byterover"]` when delegating tasks to subagents.
