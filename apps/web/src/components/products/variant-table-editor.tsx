@@ -31,7 +31,6 @@ export interface GeneratedVariant {
 }
 
 interface VariantTableEditorProps {
-	// biome-ignore lint/suspicious/noExplicitAny: TanStack Form FieldApi requires 23 type parameters
 	field: any;
 	currency: "COP" | "BRL" | "MXN" | "USD";
 }

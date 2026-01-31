@@ -16,7 +16,6 @@ export interface VariantOption {
 }
 
 interface VariantOptionsBuilderProps {
-	// biome-ignore lint/suspicious/noExplicitAny: TanStack Form FieldApi requires 23 type parameters
 	field: any;
 	onGenerate?: (variants: GeneratedVariant[]) => void;
 }
