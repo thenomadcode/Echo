@@ -274,7 +274,7 @@
 				"Typecheck passes"
 			],
 			"priority": 16,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
 			"notes": "AI conversation flow for variants"
 		},
@@ -292,7 +292,7 @@
 				"Typecheck passes"
 			],
 			"priority": 17,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
 			"notes": "Inventory management per variant"
 		},
