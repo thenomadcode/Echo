@@ -50,3 +50,20 @@
   - Backwards compatibility achieved by using intents[0] in existing code
   - All intent examples in prompt must be converted to array format for consistency
 ---
+
+## 2026-01-31 19:57 - US-002
+- Implemented multi-intent processing in processMessage workflow
+- Modified intent handling to iterate through all intents in intents array instead of using intents[0]
+- Added state progression tracking: currentState updates after each intent is processed
+- Added accumulation of pendingOrder and pendingDelivery across multiple intents
+- Order creation now happens when final intent satisfies all conditions (items + delivery + payment)
+- Example: "Ship to 123 Main St, I'll pay cash" now processes both delivery_choice and payment_choice intents sequentially
+- Files changed:
+  - packages/backend/convex/ai/process.ts (refactored processMessage action to support multi-intent flow)
+- **Learnings for future iterations:**
+  - Multi-intent processing requires accumulating state across the loop (pendingOrder, pendingDelivery)
+  - State transitions must happen sequentially: confirming → payment → completed
+  - Each intent sees the accumulated data from previous intents in the same message
+  - Type annotations (currentState: string, newState: string) needed to avoid TypeScript inference issues
+  - The last intent is used for response generation context
+---
