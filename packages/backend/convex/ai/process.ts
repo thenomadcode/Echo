@@ -452,7 +452,7 @@ export const processMessage = action({
 			conversationHistory,
 			productNames,
 		});
-		const intent = intentResult.intent;
+		const intent = intentResult.intents[0] ?? { type: "unknown" as const };
 		const intentTokens = intentResult.tokensUsed;
 
 		const failureCount = 0;
