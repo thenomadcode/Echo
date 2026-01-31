@@ -58,15 +58,27 @@ export const generatePaymentLink = action({
 		);
 
 		if (shopifyConnection) {
-			const result = await ctx.runAction(api.integrations.shopify.orders.createOrder, {
-				orderId: args.orderId,
-			});
+			try {
+				const result = await ctx.runAction(api.integrations.shopify.orders.createOrder, {
+					orderId: args.orderId,
+				});
 
-			if (!result.success || !result.invoiceUrl) {
-				throw new Error(result.error ?? "Failed to create Shopify draft order");
+				if (result.success && result.invoiceUrl) {
+					console.log(
+						`[Shopify] Draft order created successfully for order ${order.orderNumber}: ${result.shopifyDraftOrderId}`,
+					);
+					return result.invoiceUrl;
+				}
+
+				console.error(
+					`[Shopify] Draft order creation failed for order ${order.orderNumber}: ${result.error}. Falling back to Stripe.`,
+				);
+			} catch (error) {
+				const message = error instanceof Error ? error.message : "Unknown error";
+				console.error(
+					`[Shopify] Draft order creation threw error for order ${order.orderNumber}: ${message}. Falling back to Stripe.`,
+				);
 			}
-
-			return result.invoiceUrl;
 		}
 
 		const stripeSecretKey = process.env.STRIPE_SECRET_KEY;

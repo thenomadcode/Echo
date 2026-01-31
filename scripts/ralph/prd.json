@@ -50,9 +50,9 @@
 				"Typecheck passes"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Added extractCustomerName function that detects names from multiple patterns (delivery addresses, 'my name is', 'for <name>'), created updateNameInternal mutation in customers.ts, integrated into processMessage intent loop. Prefers longer names when updating."
 		},
 		{
 			"id": "US-004",
@@ -67,9 +67,9 @@
 				"Typecheck passes"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Address persistence integrated into handleCheckoutIntent for both delivery_choice and address_provided intents. Uses existing updateCustomerAddress action with fuzzy matching and auto-labeling. Address saved in try-catch before order creation to ensure persistence even on order failure."
 		},
 		{
 			"id": "US-005",
@@ -84,9 +84,9 @@
 				"Typecheck passes"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"ultrawork": true,
-			"notes": ""
+			"notes": "Completed: Added success field to CheckoutResult interface, implemented order verification after creation with getOrderDetails query, updated response.ts to check success before confirming orders, added failure handling that reverts state to 'confirming' for retry, updated both prompts.ts and agentPrompt.ts with ORDER VALIDATION rule"
 		},
 		{
 			"id": "US-006",

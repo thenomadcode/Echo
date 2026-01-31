@@ -912,9 +912,15 @@ async function handleCheckoutIntent(
 
 			let paymentLink: string | undefined;
 			if (intent.paymentMethod === "card") {
+				console.log(
+					`[Checkout] Generating payment link for card payment, order: ${verifiedOrder.orderNumber}`,
+				);
 				paymentLink = await ctx.runAction(api.orders.payments.generatePaymentLink, {
 					orderId,
 				});
+				console.log(
+					`[Checkout] Payment link generated successfully: ${paymentLink ? "Yes" : "No"}`,
+				);
 			}
 
 			return {

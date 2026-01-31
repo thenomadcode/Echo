@@ -67,3 +67,66 @@
   - Type annotations (currentState: string, newState: string) needed to avoid TypeScript inference issues
   - The last intent is used for response generation context
 ---
+
+## 2026-01-31 20:19 - US-003
+- Implemented customer name extraction and persistence
+- Added updateNameInternal mutation in packages/backend/convex/customers.ts
+  - Internal mutation (no auth checks) for AI flow use
+  - Prefers longer names (e.g., "John Smith" over "John")
+  - Only updates if name not set or new name is more complete
+- Created extractCustomerName function in packages/backend/convex/ai/process.ts
+  - Detects names from delivery addresses: "Ship to John Smith, 123 Main St"
+  - Detects from explicit statements: "My name is Sarah", "Me llamo Juan"
+  - Detects from "for" patterns: "This is for Maria"
+  - Multi-language support (English, Spanish, Portuguese)
+- Integrated into processMessage intent loop
+  - Checks each intent for potential name extraction
+  - Saves name via updateNameInternal if customerRecordId exists
+- Files changed:
+  - packages/backend/convex/customers.ts (added updateNameInternal mutation)
+  - packages/backend/convex/ai/process.ts (added extractCustomerName function and integration)
+- **Learnings for future iterations:**
+  - Name extraction from addresses requires careful regex to avoid false positives
+  - Capitalization check ensures we extract proper names, not common words
+  - Multi-language patterns needed for LATAM market (Spanish/Portuguese)
+  - Prefer longer names when updating to capture full names vs nicknames
+  - Integration point is the intent loop, not individual intent handlers
+---
+
+## 2026-01-31 20:19 - US-004
+- Implemented customer address persistence in handleCheckoutIntent
+- Added calls to api.ai.customerHistory.updateCustomerAddress for both delivery_choice and address_provided intents
+- Address saved in try-catch blocks before order creation to ensure persistence even if order fails
+- Leverages existing fuzzy matching logic to prevent duplicate addresses
+- Auto-generates label ("Home", "Work", or "Address") and sets isDefault=true for first address
+- Files changed:
+  - packages/backend/convex/ai/process.ts (added address persistence in handleCheckoutIntent)
+- **Learnings for future iterations:**
+  - Address persistence should happen before order creation so it persists even on order failure
+  - Use try-catch with error logging but continue execution on address save failures
+  - The updateCustomerAddress action already handles all the complexity (fuzzy matching, labeling, default setting)
+  - Two intents can trigger address saving: delivery_choice (with address) and address_provided
+  - Pattern: External actions should be resilient - log errors but don't block the main flow
+---
+
+## 2026-01-31 20:19 - US-005
+- Implemented order validation before AI confirmation
+- Added success: boolean field to CheckoutResult interface in ai/process.ts
+- Implemented order verification after creation using getOrderDetails query
+- Updated CheckoutContext interface and validator in ai/response.ts to include success and error fields
+- Updated payment_choice case in buildContextInstruction to check success flag before confirming order
+- Modified processMessage to pass success field to response generator in checkoutContext
+- Added explicit handling for order creation failure: reverts state to 'confirming' for customer retry
+- Updated both ai/prompts.ts and ai/agentPrompt.ts with ORDER VALIDATION rule mandating AI never says "order placed" without success=true
+- Files changed:
+  - packages/backend/convex/ai/process.ts (CheckoutResult interface, order verification, state handling)
+  - packages/backend/convex/ai/response.ts (CheckoutContext interface, payment_choice handling)
+  - packages/backend/convex/ai/prompts.ts (ORDER VALIDATION rule added)
+  - packages/backend/convex/ai/agentPrompt.ts (submit_order tool documentation updated)
+- **Learnings for future iterations:**
+  - Order verification should happen immediately after creation before any subsequent operations
+  - Failure handling requires explicit state management - reverting to 'confirming' allows customer to retry
+  - Success/failure flags must propagate through the entire chain: mutation → action → response generation → AI prompt
+  - AI prompts need explicit, unambiguous rules about when to confirm vs apologize - use CRITICAL/ABSOLUTE language
+  - The condition for clearing pending data changed from checking orderId to checking success===true
+---
