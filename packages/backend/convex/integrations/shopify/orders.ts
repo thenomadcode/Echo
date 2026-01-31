@@ -328,10 +328,6 @@ async function createRegularOrder(
 			shopifyOrderNumber,
 		});
 
-		console.log(
-			`[Shopify] Successfully created regular order ${shopifyOrderNumber} (ID: ${shopifyOrderId}) for Echo order ${order.orderNumber}`,
-		);
-
 		if (skippedItems.length > 0) {
 			console.warn(
 				`[Shopify] Skipped items for Echo order ${order.orderNumber}: ${skippedItems.join(", ")}`,
@@ -365,8 +361,6 @@ export const createOrderInternal = internalAction({
 		orderId: v.id("orders"),
 	},
 	handler: async (ctx, args): Promise<CreateDraftOrderResult> => {
-		console.log(`[Shopify] Starting order creation for ${args.orderId}`);
-
 		const orderData = await ctx.runQuery(internal.integrations.shopify.queries.getOrderForShopify, {
 			orderId: args.orderId,
 		});
@@ -397,12 +391,8 @@ export const createOrderInternal = internalAction({
 
 		// For cash payments, create a regular Shopify order (not a draft)
 		if (order.paymentMethod === "cash") {
-			console.log(`[Shopify] Creating regular order for cash payment: ${order.orderNumber}`);
 			return await createRegularOrder(ctx, args.orderId, order, products, shopifyConnection);
 		}
-
-		// For card payments, create a draft order (existing behavior)
-		console.log(`[Shopify] Creating draft order for card payment: ${order.orderNumber}`);
 
 		const lineItems: Array<{ variant_id: number; quantity: number }> = [];
 		const skippedItems: string[] = [];
