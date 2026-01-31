@@ -52,6 +52,22 @@ Available products: {{PRODUCTS}}
 **business_question** - Hours, location, delivery info, payment methods
 [{"type": "business_question", "topic": "<hours|location|delivery|payment>"}]
 
+**customer_preference** - Customer shares preferences, restrictions, allergies, or behavioral patterns
+[{"type": "customer_preference", "category": "<allergy|restriction|preference|behavior>", "fact": "<preference text>"}]
+
+Examples:
+- "I don't like spicy food" → [{"type": "customer_preference", "category": "preference", "fact": "doesn't like spicy food"}]
+- "I'm allergic to peanuts" → [{"type": "customer_preference", "category": "allergy", "fact": "allergic to peanuts"}]
+- "Prefer delivery in morning" → [{"type": "customer_preference", "category": "preference", "fact": "prefers delivery in morning"}]
+- "I can't eat gluten" → [{"type": "customer_preference", "category": "restriction", "fact": "can't eat gluten"}]
+- "Always orders on Fridays" → [{"type": "customer_preference", "category": "behavior", "fact": "always orders on Fridays"}]
+
+Category guide:
+- **allergy**: Medical allergies (peanuts, shellfish, dairy)
+- **restriction**: Dietary restrictions (vegetarian, vegan, gluten-free, no pork)
+- **preference**: Likes/dislikes (prefers spicy, doesn't like onions, likes extra sauce)
+- **behavior**: Recurring patterns (orders weekly, prefers morning delivery, always gets same thing)
+
 ### Non-Shopping Intents
 
 **escalation_request** - Wants human: "talk to person", "need help", "urgent"
@@ -99,6 +115,8 @@ interface IntentResult {
 	address?: string;
 	paymentMethod?: "cash" | "card";
 	category?: "politics" | "flirting" | "inappropriate" | "manipulation" | "unrelated";
+	preferenceCategory?: "allergy" | "restriction" | "preference" | "behavior";
+	fact?: string;
 }
 
 function parseJsonResponse(content: string): IntentResult[] {
@@ -256,6 +274,13 @@ function mapToIntent(result: IntentResult): Intent {
 				address: result.address ?? "",
 			};
 
+		case "customer_preference":
+			return {
+				type: "customer_preference",
+				category: validatePreferenceCategory(result.preferenceCategory),
+				fact: result.fact ?? "",
+			};
+
 		case "off_topic":
 			return {
 				type: "off_topic",
@@ -265,6 +290,16 @@ function mapToIntent(result: IntentResult): Intent {
 		default:
 			return { type: "unknown" };
 	}
+}
+
+function validatePreferenceCategory(
+	category: string | undefined,
+): "allergy" | "restriction" | "preference" | "behavior" {
+	const valid = ["allergy", "restriction", "preference", "behavior"];
+	if (category && valid.includes(category)) {
+		return category as "allergy" | "restriction" | "preference" | "behavior";
+	}
+	return "preference";
 }
 
 function validateOffTopicCategory(

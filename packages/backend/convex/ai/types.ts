@@ -124,6 +124,15 @@ export interface OffTopicIntent extends BaseIntent {
 	category: OffTopicCategory;
 }
 
+export type PreferenceCategory = "allergy" | "restriction" | "preference" | "behavior";
+
+// Intent: "I don't like spicy food", "I'm allergic to peanuts", "Prefer delivery in morning"
+export interface CustomerPreferenceIntent extends BaseIntent {
+	type: "customer_preference";
+	category: PreferenceCategory;
+	fact: string;
+}
+
 export type Intent =
 	| GreetingIntent
 	| ProductQuestionIntent
@@ -136,6 +145,7 @@ export type Intent =
 	| DeliveryChoiceIntent
 	| PaymentChoiceIntent
 	| AddressProvidedIntent
+	| CustomerPreferenceIntent
 	| OffTopicIntent
 	| UnknownIntent;
 
@@ -159,6 +169,8 @@ export interface SerializedIntent {
 	address?: string;
 	paymentMethod?: "cash" | "card";
 	category?: OffTopicCategory;
+	preferenceCategory?: PreferenceCategory;
+	fact?: string;
 }
 
 export function serializeIntent(intent: Intent): SerializedIntent {
@@ -179,6 +191,8 @@ export function serializeIntent(intent: Intent): SerializedIntent {
 			return { ...base, paymentMethod: intent.paymentMethod };
 		case "address_provided":
 			return { ...base, address: intent.address };
+		case "customer_preference":
+			return { ...base, preferenceCategory: intent.category, fact: intent.fact };
 		case "off_topic":
 			return { ...base, category: intent.category };
 		default:
@@ -223,6 +237,12 @@ export function parseIntent(serialized: SerializedIntent): Intent {
 			return {
 				type: "address_provided",
 				address: serialized.address ?? "",
+			};
+		case "customer_preference":
+			return {
+				type: "customer_preference",
+				category: (serialized.preferenceCategory as PreferenceCategory) ?? "preference",
+				fact: serialized.fact ?? "",
 			};
 		case "off_topic":
 			return {

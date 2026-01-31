@@ -501,6 +501,19 @@ export const processMessage = action({
 				});
 			}
 
+			if (intent.type === "customer_preference" && conversation.customerRecordId) {
+				try {
+					await ctx.runAction(api.ai.customerHistory.saveCustomerPreference, {
+						customerId: conversation.customerRecordId,
+						category: intent.category,
+						fact: intent.fact,
+						conversationId: args.conversationId,
+					});
+				} catch (error) {
+					console.error("Failed to save customer preference:", error);
+				}
+			}
+
 			const orderUpdate = handleOrderIntent(intent, accumulatedPendingOrder, products);
 			if (orderUpdate.pendingOrder !== undefined) {
 				accumulatedPendingOrder = orderUpdate.pendingOrder;
