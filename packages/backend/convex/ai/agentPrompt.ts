@@ -92,7 +92,8 @@ interface AgentPromptParams {
 	products: Product[];
 	currentOrder: OrderState | null;
 	language: LanguageCode;
-	customerPhone: string;
+	channel: "whatsapp" | "instagram" | "messenger";
+	customerId: string;
 	customerContext?: CustomerContext | null;
 }
 
@@ -234,11 +235,51 @@ function formatProductCatalog(products: Product[]): string {
 	return lines.join("\n");
 }
 
+function buildContactInfoSection(
+	channel: "whatsapp" | "instagram" | "messenger",
+	customerId: string,
+	customerContext?: CustomerContext | null,
+): string {
+	if (channel === "whatsapp") {
+		return `## Contact Information You Already Have
+
+Phone Number: ${customerId}
+
+IMPORTANT: You are messaging them on WhatsApp, so their phone number is ${customerId}.
+DO NOT ask for their phone number - you already have it.
+When creating orders, use this phone number automatically.`;
+	}
+
+	if (channel === "instagram") {
+		const instagramHandle = customerContext?.profile.name || customerId;
+		return `## Contact Information You Already Have
+
+Instagram: ${instagramHandle}
+
+IMPORTANT: You are messaging them on Instagram.
+DO NOT ask for their Instagram handle - you already have it.
+If you need a phone number for delivery, ask for it explicitly as a separate delivery contact number.`;
+	}
+
+	const messengerName = customerContext?.profile.name || customerId;
+	return `## Contact Information You Already Have
+
+Messenger: ${messengerName}
+
+IMPORTANT: You are messaging them on Facebook Messenger.
+If you need a phone number for delivery, ask for it explicitly as a separate delivery contact number.`;
+}
+
 export function buildAgentPrompt(params: AgentPromptParams): string {
-	const { business, products, currentOrder, language, customerPhone, customerContext } = params;
+	const { business, products, currentOrder, language, channel, customerId, customerContext } =
+		params;
 
 	const productCatalog = formatProductCatalog(products);
 	const productCount = products.length;
+	const catalogDisplay =
+		productCount === 0
+			? "NO PRODUCTS AVAILABLE - Tell customer the catalog is being set up. DO NOT make up products or prices."
+			: productCatalog;
 
 	const tz = business.timezone ? ` (${business.timezone})` : "";
 	const businessHours = business.businessHours
@@ -253,17 +294,25 @@ export function buildAgentPrompt(params: AgentPromptParams): string {
 		pt: "Responda em português brasileiro com tom amigável e natural.",
 	}[language];
 
+	const channelName = {
+		whatsapp: "WhatsApp",
+		instagram: "Instagram",
+		messenger: "Messenger",
+	}[channel];
+
+	const contactInfoSection = buildContactInfoSection(channel, customerId, customerContext);
+
 	const customerSection = customerContext
 		? `## Customer Profile (INTERNAL - use to personalize)
 ${formatCustomerContext(customerContext)}`
-		: `## Customer: ${customerPhone} (new customer)`;
+		: `## Customer: ${customerId} (new customer)`;
 
 	const isReturningCustomer = customerContext ? customerContext.profile.totalOrders > 0 : false;
 	const customerName = customerContext?.profile.name;
 
 	const returningGreeting = getReturningCustomerGreeting(customerName, isReturningCustomer);
 
-	return `You are a friendly shop assistant for ${business.name}, chatting with customers on WhatsApp.
+	return `You are a friendly shop assistant for ${business.name}, chatting with customers on ${channelName}.
 
 ## YOUR CORE OBJECTIVE: SELL
 
@@ -291,11 +340,11 @@ ALWAYS BE CLOSING:
 
 ## Your Vibe
 - Chat like a helpful friend who works at the shop
-- Short messages (it's WhatsApp, not email)
+- Short messages (it's ${channelName}, not email)
 - Natural, warm, human
 - ${languageInstruction}
 
-## Text Like a Human (CRITICAL - WhatsApp is NOT email)
+## Text Like a Human (CRITICAL - ${channelName} is NOT email)
 
 KEEP IT SHORT:
 - 1-2 sentences MAX per message (60-80 characters ideal)
@@ -336,10 +385,12 @@ PRODUCT MENTIONS:
 - Hours: ${businessHours}
 
 ## Product Knowledge (INTERNAL - ${productCount} products)
-${productCatalog || "Catalog updating..."}
+${catalogDisplay}
 
 ## Current Order
 ${orderSummary}
+
+${contactInfoSection}
 
 ${customerSection}
 ${returningGreeting}
@@ -384,9 +435,21 @@ ${returningGreeting}
 - DO: Quick, punchy responses that keep conversation moving
 
 ### Products
+${
+	productCount === 0
+		? `
+**CRITICAL: NO PRODUCTS IN CATALOG**
+- If customer asks to order/buy: "We're setting up the shop! Check back soon?"
+- NEVER make up products, prices, or inventory
+- DO NOT use update_order tool when no products exist
+- Politely deflect and offer to help when catalog is ready
+`
+		: `
 - ALL products in catalog are valid - never filter based on business type
 - If they ask "what do you have?" → Give natural summary (2-3 examples max), don't list everything
 - Example: "We've got tees, hoodies, accessories - what interests you?" NOT listing all 50 products
+`
+}
 - **Product Images**:
   - When customer asks to see a product ("show me", "send pic", "how does it look"), use send_product_image
   - For variant products, specify which variant they want to see

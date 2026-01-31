@@ -14,6 +14,7 @@ import type * as ai_customerHistory from "../ai/customerHistory.js";
 import type * as ai_escalation from "../ai/escalation.js";
 import type * as ai_intent from "../ai/intent.js";
 import type * as ai_language from "../ai/language.js";
+import type * as ai_messageHandler from "../ai/messageHandler.js";
 import type * as ai_process from "../ai/process.js";
 import type * as ai_prompts from "../ai/prompts.js";
 import type * as ai_providers_openai from "../ai/providers/openai.js";
@@ -91,6 +92,7 @@ declare const fullApi: ApiFromModules<{
   "ai/escalation": typeof ai_escalation;
   "ai/intent": typeof ai_intent;
   "ai/language": typeof ai_language;
+  "ai/messageHandler": typeof ai_messageHandler;
   "ai/process": typeof ai_process;
   "ai/prompts": typeof ai_prompts;
   "ai/providers/openai": typeof ai_providers_openai;

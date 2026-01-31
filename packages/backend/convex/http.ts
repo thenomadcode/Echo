@@ -242,13 +242,6 @@ http.route({
 			}
 
 			if (message.messageType === "text" && message.content.trim()) {
-				const processingStartedAt = Date.now();
-
-				await ctx.runMutation(internal.ai.process.scheduleProcessingCleanup, {
-					conversationId: messageResult.conversationId,
-					startedAt: processingStartedAt,
-				});
-
 				ctx
 					.runAction(internal.integrations.meta.actions.sendTypingIndicator, {
 						conversationId: messageResult.conversationId,
@@ -257,7 +250,7 @@ http.route({
 						console.warn("[Meta typing indicator] Failed:", err);
 					});
 
-				await ctx.scheduler.runAfter(0, internal.ai.process.processAndRespond, {
+				await ctx.scheduler.runAfter(0, internal.ai.messageHandler.processIncomingMessage, {
 					conversationId: messageResult.conversationId,
 					message: message.content,
 					channel: message.channel,
@@ -391,14 +384,7 @@ async function handleIncomingMessage(
 		});
 
 	if (messageType === "text" && parsedMessage.content.trim()) {
-		const processingStartedAt = Date.now();
-
-		await ctx.runMutation(internal.ai.process.scheduleProcessingCleanup, {
-			conversationId: messageResult.conversationId,
-			startedAt: processingStartedAt,
-		});
-
-		await ctx.scheduler.runAfter(0, internal.ai.process.processAndRespond, {
+		await ctx.scheduler.runAfter(0, internal.ai.messageHandler.processIncomingMessage, {
 			conversationId: messageResult.conversationId,
 			message: parsedMessage.content,
 			channel: "whatsapp",

@@ -61,14 +61,14 @@ export const getCustomerDetails = query({
 	handler: async (ctx, args) => {
 		const customer = await ctx.db
 			.query("customers")
-			.withIndex("by_phone", (q) => q.eq("phone", args.customerPhone))
+			.filter((q) => q.eq(q.field("phone"), args.customerPhone))
 			.first();
 
 		if (!customer) return null;
 
 		const addresses = await ctx.db
 			.query("customerAddresses")
-			.withIndex("by_customer", (q) => q.eq("customerRecordId", customer._id))
+			.withIndex("by_customer", (q) => q.eq("customerId", customer._id))
 			.collect();
 
 		return {

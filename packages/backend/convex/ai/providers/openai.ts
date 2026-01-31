@@ -158,7 +158,104 @@ export class OpenAIProvider implements AIProvider {
 		};
 	}
 
+	private async completeWithToolsUsingResponsesAPI(
+		params: CompleteWithToolsParams,
+	): Promise<CompleteWithToolsResult> {
+		const { messages, systemPrompt, tools, maxTokens } = params;
+		const tokenLimit = Math.max(maxTokens ?? getConfiguredMaxTokens(), 16384);
+
+		const toolsJson = JSON.stringify(
+			tools
+				.filter(
+					(t): t is OpenAI.Chat.ChatCompletionTool & { type: "function" } => t.type === "function",
+				)
+				.map((t) => ({
+					name: t.function.name,
+					description: t.function.description,
+					parameters: t.function.parameters,
+				})),
+			null,
+			2,
+		);
+
+		const enhancedSystemPrompt = `${systemPrompt}
+
+## TOOL CALLING (CRITICAL)
+
+You have access to tools. When you need to use a tool:
+- Include the tool call in "tool_calls" array with name and arguments
+- Optionally include a "message" to say something to the customer BEFORE tool execution
+
+Available tools:
+${toolsJson}
+
+RULES:
+- Use "tool_calls" array even for single tool (can be empty if no tools needed)
+- If no tools needed, just include your response in "message"
+- NEVER make up tool results - only call tools, don't simulate their output`;
+
+		const inputItems: OpenAI.Responses.ResponseInputItem[] = messages.map((msg, index) => {
+			let content = msg.content;
+			if (index === messages.length - 1 && msg.role === "user") {
+				content = `${content}\n\nIMPORTANT: Respond with valid JSON in the format described.`;
+			}
+			return {
+				type: "message" as const,
+				role: msg.role === "assistant" ? ("assistant" as const) : ("user" as const),
+				content,
+			};
+		});
+
+		const requestParams: OpenAI.Responses.ResponseCreateParamsNonStreaming = {
+			model: this.model,
+			input: inputItems,
+			max_output_tokens: tokenLimit,
+			instructions: enhancedSystemPrompt,
+			text: {
+				format: { type: "json_object" },
+			},
+		};
+
+		const response = await this.client.responses.create(requestParams);
+		const responseText = response.output_text ?? "";
+
+		let parsedResponse: { tool_calls?: ToolCall[]; message?: string } | null = null;
+		try {
+			parsedResponse = JSON.parse(responseText) as {
+				tool_calls?: ToolCall[];
+				message?: string;
+			};
+		} catch {
+			console.error("[OpenAI] Failed to parse gpt-5-nano tool response as JSON:", responseText);
+			return {
+				content: responseText,
+				toolCalls: [],
+				tokensUsed: (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0),
+				model: response.model,
+			};
+		}
+
+		const toolCalls = parsedResponse?.tool_calls ?? [];
+		const content = parsedResponse?.message ?? null;
+
+		console.log(
+			`[OpenAI] gpt-5-nano returned ${toolCalls.length} tool calls:`,
+			toolCalls.map((tc) => tc.name),
+		);
+
+		return {
+			content,
+			toolCalls,
+			tokensUsed: (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0),
+			model: response.model,
+		};
+	}
+
 	async completeWithTools(params: CompleteWithToolsParams): Promise<CompleteWithToolsResult> {
+		if (usesResponsesAPI(this.model)) {
+			return this.completeWithToolsUsingResponsesAPI(params);
+		}
+
 		const { messages, systemPrompt, tools, temperature, maxTokens } = params;
 		const tokenLimit = maxTokens ?? getConfiguredMaxTokens();
 

@@ -403,7 +403,8 @@ export const processWithAgent = action({
 			})),
 			currentOrder: orderState,
 			language,
-			customerPhone: conversation.customerId,
+			channel: conversation.channel,
+			customerId: conversation.customerId,
 			customerContext,
 		});
 
@@ -414,18 +415,31 @@ export const processWithAgent = action({
 
 		conversationHistory.push({ role: "user", content: args.message });
 
+		console.log(`[Agent] processWithAgent START for ${args.conversationId}`);
 		const provider = new OpenAIProvider();
+		const availableTools =
+			products.length > 0 ? [...ORDER_TOOLS, ...CUSTOMER_TOOLS] : CUSTOMER_TOOLS;
+		console.log(
+			`[Agent] Available tools: ${availableTools.map((t) => (t.type === "function" ? t.function.name : "unknown")).join(", ")}`,
+		);
+
 		const result = await provider.completeWithTools({
 			messages: conversationHistory,
 			systemPrompt,
-			tools: [...ORDER_TOOLS, ...CUSTOMER_TOOLS],
+			tools: availableTools,
 			temperature: 0.7,
 		});
 
+		console.log(
+			`[Agent] AI returned ${result.toolCalls.length} tool calls:`,
+			result.toolCalls.map((tc) => tc.name),
+		);
 		const toolResults: string[] = [];
 
 		for (const toolCall of result.toolCalls) {
+			console.log(`[Agent] Executing tool: ${toolCall.name} with args:`, toolCall.arguments);
 			const execResult = await executeToolCall(ctx, toolCall, conversation, products);
+			console.log(`[Agent] Tool ${toolCall.name} result:`, execResult);
 			toolResults.push(`${toolCall.name}: ${execResult.message}`);
 			if (execResult.data) {
 				toolResults.push(JSON.stringify(execResult.data));
@@ -474,7 +488,8 @@ export const processWithAgent = action({
 					})),
 					currentOrder: updatedOrderState,
 					language,
-					customerPhone: conversation.customerId,
+					channel: conversation.channel,
+					customerId: conversation.customerId,
 					customerContext: updatedContext.customerContext,
 				});
 
