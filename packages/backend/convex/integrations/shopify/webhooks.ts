@@ -8,7 +8,7 @@ import type {
 	ShopifyWebhookResponse,
 	ShopifyWebhooksListResponse,
 } from "./types";
-import { WEBHOOK_TOPICS } from "./utils";
+import { WEBHOOK_TOPICS, downloadAndStoreImage } from "./utils";
 
 async function listExistingWebhooks(
 	shop: string,
