@@ -130,3 +130,37 @@
   - AI prompts need explicit, unambiguous rules about when to confirm vs apologize - use CRITICAL/ABSOLUTE language
   - The condition for clearing pending data changed from checking orderId to checking success===true
 ---
+## 2026-01-31 20:25 - US-006
+- Implemented Shopify draft order creation for card payments with graceful error handling
+- Enhanced generatePaymentLink in packages/backend/convex/orders/payments.ts:
+  - Added try-catch block around Shopify createOrder call (lines 60-82)
+  - Logs success when Shopify draft order created (shopifyDraftOrderId)
+  - Logs error and falls back to Stripe if Shopify fails
+  - Ensures customers can complete payment even if Shopify has issues
+- Added logging in handleCheckoutIntent (packages/backend/convex/ai/process.ts):
+  - Logs when payment link generation starts for card payments (line 915)
+  - Logs when payment link generation completes successfully (line 921)
+- Verified complete flow:
+  1. handleCheckoutIntent detects payment_choice='card' intent
+  2. Creates Convex order via orders.mutations.create
+  3. Sets delivery info and payment method
+  4. Calls generatePaymentLink action
+  5. generatePaymentLink checks for Shopify connection
+  6. If connected, calls integrations.shopify.orders.createOrder
+  7. createOrder creates Shopify draft order via REST API
+  8. Returns invoiceUrl from draft_order.invoice_url
+  9. Saves shopifyDraftOrderId to Echo order (via updateOrderWithDraftOrderInfo)
+  10. invoiceUrl flows back through paymentLink variable
+  11. checkoutResult includes paymentLink field
+  12. AI response includes payment link in instruction (response.ts line 292)
+- Files changed:
+  - packages/backend/convex/orders/payments.ts (enhanced error handling, added logging)
+  - packages/backend/convex/ai/process.ts (added checkout logging)
+- **Learnings for future iterations:**
+  - When integrating external APIs (Shopify), always provide fallback mechanisms
+  - Log both success and failure paths for better debugging
+  - Try-catch error boundaries prevent entire checkout flow from failing
+  - Graceful degradation: Stripe fallback ensures business continuity if Shopify has issues
+  - Console.log is acceptable for informational/operational logging (not just errors)
+  - Pattern: Try primary provider → log error → fall back to secondary provider
+---

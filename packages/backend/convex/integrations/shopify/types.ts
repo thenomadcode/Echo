@@ -207,3 +207,15 @@ export type CreateDraftOrderResult = {
 	invoiceUrl: string | null;
 	error: string | null;
 };
+
+export type ShopifyOrderResponse = {
+	order: {
+		id: number;
+		name: string;
+		order_number?: number;
+		financial_status?: string;
+		fulfillment_status?: string | null;
+		total_price?: string;
+		created_at?: string;
+	};
+};
