@@ -138,9 +138,9 @@
 				"Typecheck passes"
 			],
 			"priority": 8,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Added 'YOUR CORE OBJECTIVE: SELL' section to both prompts.ts and agentPrompt.ts with directive language examples, urgency tactics, and 'always be closing' guidance. Strengthened ORDER CREATION MANDATE to immediately submit when all info present. Updated Natural Flow section with directive phrasing and removed passive language patterns. Added low stock urgency tactics (≤5 items) to product variant handling."
 		},
 		{
 			"id": "US-009",

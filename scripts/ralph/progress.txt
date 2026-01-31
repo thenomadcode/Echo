@@ -194,3 +194,33 @@
   - updateOrderWithShopifyInfo saves shopifyOrderId, updateOrderWithDraftOrderInfo saves shopifyDraftOrderId
   - Logging pattern: use console.error for errors (console.log/info automatically removed by linter)
 ---
+## 2026-01-31 20:39 - US-008
+- Implemented sales-focused and directive AI prompts across both prompt files
+- Added "YOUR CORE OBJECTIVE: SELL" section to packages/backend/convex/ai/prompts.ts (after language instruction, before Business section)
+- Added same section to packages/backend/convex/ai/agentPrompt.ts (after opening line, before "Your Vibe" section)
+- Directive language examples added:
+  - "Ready to order?" vs "Let me know if you have questions"
+  - "Should I add that to your order?" vs "Is there anything else?"
+  - "Want to grab that before it's gone?" vs "Feel free to browse"
+- Urgency tactics added:
+  - Low stock: "Only 2 left - should I reserve one for you?"
+  - Time-sensitive: "We close in an hour - want to get this in?"
+  - Popular items: "This one's selling fast - want it?"
+- Updated ORDER CREATION MANDATE (prompts.ts rule #8): When items + delivery + payment present, MUST immediately create order (don't ask permission)
+- Strengthened ORDER VALIDATION rule (prompts.ts rule #9, agentPrompt.ts submit_order): NEVER say "order placed" without success=true
+- Updated Natural Flow section in agentPrompt.ts:
+  - Changed from passive to directive phrasing at each step
+  - Removed "Let me know", "Take your time", "Is there anything..."
+  - Added "Always Push Forward" subsection with DO/DON'T examples
+- Added low stock urgency to variant handling: mention "Only X left" when ≤5 items in stock
+- Files changed:
+  - packages/backend/convex/ai/prompts.ts (added sales section, updated behavior rules)
+  - packages/backend/convex/ai/agentPrompt.ts (added sales section, updated flow and product guidance)
+- **Learnings for future iterations:**
+  - Sales-focused prompts require both explicit objectives AND concrete examples at each conversation phase
+  - Directive language isn't just about word choice - it's about eliminating question marks that give customers escape routes
+  - Urgency tactics work best when tied to real data (inventory counts, business hours, order history)
+  - The AI needs permission to be assertive - "MUST submit order" vs "you may submit order" changes behavior significantly
+  - Passive phrases often hide in seemingly helpful statements ("let me know", "take your time")
+  - Each conversation state (browsing, ordering, confirming) needs its own directive guidance
+---
