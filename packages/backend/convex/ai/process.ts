@@ -590,6 +590,16 @@ export const processMessage = action({
 				state: newState,
 				clearPendingData: true,
 			});
+
+			if (newState === "completed" && conversation.customerRecordId) {
+				try {
+					await ctx.scheduler.runAfter(0, internal.ai.summary.processConversationMemory, {
+						conversationId: args.conversationId,
+					});
+				} catch (error) {
+					console.error("Failed to schedule summary generation:", error);
+				}
+			}
 		} else if (finalCheckoutResult.success === false) {
 			newState = "confirming";
 			await ctx.runMutation(internal.ai.process.updateConversation, {
