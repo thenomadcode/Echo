@@ -157,9 +157,9 @@
 				"Typecheck passes"
 			],
 			"priority": 9,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Added comprehensive 'Text Like a Human' section to agentPrompt.ts with message length limits, casual language examples, formatting prohibitions, and product mention limits. Updated Natural Flow and Products sections to reinforce conversational style."
 		},
 		{
 			"id": "US-010",
@@ -175,9 +175,9 @@
 				"Typecheck passes"
 			],
 			"priority": 10,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Added customer_preference intent type to intent classification with category detection (allergy/restriction/preference/behavior), integrated into processMessage intent loop with saveCustomerPreference action call"
 		},
 		{
 			"id": "US-011",

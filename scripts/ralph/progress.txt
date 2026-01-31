@@ -224,3 +224,56 @@
   - Passive phrases often hide in seemingly helpful statements ("let me know", "take your time")
   - Each conversation state (browsing, ordering, confirming) needs its own directive guidance
 ---
+## 2026-01-31 20:46 - US-009
+- Implemented human-like text messaging style guidelines in AI prompts
+- Added comprehensive "Text Like a Human" section to packages/backend/convex/ai/agentPrompt.ts after "Your Vibe" section
+- Guidelines include:
+  - Message length limit: 1-2 sentences max (60-80 characters ideal)
+  - Provided DO/DON'T examples for concise vs verbose responses
+  - Casual language requirements: "yeah", "cool", "got it" with mandatory contractions
+  - Prohibited bullet points, numbered lists, and all formatting (bold, italics, underscores)
+  - Limited product mentions to 2-3 max per message
+- Updated "Natural Flow" section with character count reminder
+- Updated "Products" section with specific examples of natural summaries vs product dumps
+- Updated variant handling to prohibit listing all options like "Select: S/M/L/XL"
+- Files changed:
+  - packages/backend/convex/ai/agentPrompt.ts (added "Text Like a Human" section, updated flow and product guidance)
+- **Learnings for future iterations:**
+  - WhatsApp conversational style requires explicit length constraints (60-80 char) to prevent verbose responses
+  - DO/DON'T examples are more effective than abstract guidelines for AI behavior
+  - Formatting prohibitions must be explicit - AI defaults to structured lists without clear instructions
+  - Casual language guidance needs specific word substitutions ("yeah" not "yes") to change tone
+  - Contraction enforcement changes formality: "I'll" vs "I will" makes responses feel human
+  - Product listing limits prevent overwhelming customers: "We've got [category]" vs listing 50 products
+  - Message brevity requires balancing between natural conversation and completing the sale
+---
+
+## 2026-01-31 20:53 - US-010
+- Implemented customer preference capture in intent classification workflow
+- Added customer_preference intent type to packages/backend/convex/ai/intent.ts
+  - Added intent definition with category (allergy/restriction/preference/behavior) and fact fields
+  - Created comprehensive examples for each category type
+  - Added validatePreferenceCategory validator function
+- Updated packages/backend/convex/ai/types.ts
+  - Added CustomerPreferenceIntent interface with category and fact fields
+  - Added PreferenceCategory type union (allergy | restriction | preference | behavior)
+  - Updated Intent union to include CustomerPreferenceIntent
+  - Updated SerializedIntent interface and serializeIntent/parseIntent functions
+- Integrated preference detection in packages/backend/convex/ai/process.ts
+  - Added customer_preference intent handling in processMessage intent loop (line 503-513)
+  - Calls api.ai.customerHistory.saveCustomerPreference when preference detected
+  - Wrapped in try-catch with console.error logging for resilience
+- Files changed:
+  - packages/backend/convex/ai/intent.ts (added customer_preference intent classification)
+  - packages/backend/convex/ai/types.ts (added CustomerPreferenceIntent type and serialization)
+  - packages/backend/convex/ai/process.ts (integrated preference saving in intent loop)
+- **Learnings for future iterations:**
+  - Intent classification now supports customer memory capture alongside order/delivery/payment flows
+  - Preference detection works via multi-intent detection - can be combined with other intents
+  - Category auto-detection by AI: allergy (medical), restriction (dietary), preference (likes/dislikes), behavior (patterns)
+  - Integration pattern: Check intent type in loop → call external action → wrap in try-catch
+  - Similar to name extraction pattern (lines 496-502), but uses action instead of mutation
+  - AI prompt examples are critical for accurate category detection (added 5 examples with category guide)
+  - Fact extraction relies on AI to normalize customer language into consistent statements
+---
+
