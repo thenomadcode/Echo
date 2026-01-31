@@ -437,3 +437,34 @@
   - Browser testing confirmed all variant info displays correctly
 ---
 
+## 2026-01-31 08:46 - US-019
+- Implemented variant image delivery via WhatsApp/Instagram/Messenger
+- Added send_product_image tool to AI tools (packages/backend/convex/ai/tools.ts):
+  - Tool accepts product_name, optional variant_specification, and optional caption
+  - Added SendProductImageArgs TypeScript interface
+- Implemented executeSendProductImage function in agent.ts:
+  - Uses findProduct and findVariant utilities to locate the correct product/variant
+  - Retrieves imageId from variant (with fallback to product imageId)
+  - Generates public HTTPS URL using ctx.storage.getUrl(imageId)
+  - Sends image via WhatsApp or Meta (Instagram/Messenger) using existing sendMessage actions
+  - Returns clear error messages when product/variant not found or no image available
+- Wired up send_product_image tool in executeToolCall switch statement
+- Updated AI system prompt (packages/backend/convex/ai/agentPrompt.ts):
+  - Added send_product_image to tools list
+  - Added Product Images section with guidance: send only when customer requests, don't proactively send
+  - AI responds naturally to requests like "show me", "send pic", "how does it look"
+- Typecheck passes
+- Commit: 5f52d3f "feat: US-019 - Implement variant image delivery via WhatsApp"
+- Files changed:
+  - packages/backend/convex/ai/tools.ts (+28 lines: new tool + TypeScript interface)
+  - packages/backend/convex/ai/agent.ts (+97 lines: executeSendProductImage function + tool wiring + import)
+  - packages/backend/convex/ai/agentPrompt.ts (+8 lines: updated prompt guidance)
+- **Learnings for future iterations:**
+  - Image IDs stored as v.string() in schema, not v.id("_storage"), requires cast when calling ctx.storage.getUrl()
+  - Variant image fallback pattern: variant.imageId ?? product.imageId ensures product-level image used when variant has none
+  - Tool execution pattern: validate inputs → fetch data → generate URL → send via channel-appropriate action
+  - AI prompt guidance should be clear about WHEN to use tools (reactive, not proactive for images)
+  - WhatsApp and Meta (Instagram/Messenger) share same sendMessage action signature for images
+  - Product/variant lookup uses existing findProduct/findVariant utilities for consistency
+---
+

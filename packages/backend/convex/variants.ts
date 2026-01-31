@@ -255,3 +255,86 @@ export const get = query({
 		return variant;
 	},
 });
+
+export const bulkUpdatePrices = mutation({
+	args: {
+		updates: v.array(
+			v.object({
+				variantId: v.id("productVariants"),
+				price: v.number(),
+				compareAtPrice: v.optional(v.number()),
+			}),
+		),
+	},
+	handler: async (ctx, args) => {
+		const now = Date.now();
+
+		for (const update of args.updates) {
+			const variant = await ctx.db.get(update.variantId);
+			if (!variant) {
+				throw new Error(`Variant ${update.variantId} not found`);
+			}
+
+			const product = await ctx.db.get(variant.productId);
+			if (!product) {
+				throw new Error(`Parent product for variant ${update.variantId} not found`);
+			}
+			await requireBusinessOwnership(ctx, product.businessId as any);
+
+			const updates: Record<string, unknown> = {
+				price: update.price,
+				updatedAt: now,
+			};
+
+			if (update.compareAtPrice !== undefined) {
+				updates.compareAtPrice = update.compareAtPrice;
+			}
+
+			await ctx.db.patch(update.variantId, updates);
+		}
+
+		return { success: true, updatedCount: args.updates.length };
+	},
+});
+
+export const bulkAdjustInventory = mutation({
+	args: {
+		adjustments: v.array(
+			v.object({
+				variantId: v.id("productVariants"),
+				adjustment: v.number(),
+			}),
+		),
+	},
+	handler: async (ctx, args) => {
+		const now = Date.now();
+
+		for (const adjustment of args.adjustments) {
+			const variant = await ctx.db.get(adjustment.variantId);
+			if (!variant) {
+				throw new Error(`Variant ${adjustment.variantId} not found`);
+			}
+
+			const product = await ctx.db.get(variant.productId);
+			if (!product) {
+				throw new Error(`Parent product for variant ${adjustment.variantId} not found`);
+			}
+			await requireBusinessOwnership(ctx, product.businessId as any);
+
+			const newInventory = variant.inventoryQuantity + adjustment.adjustment;
+
+			if (newInventory < 0) {
+				throw new Error(
+					`Variant ${adjustment.variantId} inventory cannot be negative (current: ${variant.inventoryQuantity}, adjustment: ${adjustment.adjustment})`,
+				);
+			}
+
+			await ctx.db.patch(adjustment.variantId, {
+				inventoryQuantity: newInventory,
+				updatedAt: now,
+			});
+		}
+
+		return { success: true, adjustedCount: args.adjustments.length };
+	},
+});
