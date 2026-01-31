@@ -120,9 +120,9 @@
 				"Typecheck passes"
 			],
 			"priority": 7,
-			"passes": false,
+			"passes": true,
 			"ultrawork": false,
-			"notes": ""
+			"notes": "Completed: Modified createOrderInternal to detect cash payments and create regular Shopify orders (via /orders.json) instead of draft orders. Regular orders automatically decrement Shopify inventory and mark order as paid. Added comprehensive error handling with console.error logging throughout the flow."
 		},
 		{
 			"id": "US-008",

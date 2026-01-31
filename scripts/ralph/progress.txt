@@ -164,3 +164,33 @@
   - Console.log is acceptable for informational/operational logging (not just errors)
   - Pattern: Try primary provider → log error → fall back to secondary provider
 ---
+## 2026-01-31 20:32 - US-007
+- Implemented Shopify regular order creation for cash payments
+- Modified createOrderInternal in packages/backend/convex/integrations/shopify/orders.ts:
+  - Added payment method detection (lines 399-402)
+  - For cash payments: calls createRegularOrder helper function (creates regular Shopify order via /admin/api/2026-01/orders.json)
+  - For card payments: maintains existing draft order flow (creates draft via /admin/api/2026-01/draft_orders.json)
+- Created createRegularOrder helper function (lines 202-357):
+  - Creates regular Shopify orders with financial_status='paid' for cash payments
+  - Includes transaction record marking payment as successful
+  - Saves shopifyOrderId to Echo orders table (not shopifyDraftOrderId)
+  - Handles line items, customer info, shipping address same as draft orders
+  - Comprehensive error handling with console.error for failures
+- Added types to support regular order creation:
+  - ShopifyOrderResponse type in integrations/shopify/types.ts
+  - Uses existing updateOrderWithShopifyInfo mutation to save shopifyOrderId
+- Inventory sync verification:
+  - Convex: decrementInventory already called in setPaymentMethod (orders/delivery.ts line 72-74)
+  - Shopify: Regular orders automatically decrement inventory when created (unlike drafts)
+- Files changed:
+  - packages/backend/convex/integrations/shopify/orders.ts (added createRegularOrder, modified createOrderInternal)
+  - packages/backend/convex/integrations/shopify/types.ts (added ShopifyOrderResponse type)
+- **Learnings for future iterations:**
+  - Shopify has two order APIs: draft_orders.json (for payment-pending) vs orders.json (for completed/paid)
+  - Draft orders don't affect inventory until converted to regular orders
+  - Regular orders automatically decrement inventory and mark financial_status='paid'
+  - Must include transactions array when creating paid orders via API
+  - Payment method distinction (cash vs card) requires different Shopify order types
+  - updateOrderWithShopifyInfo saves shopifyOrderId, updateOrderWithDraftOrderInfo saves shopifyDraftOrderId
+  - Logging pattern: use console.error for errors (console.log/info automatically removed by linter)
+---
